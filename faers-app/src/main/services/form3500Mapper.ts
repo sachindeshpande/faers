@@ -60,17 +60,26 @@ export class Form3500AMapper {
   private mapCaseData(formData: Form3500AData, warnings: string[]): UpdateCaseDTO {
     const { patient, event, manufacturer } = formData;
 
+    // Parse the receipt date first (we'll reuse it)
+    const receiptDate = this.parseDate(event.dateOfReport, warnings) ||
+                        this.parseDate(manufacturer.dateReceived, warnings) ||
+                        new Date().toISOString().split('T')[0]; // Fallback to today
+
+    // Parse sender name from manufacturer contact
+    const senderNames = this.parseSenderName(manufacturer.contactName);
+
     const caseData: UpdateCaseDTO = {
       // Report info - default to Spontaneous for Form 3500
       reportType: ReportType.Spontaneous,
       initialOrFollowup: ReportCategory.Initial,
-      // Use "Date of this Report" from reporter section, fallback to manufacturer date received
-      receiptDate: this.parseDate(event.dateOfReport, warnings) ||
-                   this.parseDate(manufacturer.dateReceived, warnings),
+      receiptDate,
+      receiveDate: receiptDate, // E2B requires both dates; use same value
 
       // Sender info from manufacturer section
       senderType: SenderType.PharmaceuticalCompany,
-      senderOrganization: manufacturer.contactName,
+      senderOrganization: manufacturer.contactName || 'Unknown Organization',
+      senderGivenName: senderNames.givenName,
+      senderFamilyName: senderNames.familyName,
       senderAddress: manufacturer.address,
       senderPhone: manufacturer.phone,
       senderEmail: manufacturer.email,
@@ -164,6 +173,14 @@ export class Form3500AMapper {
       const terms = aeTerm.split(',').map(t => t.trim()).filter(t => t.length > 0);
 
       terms.forEach((term, index) => {
+        // Check if any seriousness criterion is set
+        const hasSeriousness = event.outcomes.death ||
+                               event.outcomes.lifeThreatening ||
+                               event.outcomes.hospitalization ||
+                               event.outcomes.disability ||
+                               event.outcomes.congenitalAnomaly ||
+                               event.outcomes.otherSerious;
+
         const reaction: Partial<CaseReaction> = {
           reactionTerm: term,
           startDate: this.parseDate(event.dateOfEvent, warnings),
@@ -172,7 +189,8 @@ export class Form3500AMapper {
           seriousHospitalization: event.outcomes.hospitalization,
           seriousDisability: event.outcomes.disability,
           seriousCongenital: event.outcomes.congenitalAnomaly,
-          seriousOther: event.outcomes.otherSerious,
+          // Default to "Other Serious" if no seriousness criteria specified
+          seriousOther: event.outcomes.otherSerious || !hasSeriousness,
           outcome: event.outcomes.death ? ReactionOutcome.Fatal : ReactionOutcome.Unknown,
           sortOrder: index + 1
         };
@@ -182,6 +200,14 @@ export class Form3500AMapper {
     } else {
       // Create a placeholder reaction if we have event description
       if (event.description) {
+        // Check if any seriousness criterion is set
+        const hasSeriousness = event.outcomes.death ||
+                               event.outcomes.lifeThreatening ||
+                               event.outcomes.hospitalization ||
+                               event.outcomes.disability ||
+                               event.outcomes.congenitalAnomaly ||
+                               event.outcomes.otherSerious;
+
         const reaction: Partial<CaseReaction> = {
           reactionTerm: 'See narrative for event description',
           nativeTerm: event.description,
@@ -191,7 +217,8 @@ export class Form3500AMapper {
           seriousHospitalization: event.outcomes.hospitalization,
           seriousDisability: event.outcomes.disability,
           seriousCongenital: event.outcomes.congenitalAnomaly,
-          seriousOther: event.outcomes.otherSerious,
+          // Default to "Other Serious" if no seriousness criteria specified
+          seriousOther: event.outcomes.otherSerious || !hasSeriousness,
           outcome: event.outcomes.death ? ReactionOutcome.Fatal : ReactionOutcome.Unknown,
           sortOrder: 1
         };
@@ -480,6 +507,42 @@ export class Form3500AMapper {
     };
 
     return months[month.toLowerCase()];
+  }
+
+  /**
+   * Parse sender name from contact name string
+   * Handles formats like "John Smith", "Smith, John", or just "John"
+   */
+  private parseSenderName(contactName?: string): { givenName: string; familyName: string } {
+    if (!contactName || contactName.trim().length === 0) {
+      return { givenName: 'Unknown', familyName: 'Sender' };
+    }
+
+    const trimmed = contactName.trim();
+
+    // Check for "Last, First" format
+    if (trimmed.includes(',')) {
+      const [last, first] = trimmed.split(',').map(s => s.trim());
+      return {
+        givenName: first || 'Unknown',
+        familyName: last || 'Sender'
+      };
+    }
+
+    // Check for "First Last" format
+    const parts = trimmed.split(/\s+/);
+    if (parts.length >= 2) {
+      return {
+        givenName: parts[0],
+        familyName: parts.slice(1).join(' ')
+      };
+    }
+
+    // Single name - use as family name
+    return {
+      givenName: 'Unknown',
+      familyName: parts[0] || 'Sender'
+    };
   }
 
   /**

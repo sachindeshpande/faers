@@ -25,7 +25,9 @@ import {
   WarningOutlined,
   ExperimentOutlined,
   EditOutlined,
-  UnorderedListOutlined
+  UnorderedListOutlined,
+  CheckCircleFilled,
+  CloseCircleFilled
 } from '@ant-design/icons';
 import type { MenuProps } from 'antd';
 import { useCaseStore, useCurrentCase, useCaseActions } from './stores/caseStore';
@@ -39,58 +41,31 @@ import {
   DrugsSection,
   NarrativeSection
 } from './components/case-form';
-import type { Case, CaseDrug, CaseReaction, CaseReporter } from '../shared/types/case.types';
+import type { Case, CaseDrug, CaseReaction, CaseReporter, ValidationResult } from '../shared/types/case.types';
+import ValidationPanel from './components/validation/ValidationPanel';
 
 const { Header, Sider, Content, Footer } = Layout;
 
 type MenuItem = Required<MenuProps>['items'][number];
 
-// Navigation menu items matching form sections
-const navItems: MenuItem[] = [
-  {
-    key: 'cases',
-    icon: <UnorderedListOutlined />,
-    label: 'Case List'
-  },
-  {
-    type: 'divider'
-  },
-  {
-    key: 'report',
-    icon: <FileTextOutlined />,
-    label: 'Report Info'
-  },
-  {
-    key: 'reporter',
-    icon: <UserOutlined />,
-    label: 'Reporter'
-  },
-  {
-    key: 'sender',
-    icon: <SendOutlined />,
-    label: 'Sender'
-  },
-  {
-    key: 'patient',
-    icon: <MedicineBoxOutlined />,
-    label: 'Patient'
-  },
-  {
-    key: 'reactions',
-    icon: <WarningOutlined />,
-    label: 'Reactions'
-  },
-  {
-    key: 'drugs',
-    icon: <ExperimentOutlined />,
-    label: 'Drugs'
-  },
-  {
-    key: 'narrative',
-    icon: <EditOutlined />,
-    label: 'Narrative'
+// Section indicator component
+const SectionIndicator: React.FC<{ hasData: boolean; hasError: boolean }> = ({ hasData, hasError }) => {
+  if (hasError) {
+    return <CloseCircleFilled style={{ color: '#ff4d4f', fontSize: 10, marginLeft: 8 }} />;
   }
-];
+  if (hasData) {
+    return <CheckCircleFilled style={{ color: '#52c41a', fontSize: 10, marginLeft: 8 }} />;
+  }
+  return null;
+};
+
+// Helper to create nav label with indicator
+const createNavLabel = (label: string, hasData: boolean, hasError: boolean) => (
+  <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+    {label}
+    <SectionIndicator hasData={hasData} hasError={hasError} />
+  </span>
+);
 
 const App: React.FC = () => {
   const [messageApi, contextHolder] = message.useMessage();
@@ -105,6 +80,11 @@ const App: React.FC = () => {
   const [reactions, setReactions] = useState<CaseReaction[]>([]);
   const [reporters, setReporters] = useState<CaseReporter[]>([]);
   const [loadingRelated, setLoadingRelated] = useState(false);
+
+  // Validation state
+  const [validationResult, setValidationResult] = useState<ValidationResult | null>(null);
+  const [isValidating, setIsValidating] = useState(false);
+  const [showValidationPanel, setShowValidationPanel] = useState(false);
 
   // Load cases on mount
   useEffect(() => {
@@ -266,22 +246,96 @@ const App: React.FC = () => {
     messageApi.success('Case saved successfully');
   };
 
-  // Handle validate (placeholder)
-  const handleValidate = () => {
+  // Handle validate
+  const handleValidate = async () => {
     if (!currentCase) {
       messageApi.warning('No case selected');
       return;
     }
-    messageApi.info('Validation will be implemented in M3');
+
+    setIsValidating(true);
+    try {
+      const result = await window.electronAPI.validateCase(currentCase.id);
+      if (result.success && result.data) {
+        setValidationResult(result.data);
+        setShowValidationPanel(true);
+
+        // Show summary message
+        const errors = result.data.errors.filter(e => e.severity === 'error');
+        const warnings = result.data.errors.filter(e => e.severity === 'warning');
+
+        if (result.data.valid) {
+          messageApi.success('Validation passed! Case is ready for export.');
+        } else {
+          messageApi.error(`Validation found ${errors.length} error(s) and ${warnings.length} warning(s)`);
+        }
+      } else {
+        messageApi.error(`Validation failed: ${result.error}`);
+      }
+    } catch (error) {
+      messageApi.error(`Validation error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsValidating(false);
+    }
   };
 
-  // Handle export XML (placeholder)
-  const handleExportXML = () => {
+  // Handle navigation from validation panel
+  const handleNavigateToField = (field: string) => {
+    // Map field to section
+    if (field.startsWith('report') || field === 'receiptDate' || field === 'receiveDate' ||
+        field === 'initialOrFollowup' || field.includes('nullification')) {
+      setActiveSection('report');
+    } else if (field.startsWith('reporter') || field === 'reporters') {
+      setActiveSection('reporter');
+    } else if (field.startsWith('sender')) {
+      setActiveSection('sender');
+    } else if (field.startsWith('patient') || field === 'deathDate' || field === 'patientDeath') {
+      setActiveSection('patient');
+    } else if (field.startsWith('reaction') || field === 'reactions') {
+      setActiveSection('reactions');
+    } else if (field.startsWith('drug') || field === 'drugs') {
+      setActiveSection('drugs');
+    } else if (field.startsWith('narrative') || field === 'caseNarrative') {
+      setActiveSection('narrative');
+    }
+  };
+
+  // Handle export XML
+  const handleExportXML = async () => {
     if (!currentCase) {
       messageApi.warning('No case selected');
       return;
     }
-    messageApi.info('XML export will be implemented in M4');
+
+    try {
+      // Show save dialog
+      const dialogResult = await window.electronAPI.showSaveDialog({
+        title: 'Export E2B(R3) XML',
+        defaultPath: `${currentCase.id}.xml`,
+        filters: [
+          { name: 'XML Files', extensions: ['xml'] }
+        ]
+      });
+
+      if (!dialogResult.success || !dialogResult.data) {
+        return; // User cancelled
+      }
+
+      const filePath = dialogResult.data;
+
+      // Export XML
+      const result = await window.electronAPI.exportXML(currentCase.id, filePath);
+
+      if (result.success) {
+        messageApi.success(`Case exported to ${filePath}`);
+        // Refresh case to update status
+        useCaseStore.getState().fetchCase(currentCase.id);
+      } else {
+        messageApi.error(`Export failed: ${result.error}`);
+      }
+    } catch (error) {
+      messageApi.error(`Export error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   };
 
   // Handle import Form 3500
@@ -337,6 +391,98 @@ const App: React.FC = () => {
   const handleNavClick: MenuProps['onClick'] = (e) => {
     setActiveSection(e.key);
   };
+
+  // Check if a section has validation errors
+  const getSectionErrors = (sectionKey: string): boolean => {
+    if (!validationResult) return false;
+
+    const sectionFieldMap: Record<string, string[]> = {
+      report: ['reportType', 'initialOrFollowup', 'receiptDate', 'receiveDate', 'nullification'],
+      reporter: ['reporters', 'qualification'],
+      sender: ['senderType', 'senderOrganization', 'senderGivenName', 'senderFamilyName', 'senderEmail'],
+      patient: ['patientSex', 'patientAge', 'patientWeight', 'patientHeight', 'patientDeath', 'deathDate'],
+      reactions: ['reactions', 'reactionTerm', 'seriousness'],
+      drugs: ['drugs', 'characterization', 'productName'],
+      narrative: ['caseNarrative', 'narrative']
+    };
+
+    const fields = sectionFieldMap[sectionKey] || [];
+    return validationResult.errors.some(e =>
+      e.severity === 'error' &&
+      fields.some(f => e.field.toLowerCase().includes(f.toLowerCase()))
+    );
+  };
+
+  // Check if a section has data
+  const getSectionHasData = (sectionKey: string): boolean => {
+    if (!currentCase) return false;
+
+    switch (sectionKey) {
+      case 'report':
+        return !!(currentCase.reportType || currentCase.receiptDate || currentCase.receiveDate);
+      case 'reporter':
+        return reporters.length > 0;
+      case 'sender':
+        return !!(currentCase.senderOrganization || currentCase.senderGivenName || currentCase.senderFamilyName);
+      case 'patient':
+        return !!(currentCase.patientSex !== undefined || currentCase.patientAge || currentCase.patientBirthdate);
+      case 'reactions':
+        return reactions.length > 0;
+      case 'drugs':
+        return drugs.length > 0;
+      case 'narrative':
+        return !!(currentCase.caseNarrative && currentCase.caseNarrative.trim().length > 0);
+      default:
+        return false;
+    }
+  };
+
+  // Generate nav items with indicators
+  const getNavItems = (): MenuItem[] => [
+    {
+      key: 'cases',
+      icon: <UnorderedListOutlined />,
+      label: 'Case List'
+    },
+    {
+      type: 'divider'
+    },
+    {
+      key: 'report',
+      icon: <FileTextOutlined />,
+      label: createNavLabel('Report Info', getSectionHasData('report'), getSectionErrors('report'))
+    },
+    {
+      key: 'reporter',
+      icon: <UserOutlined />,
+      label: createNavLabel('Reporter', getSectionHasData('reporter'), getSectionErrors('reporter'))
+    },
+    {
+      key: 'sender',
+      icon: <SendOutlined />,
+      label: createNavLabel('Sender', getSectionHasData('sender'), getSectionErrors('sender'))
+    },
+    {
+      key: 'patient',
+      icon: <MedicineBoxOutlined />,
+      label: createNavLabel('Patient', getSectionHasData('patient'), getSectionErrors('patient'))
+    },
+    {
+      key: 'reactions',
+      icon: <WarningOutlined />,
+      label: createNavLabel('Reactions', getSectionHasData('reactions'), getSectionErrors('reactions'))
+    },
+    {
+      key: 'drugs',
+      icon: <ExperimentOutlined />,
+      label: createNavLabel('Drugs', getSectionHasData('drugs'), getSectionErrors('drugs'))
+    },
+    {
+      key: 'narrative',
+      icon: <EditOutlined />,
+      label: createNavLabel('Narrative', getSectionHasData('narrative'), getSectionErrors('narrative'))
+    }
+  ];
 
   // Get status badge class
   const getStatusBadgeClass = (status?: string) => {
@@ -503,6 +649,7 @@ const App: React.FC = () => {
                 icon={<CheckSquareOutlined />}
                 onClick={handleValidate}
                 disabled={!currentCase}
+                loading={isValidating}
               >
                 Validate
               </Button>
@@ -527,7 +674,7 @@ const App: React.FC = () => {
           <Menu
             mode="inline"
             selectedKeys={[activeSection]}
-            items={navItems}
+            items={getNavItems()}
             onClick={handleNavClick}
           />
         </Sider>
@@ -535,6 +682,15 @@ const App: React.FC = () => {
         {/* Main Content */}
         <Content className="app-main">
           {renderContent()}
+
+          {/* Validation Panel */}
+          {showValidationPanel && (
+            <ValidationPanel
+              result={validationResult}
+              onClose={() => setShowValidationPanel(false)}
+              onNavigateToField={handleNavigateToField}
+            />
+          )}
         </Content>
       </Layout>
 

@@ -3,6 +3,7 @@
  */
 
 import { ipcMain, dialog } from 'electron';
+import * as fs from 'fs';
 import { getDatabase, backupDatabase, restoreDatabase } from '../database/connection';
 import {
   CaseRepository,
@@ -11,6 +12,8 @@ import {
   ReporterRepository
 } from '../database/repositories';
 import { Form3500ImportService } from '../services/form3500ImportService';
+import { XMLGeneratorService } from '../services/xmlGeneratorService';
+import { ValidationService } from '../services/validationService';
 import { IPC_CHANNELS } from '../../shared/types/ipc.types';
 import type {
   CaseFilterOptions,
@@ -115,6 +118,14 @@ export function registerIpcHandlers(): void {
   ipcMain.handle(
     IPC_CHANNELS.CASE_COUNT,
     wrapHandler(() => caseRepo.count())
+  );
+
+  // Validation
+  const validationService = new ValidationService(db);
+
+  ipcMain.handle(
+    IPC_CHANNELS.CASE_VALIDATE,
+    wrapHandler((id: string) => validationService.validate(id))
   );
 
   // Reporter operations
@@ -314,6 +325,69 @@ export function registerIpcHandlers(): void {
         return {
           success: false,
           error: error instanceof Error ? error.message : 'Import error'
+        };
+      }
+    }
+  );
+
+  // XML Generation and Export
+  const xmlService = new XMLGeneratorService(db);
+
+  ipcMain.handle(
+    IPC_CHANNELS.XML_GENERATE,
+    async (_, caseId: string) => {
+      try {
+        const result = xmlService.generate(caseId);
+        if (!result.success) {
+          return {
+            success: false,
+            error: result.errors.join('; ')
+          };
+        }
+        return {
+          success: true,
+          data: result.xml
+        };
+      } catch (error) {
+        return {
+          success: false,
+          error: error instanceof Error ? error.message : 'XML generation error'
+        };
+      }
+    }
+  );
+
+  ipcMain.handle(
+    IPC_CHANNELS.XML_EXPORT,
+    async (_, { caseId, filePath }: { caseId: string; filePath: string }) => {
+      try {
+        const result = xmlService.generate(caseId);
+        if (!result.success) {
+          return {
+            success: false,
+            error: result.errors.join('; ')
+          };
+        }
+
+        // Write XML to file
+        fs.writeFileSync(filePath, result.xml!, 'utf-8');
+
+        // Update case with export info
+        const now = new Date().toISOString();
+        caseRepo.update(caseId, {
+          status: 'Exported',
+          exportedAt: now,
+          exportedXmlPath: filePath
+        });
+
+        return {
+          success: true,
+          data: undefined
+        };
+      } catch (error) {
+        return {
+          success: false,
+          error: error instanceof Error ? error.message : 'XML export error'
         };
       }
     }

@@ -21,7 +21,8 @@ import {
   Modal,
   Typography,
   Tag,
-  Tooltip
+  Tooltip,
+  message
 } from 'antd';
 import type { MenuProps, TableProps } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
@@ -89,11 +90,6 @@ const CaseList: React.FC<CaseListProps> = ({ onSelectCase }) => {
     }
   };
 
-  // Handle row double-click
-  const handleRowDoubleClick = (record: CaseListItem) => {
-    onSelectCase(record.id);
-  };
-
   // Handle duplicate
   const handleDuplicate = async (id: string) => {
     const duplicated = await duplicateCase(id);
@@ -114,7 +110,35 @@ const CaseList: React.FC<CaseListProps> = ({ onSelectCase }) => {
       await deleteCase(caseToDelete);
       setDeleteModalOpen(false);
       setCaseToDelete(null);
+      setSelectedRowKeys([]); // Clear selection after delete
     }
+  };
+
+  // Handle bulk delete of selected cases
+  const handleBulkDelete = () => {
+    // Get selected cases that are Draft status (only Draft can be deleted)
+    const selectedCases = cases.filter(c => selectedRowKeys.includes(c.id));
+    const draftCases = selectedCases.filter(c => c.status === 'Draft');
+
+    if (draftCases.length === 0) {
+      message.warning('No Draft cases selected. Only Draft cases can be deleted.');
+      return;
+    }
+
+    if (draftCases.length < selectedCases.length) {
+      message.info(`${selectedCases.length - draftCases.length} non-Draft case(s) will be skipped.`);
+    }
+
+    // For simplicity, delete one at a time (first Draft case)
+    setCaseToDelete(draftCases[0].id);
+    setDeleteModalOpen(true);
+  };
+
+  // Check if any selected cases can be deleted
+  const canDeleteSelected = () => {
+    if (selectedRowKeys.length === 0) return false;
+    const selectedCases = cases.filter(c => selectedRowKeys.includes(c.id));
+    return selectedCases.some(c => c.status === 'Draft');
   };
 
   // Handle pagination
@@ -125,6 +149,36 @@ const CaseList: React.FC<CaseListProps> = ({ onSelectCase }) => {
   ) => {
     const offset = ((pagination.current || 1) - 1) * (pagination.pageSize || 50);
     fetchCases({ offset, limit: pagination.pageSize });
+  };
+
+  // Handle export XML
+  const handleExportXML = async (id: string) => {
+    try {
+      // Show save dialog
+      const dialogResult = await window.electronAPI.showSaveDialog({
+        title: 'Export E2B(R3) XML',
+        defaultPath: `${id}.xml`,
+        filters: [{ name: 'XML Files', extensions: ['xml'] }]
+      });
+
+      if (!dialogResult.success || !dialogResult.data) {
+        return; // User cancelled
+      }
+
+      const filePath = dialogResult.data;
+
+      // Export XML
+      const exportResult = await window.electronAPI.exportXML(id, filePath);
+
+      if (exportResult.success) {
+        message.success(`XML exported successfully to ${filePath}`);
+        fetchCases(); // Refresh to show updated status
+      } else {
+        message.error(`Export failed: ${exportResult.error}`);
+      }
+    } catch (error) {
+      message.error(`Export failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   };
 
   // Context menu items
@@ -147,7 +201,7 @@ const CaseList: React.FC<CaseListProps> = ({ onSelectCase }) => {
       key: 'export',
       label: 'Export XML',
       icon: <ExportOutlined />,
-      disabled: true // Will be enabled in M4
+      onClick: () => handleExportXML(record.id)
     },
     {
       type: 'divider'
@@ -286,10 +340,8 @@ const CaseList: React.FC<CaseListProps> = ({ onSelectCase }) => {
           />
 
           <Select
-            style={{ width: 120 }}
-            placeholder="Status"
-            allowClear
-            value={statusFilter}
+            style={{ width: 140 }}
+            value={statusFilter || 'all'}
             onChange={handleStatusChange}
             options={[
               { value: 'all', label: 'All Status' },
@@ -300,6 +352,18 @@ const CaseList: React.FC<CaseListProps> = ({ onSelectCase }) => {
           />
 
           <Space style={{ marginLeft: 'auto' }}>
+            {selectedRowKeys.length > 0 && (
+              <Tooltip title="Only Draft cases can be deleted">
+                <Button
+                  danger
+                  icon={<DeleteOutlined />}
+                  onClick={handleBulkDelete}
+                  disabled={!canDeleteSelected()}
+                >
+                  Delete Selected
+                </Button>
+              </Tooltip>
+            )}
             <Button
               icon={<ReloadOutlined />}
               onClick={handleRefresh}
@@ -336,7 +400,15 @@ const CaseList: React.FC<CaseListProps> = ({ onSelectCase }) => {
           }}
           onChange={handleTableChange}
           onRow={(record) => ({
-            onDoubleClick: () => handleRowDoubleClick(record),
+            onClick: (e) => {
+              // Don't open case if clicking on checkbox or action buttons
+              const target = e.target as HTMLElement;
+              if (target.closest('.ant-checkbox-wrapper') || target.closest('.ant-btn')) {
+                return;
+              }
+              onSelectCase(record.id);
+            },
+            onDoubleClick: () => onSelectCase(record.id),
             style: { cursor: 'pointer' }
           })}
           rowSelection={{
