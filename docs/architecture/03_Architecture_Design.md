@@ -1,9 +1,9 @@
 # FAERS Submission Application - Architecture & Design Document
 
-**Version:** 1.0
+**Version:** 1.1
 **Phase:** 1 (Core ICSR Submission MVP)
 **Last Updated:** January 2026
-**Status:** Approved for Implementation
+**Status:** Implemented
 
 ---
 
@@ -276,8 +276,10 @@ Detailed view of the main process components.
 │  │  │  • Handles errors consistently                                   │  │  │
 │  │  │                                                                  │  │  │
 │  │  │  Channels: case:list, case:get, case:create, case:update,       │  │  │
-│  │  │            case:delete, reaction:*, drug:*, reporter:*,          │  │  │
-│  │  │            xml:generate, db:backup, settings:*                   │  │  │
+│  │  │            case:delete, case:validate, case:duplicate,           │  │  │
+│  │  │            reaction:*, drug:*, reporter:*,                       │  │  │
+│  │  │            xml:generate, xml:export, import:form3500,            │  │  │
+│  │  │            db:backup, db:restore, dialog:save, dialog:open       │  │  │
 │  │  └─────────────────────────────────────────────────────────────────┘  │  │
 │  └───────────────────────────────────────────────────────────────────────┘  │
 │                                    │                                        │
@@ -321,17 +323,30 @@ Detailed view of the main process components.
 │  └───────────────────────────────────────────────────────────────────────┘  │
 │                                                                              │
 │  ┌───────────────────────────────────────────────────────────────────────┐  │
-│  │                      Service Layer (Future)                            │  │
+│  │                         Service Layer                                  │  │
 │  │  ┌───────────────────┐ ┌───────────────────┐ ┌───────────────────┐    │  │
 │  │  │                   │ │                   │ │                   │    │  │
-│  │  │ValidationService  │ │  E2B Generator    │ │  Export Service   │    │  │
-│  │  │    (M3)           │ │     (M4)          │ │     (M4)          │    │  │
+│  │  │ValidationService  │ │XMLGeneratorService│ │Form3500ImportSvc  │    │  │
 │  │  │                   │ │                   │ │                   │    │  │
-│  │  │ • validateCase()  │ │ • generateICSR()  │ │ • exportToFile()  │    │  │
-│  │  │ • validateField() │ │ • validateXML()   │ │ • saveXML()       │    │  │
-│  │  │ • checkE2B()      │ │ • formatDate()    │ │                   │    │  │
+│  │  │ • validate()      │ │ • generate()      │ │ • import()        │    │  │
+│  │  │ • validateReport  │ │ • exportToFile()  │ │ • parser.parse()  │    │  │
+│  │  │   Information()   │ │ • buildXML()      │ │ • mapper.map()    │    │  │
+│  │  │ • validatePatient │ │ • escapeXml()     │ │                   │    │  │
+│  │  │   Information()   │ │                   │ │                   │    │  │
+│  │  │ • validateDrugs() │ └───────────────────┘ └───────────────────┘    │  │
+│  │  │ • validateReact   │                                                │  │
+│  │  │   ions()          │ ┌───────────────────┐ ┌───────────────────┐    │  │
+│  │  │ • validateCross   │ │                   │ │                   │    │  │
+│  │  │   FieldRules()    │ │ Form3500AParser   │ │ Form3500AMapper   │    │  │
 │  │  │                   │ │                   │ │                   │    │  │
-│  │  └───────────────────┘ └───────────────────┘ └───────────────────┘    │  │
+│  │  └───────────────────┘ │ • parse()         │ │ • map()           │    │  │
+│  │                        │ • extractPatient  │ │ • mapCaseData()   │    │  │
+│  │                        │   Info()          │ │ • mapDrugs()      │    │  │
+│  │                        │ • extractEvent    │ │ • mapReactions()  │    │  │
+│  │                        │   Info()          │ │ • mapReporters()  │    │  │
+│  │                        │ • extractProducts │ │ • parseDate()     │    │  │
+│  │                        │                   │ │                   │    │  │
+│  │                        └───────────────────┘ └───────────────────┘    │  │
 │  └───────────────────────────────────────────────────────────────────────┘  │
 │                                                                              │
 └──────────────────────────────────────────────────────────────────────────────┘
@@ -418,13 +433,20 @@ Detailed view of the renderer process components.
 │  │  │  • getCase()             • saveDrug()                             │ │  │
 │  │  │  • createCase()          • deleteDrug()                           │ │  │
 │  │  │  • updateCase()                                                   │ │  │
-│  │  │  • deleteCase()          Utilities:                               │ │  │
-│  │  │  • duplicateCase()       • showSaveDialog()                       │ │  │
-│  │  │                          • showOpenDialog()                       │ │  │
-│  │  │  Reaction Operations:    • backupDatabase()                       │ │  │
-│  │  │  • getReactions()        • getCountries()                         │ │  │
-│  │  │  • saveReaction()        • getSetting()                           │ │  │
-│  │  │  • deleteReaction()      • setSetting()                           │ │  │
+│  │  │  • deleteCase()          Validation & Export:                     │ │  │
+│  │  │  • duplicateCase()       • validateCase()                         │ │  │
+│  │  │                          • generateXML()                          │ │  │
+│  │  │  Reaction Operations:    • exportXML()                            │ │  │
+│  │  │  • getReactions()                                                 │ │  │
+│  │  │  • saveReaction()        Import Operations:                       │ │  │
+│  │  │  • deleteReaction()      • importForm3500()                       │ │  │
+│  │  │                                                                   │ │  │
+│  │  │  Reporter Operations:    Utilities:                               │ │  │
+│  │  │  • getReporters()        • showSaveDialog()                       │ │  │
+│  │  │  • saveReporter()        • showOpenDialog()                       │ │  │
+│  │  │  • deleteReporter()      • backupDatabase()                       │ │  │
+│  │  │                          • restoreDatabase()                      │ │  │
+│  │  │                          • getCountries()                         │ │  │
 │  │  │                                                                   │ │  │
 │  │  └──────────────────────────────────────────────────────────────────┘ │  │
 │  └───────────────────────────────────────────────────────────────────────┘  │
@@ -691,7 +713,45 @@ Each repository encapsulates database operations for a specific entity:
 | `DrugRepository` | Medications | CRUD with substances/dosages |
 | `ReporterRepository` | Primary Source | CRUD, set primary |
 
-#### 6.1.3 IPC Handlers (`case.handlers.ts`)
+#### 6.1.3 Services Layer
+
+The service layer contains business logic that orchestrates repositories and performs complex operations.
+
+| Service | File | Purpose |
+|---------|------|---------|
+| `ValidationService` | `validationService.ts` | E2B(R3) compliance validation |
+| `XMLGeneratorService` | `xmlGeneratorService.ts` | E2B(R3) XML generation |
+| `Form3500ImportService` | `form3500ImportService.ts` | PDF import orchestration |
+| `Form3500AParser` | `form3500Parser.ts` | PDF field extraction |
+| `Form3500AMapper` | `form3500Mapper.ts` | Form 3500A to E2B mapping |
+
+**ValidationService Key Methods:**
+```typescript
+validate(caseId: string): ValidationResult
+  // Runs all validation checks:
+  // - validateReportInformation()
+  // - validateReporterInformation()
+  // - validateSenderInformation()
+  // - validatePatientInformation()
+  // - validateReactions()
+  // - validateDrugs()
+  // - validateNarrative()
+  // - validateCrossFieldRules()
+```
+
+**XMLGeneratorService Key Methods:**
+```typescript
+generate(caseId: string): Promise<XMLGenerationResult>
+exportToFile(caseId: string, filePath: string): Promise<XMLExportResult>
+```
+
+**Form3500ImportService Key Methods:**
+```typescript
+import(filePath: string): Promise<Form3500AImportResult>
+  // Orchestrates: parse → map → create case → create entities
+```
+
+#### 6.1.4 IPC Handlers (`case.handlers.ts`)
 
 **Responsibilities:**
 - Register ipcMain handlers for all channels
@@ -712,25 +772,59 @@ ipcMain.handle(IPC_CHANNELS.CASE_LIST,
 
 **Responsibilities:**
 - Define main layout (header, sidebar, content, footer)
-- Render toolbar with action buttons
-- Handle navigation between sections
-- Display status bar information
+- Render toolbar with action buttons (New, Save, Validate, Export, Import)
+- Handle navigation between sections with dynamic indicators
+- Display status bar with case info (ID, status, dirty state)
+- Coordinate validation and show results
+
+**Navigation Indicators:**
+- Green checkmark: Section has data
+- Red X: Section has validation errors
+- No indicator: Section is empty with no errors
+
+```typescript
+// Dynamic navigation generation
+const getNavItems = (): MenuItem[] => [
+  { key: 'report', label: createNavLabel('Report Info',
+      getSectionHasData('report'), getSectionErrors('report')) },
+  // ... other sections
+];
+```
 
 #### 6.2.2 Case List (`CaseList.tsx`)
 
 **Responsibilities:**
-- Display paginated table of cases
-- Provide search and filter controls
-- Handle row selection and actions
-- Context menu for case operations
+- Display paginated, sortable table of cases
+- Provide search and status filter controls
+- Handle row selection for bulk operations
+- Single-click to open case, checkbox for selection
+- Context menu for case actions (Open, Duplicate, Export, Delete)
+- Bulk delete of selected Draft cases
 
 #### 6.2.3 Case Store (`caseStore.ts`)
 
 **Responsibilities:**
 - Manage application state with Zustand
 - Provide actions for case operations
-- Track loading states and errors
+- Track loading states, dirty state, and errors
+- Store related entities (drugs, reactions, reporters)
 - Expose selectors for component access
+
+**State:**
+```typescript
+interface CaseState {
+  cases: CaseListItem[];
+  currentCase: Case | null;
+  drugs: CaseDrug[];
+  reactions: CaseReaction[];
+  reporters: CaseReporter[];
+  isLoading: boolean;
+  isDirty: boolean;
+  isSaving: boolean;
+  activeSection: string;
+  filters: CaseFilterOptions;
+}
+```
 
 ---
 
@@ -819,7 +913,7 @@ ipcMain.handle(IPC_CHANNELS.CASE_LIST,
     │                         │                     │                       │
 ```
 
-### 7.3 XML Export Flow (Future - M4)
+### 7.3 XML Export Flow
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
@@ -828,43 +922,110 @@ ipcMain.handle(IPC_CHANNELS.CASE_LIST,
 
    User              Renderer              Main Process           File System
     │                    │                      │                      │
-    │ Click "Export"     │                      │                      │
+    │ Click "Export XML" │                      │                      │
     │───────────────────►│                      │                      │
-    │                    │                      │                      │
-    │                    │ validateCase(id)     │                      │
-    │                    │─────────────────────►│                      │
-    │                    │                      │                      │
-    │                    │ ValidationResult     │                      │
-    │                    │◄─────────────────────│                      │
-    │                    │                      │                      │
-    │                    │ If errors, show UI   │                      │
-    │◄───────────────────│                      │                      │
     │                    │                      │                      │
     │                    │ showSaveDialog()     │                      │
     │                    │─────────────────────►│                      │
     │                    │                      │                      │
-    │ Select path        │                      │                      │
+    │ Select file path   │                      │                      │
     │───────────────────►│                      │                      │
     │                    │                      │                      │
     │                    │ exportXML(id, path)  │                      │
     │                    │─────────────────────►│                      │
     │                    │                      │                      │
-    │                    │                      │ E2BGenerator         │
-    │                    │                      │ .generateICSR()      │
+    │                    │                      │ ValidationService    │
+    │                    │                      │ .validate(caseId)    │
     │                    │                      │         │            │
-    │                    │                      │         │ Build XML  │
     │                    │                      │◄────────┘            │
     │                    │                      │                      │
-    │                    │                      │ writeFileSync(xml)   │
+    │                    │                      │ If !valid, return    │
+    │                    │                      │ error with details   │
+    │                    │                      │                      │
+    │                    │                      │ XMLGeneratorService  │
+    │                    │                      │ .generate(caseId)    │
+    │                    │                      │         │            │
+    │                    │                      │         │ Build E2B  │
+    │                    │                      │         │ XML from   │
+    │                    │                      │         │ case data  │
+    │                    │                      │◄────────┘            │
+    │                    │                      │                      │
+    │                    │                      │ fs.writeFileSync     │
+    │                    │                      │ (filePath, xml)      │
     │                    │                      │─────────────────────►│
     │                    │                      │                      │
-    │                    │                      │ Update case status   │
-    │                    │                      │ = 'Exported'         │
+    │                    │                      │ CaseRepository       │
+    │                    │                      │ .update(id,          │
+    │                    │                      │   {status:'Exported',│
+    │                    │                      │    exportedAt, ...}) │
     │                    │                      │                      │
-    │                    │ Success              │                      │
+    │                    │ IPCResponse<void>    │                      │
     │                    │◄─────────────────────│                      │
     │                    │                      │                      │
-    │ Show confirmation  │                      │                      │
+    │ Show success msg   │                      │                      │
+    │◄───────────────────│                      │                      │
+    │                    │                      │                      │
+```
+
+### 7.4 PDF Import Flow (Form 3500A)
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                       PDF IMPORT DATA FLOW (FORM 3500A)                      │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+   User              Renderer              Main Process           File System
+    │                    │                      │                      │
+    │ Click "Import 3500"│                      │                      │
+    │───────────────────►│                      │                      │
+    │                    │                      │                      │
+    │                    │ showOpenDialog()     │                      │
+    │                    │ (filter: *.pdf)      │                      │
+    │                    │─────────────────────►│                      │
+    │                    │                      │                      │
+    │ Select PDF file    │                      │                      │
+    │───────────────────►│                      │                      │
+    │                    │                      │                      │
+    │                    │ importForm3500(path) │                      │
+    │                    │─────────────────────►│                      │
+    │                    │                      │                      │
+    │                    │                      │ Form3500AParser      │
+    │                    │                      │ .parse(filePath)     │
+    │                    │                      │         │            │
+    │                    │                      │         │ Read PDF   │
+    │                    │                      │         │◄──────────│
+    │                    │                      │         │            │
+    │                    │                      │         │ Extract    │
+    │                    │                      │         │ AcroForm   │
+    │                    │                      │         │ fields     │
+    │                    │                      │◄────────┘            │
+    │                    │                      │                      │
+    │                    │                      │ Form3500AMapper      │
+    │                    │                      │ .map(formData)       │
+    │                    │                      │         │            │
+    │                    │                      │         │ Transform  │
+    │                    │                      │         │ to E2B     │
+    │                    │                      │         │ entities   │
+    │                    │                      │◄────────┘            │
+    │                    │                      │                      │
+    │                    │                      │ CaseRepository       │
+    │                    │                      │ .create() + .update()│
+    │                    │                      │                      │
+    │                    │                      │ DrugRepository       │
+    │                    │                      │ .create() for each   │
+    │                    │                      │                      │
+    │                    │                      │ ReactionRepository   │
+    │                    │                      │ .create() for each   │
+    │                    │                      │                      │
+    │                    │                      │ ReporterRepository   │
+    │                    │                      │ .create() for each   │
+    │                    │                      │                      │
+    │                    │ ImportResult         │                      │
+    │                    │ {caseId, warnings}   │                      │
+    │                    │◄─────────────────────│                      │
+    │                    │                      │                      │
+    │                    │ Navigate to case     │                      │
+    │ Show imported case │ form                 │                      │
     │◄───────────────────│                      │                      │
     │                    │                      │                      │
 ```
@@ -1199,6 +1360,7 @@ The architecture is designed with these extension points:
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
 | 1.0 | January 2026 | Claude Code | Initial architecture document |
+| 1.1 | January 2026 | Claude Code | Updated with implemented services (ValidationService, XMLGeneratorService, Form3500ImportService), PDF import flow, navigation indicators |
 
 ---
 
