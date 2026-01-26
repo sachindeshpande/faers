@@ -119,8 +119,24 @@ body {
 }
 
 .status-badge.exported {
-  background: #fff7e6;
-  color: #fa8c16;
+  background: #f9f0ff;
+  color: #722ed1;
+}
+
+/* Phase 2: Extended status badges */
+.status-badge.submitted {
+  background: #f0f5ff;
+  color: #2f54eb;
+}
+
+.status-badge.acknowledged {
+  background: #f6ffed;
+  color: #52c41a;
+}
+
+.status-badge.rejected {
+  background: #fff2f0;
+  color: #ff4d4f;
 }
 
 /* Toolbar */

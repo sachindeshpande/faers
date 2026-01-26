@@ -11,7 +11,13 @@ import type {
   ValidationResult,
   CaseReporter,
   CaseReaction,
-  CaseDrug
+  CaseDrug,
+  SubmissionHistoryEntry,
+  SubmissionRecord,
+  DashboardStats,
+  AcknowledgmentType,
+  SubmissionEnvironment,
+  SubmissionReportType
 } from './case.types';
 import type { Form3500AImportResult } from './form3500.types';
 
@@ -64,7 +70,23 @@ export const IPC_CHANNELS = {
   FILE_OPEN_DIALOG: 'file:openDialog',
 
   // Import operations
-  IMPORT_FORM3500: 'import:form3500'
+  IMPORT_FORM3500: 'import:form3500',
+
+  // Phase 2: Submission operations
+  SUBMISSION_RECORD: 'submission:record',
+  SUBMISSION_ACKNOWLEDGE: 'submission:acknowledge',
+  SUBMISSION_GET_HISTORY: 'submission:history',
+  SUBMISSION_GET_RECORD: 'submission:getRecord',
+
+  // Phase 2: Dashboard operations
+  DASHBOARD_GET_STATS: 'dashboard:stats',
+
+  // Phase 2: FDA Export
+  XML_EXPORT_FDA: 'xml:exportFda',
+
+  // Phase 2: Status transitions
+  CASE_MARK_READY: 'case:markReady',
+  CASE_REVERT_TO_DRAFT: 'case:revertToDraft'
 } as const;
 
 // Type for channel names
@@ -209,6 +231,58 @@ export interface OpenDialogOptions {
   properties?: Array<'openFile' | 'openDirectory' | 'multiSelections'>;
 }
 
+// ============================================================
+// Phase 2: Submission Request/Response Types
+// ============================================================
+
+// Record FDA ESG NextGen USP submission
+export interface RecordSubmissionRequest {
+  caseId: string;
+  srpConfirmationNumber: string;
+  submissionDate: string;
+  notes?: string;
+}
+
+// Record FDA acknowledgment
+export interface RecordAcknowledgmentRequest {
+  caseId: string;
+  acknowledgmentType: AcknowledgmentType;
+  acknowledgmentDate: string;
+  fdaCaseNumber?: string; // Required if Accepted
+  rejectionReason?: string; // Required if Rejected
+  notes?: string;
+}
+
+// Export with FDA filename
+export interface ExportFdaRequest {
+  caseId: string;
+  exportPath: string;
+  submissionEnvironment?: SubmissionEnvironment;
+  submissionReportType?: SubmissionReportType;
+}
+
+export interface ExportFdaResponse {
+  filename: string;
+  filePath: string;
+  sequenceNumber: number;
+  submissionEnvironment: SubmissionEnvironment;
+  submissionReportType: SubmissionReportType;
+  batchReceiver: string;
+  isTestMode: boolean;
+}
+
+// Revert to draft
+export interface RevertToDraftRequest {
+  caseId: string;
+  reason?: string;
+}
+
+// Mark ready result (includes validation if failed)
+export interface MarkReadyResponse {
+  case?: Case;
+  validationResult?: ValidationResult;
+}
+
 // Exposed API interface for renderer
 export interface ElectronAPI {
   // Case operations
@@ -259,6 +333,22 @@ export interface ElectronAPI {
 
   // Import operations
   importForm3500: (filePath: string) => Promise<IPCResponse<Form3500AImportResult>>;
+
+  // Phase 2: Submission operations
+  recordSubmission: (data: RecordSubmissionRequest) => Promise<IPCResponse<SubmissionRecord>>;
+  recordAcknowledgment: (data: RecordAcknowledgmentRequest) => Promise<IPCResponse<SubmissionRecord>>;
+  getSubmissionHistory: (caseId: string) => Promise<IPCResponse<SubmissionHistoryEntry[]>>;
+  getSubmissionRecord: (caseId: string) => Promise<IPCResponse<SubmissionRecord | null>>;
+
+  // Phase 2: Dashboard
+  getDashboardStats: () => Promise<IPCResponse<DashboardStats>>;
+
+  // Phase 2: FDA Export
+  exportXmlFda: (caseId: string, exportPath: string) => Promise<IPCResponse<ExportFdaResponse>>;
+
+  // Phase 2: Status transitions
+  markCaseReady: (caseId: string) => Promise<IPCResponse<MarkReadyResponse>>;
+  revertCaseToDraft: (caseId: string, reason?: string) => Promise<IPCResponse<Case>>;
 }
 
 // Declare the electronAPI on the window object

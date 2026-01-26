@@ -15,7 +15,10 @@ import type {
   CaseReaction,
   CaseDrug,
   Case,
-  ValidationResult
+  ValidationResult,
+  SubmissionRecord,
+  SubmissionHistoryEntry,
+  DashboardStats
 } from '../shared/types/case.types';
 import type {
   IPCResponse,
@@ -24,7 +27,11 @@ import type {
   MedDRATerm,
   SaveDialogOptions,
   OpenDialogOptions,
-  ElectronAPI
+  ElectronAPI,
+  RecordSubmissionRequest,
+  RecordAcknowledgmentRequest,
+  ExportFdaResponse,
+  MarkReadyResponse
 } from '../shared/types/ipc.types';
 import type { Form3500AImportResult } from '../shared/types/form3500.types';
 
@@ -125,7 +132,35 @@ const electronAPI: ElectronAPI = {
 
   // Import operations
   importForm3500: (filePath: string): Promise<IPCResponse<Form3500AImportResult>> =>
-    ipcRenderer.invoke(IPC_CHANNELS.IMPORT_FORM3500, filePath)
+    ipcRenderer.invoke(IPC_CHANNELS.IMPORT_FORM3500, filePath),
+
+  // Phase 2: Submission operations
+  recordSubmission: (data: RecordSubmissionRequest): Promise<IPCResponse<SubmissionRecord>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.SUBMISSION_RECORD, data),
+
+  recordAcknowledgment: (data: RecordAcknowledgmentRequest): Promise<IPCResponse<SubmissionRecord>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.SUBMISSION_ACKNOWLEDGE, data),
+
+  getSubmissionHistory: (caseId: string): Promise<IPCResponse<SubmissionHistoryEntry[]>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.SUBMISSION_GET_HISTORY, caseId),
+
+  getSubmissionRecord: (caseId: string): Promise<IPCResponse<SubmissionRecord | null>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.SUBMISSION_GET_RECORD, caseId),
+
+  // Phase 2: Dashboard
+  getDashboardStats: (): Promise<IPCResponse<DashboardStats>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.DASHBOARD_GET_STATS),
+
+  // Phase 2: FDA Export
+  exportXmlFda: (caseId: string, exportPath: string): Promise<IPCResponse<ExportFdaResponse>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.XML_EXPORT_FDA, { caseId, exportPath }),
+
+  // Phase 2: Status transitions
+  markCaseReady: (caseId: string): Promise<IPCResponse<MarkReadyResponse>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.CASE_MARK_READY, caseId),
+
+  revertCaseToDraft: (caseId: string, reason?: string): Promise<IPCResponse<Case>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.CASE_REVERT_TO_DRAFT, { caseId, reason })
 };
 
 // Expose the API to the renderer process

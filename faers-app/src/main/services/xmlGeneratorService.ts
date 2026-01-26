@@ -17,14 +17,23 @@ import type {
   Case,
   CaseReaction,
   CaseDrug,
-  CaseReporter
+  CaseReporter,
+  SubmissionEnvironment,
+  SubmissionReportType
 } from '../../shared/types/case.types';
+import { BATCH_RECEIVERS } from '../../shared/types/case.types';
+
+export interface XMLGenerationOptions {
+  submissionEnvironment?: SubmissionEnvironment;
+  submissionReportType?: SubmissionReportType;
+}
 
 export interface XMLGenerationResult {
   success: boolean;
   xml?: string;
   errors: string[];
   warnings: string[];
+  batchReceiver?: string; // The batch receiver used in the generated XML
 }
 
 export class XMLGeneratorService {
@@ -42,10 +51,17 @@ export class XMLGeneratorService {
 
   /**
    * Generate E2B(R3) XML for a case
+   * @param caseId - The case ID to generate XML for
+   * @param options - Optional generation options including submission environment
    */
-  generate(caseId: string): XMLGenerationResult {
+  generate(caseId: string, options: XMLGenerationOptions = {}): XMLGenerationResult {
     const errors: string[] = [];
     const warnings: string[] = [];
+
+    // Default to Postmarket if not specified
+    // Note: Batch receiver is the same for Test and Production when using USP
+    const reportType = options.submissionReportType || 'Postmarket';
+    const batchReceiver = BATCH_RECEIVERS[reportType];
 
     // Load case with all related data
     const caseData = this.caseRepo.findById(caseId);
@@ -81,8 +97,8 @@ export class XMLGeneratorService {
     }
 
     try {
-      const xml = this.buildXML(caseData, reporters, reactions, drugs);
-      return { success: true, xml, errors: [], warnings };
+      const xml = this.buildXML(caseData, reporters, reactions, drugs, batchReceiver);
+      return { success: true, xml, errors: [], warnings, batchReceiver };
     } catch (error) {
       return {
         success: false,
@@ -99,7 +115,8 @@ export class XMLGeneratorService {
     caseData: Case,
     reporters: CaseReporter[],
     reactions: CaseReaction[],
-    drugs: CaseDrug[]
+    drugs: CaseDrug[],
+    batchReceiver: string
   ): string {
     const messageId = uuidv4();
     const creationTime = this.formatDateTime(new Date());
@@ -112,8 +129,8 @@ export class XMLGeneratorService {
     // Root element with namespaces
     lines.push('<ichicsr lang="en" xmlns="urn:hl7-org:v3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">');
 
-    // Message Header
-    lines.push(this.buildMessageHeader(messageId, creationTime, caseData));
+    // Message Header (includes Batch Receiver N.1.4)
+    lines.push(this.buildMessageHeader(messageId, creationTime, caseData, batchReceiver));
 
     // Control Act with Safety Report
     lines.push('  <controlActProcess classCode="CACT" moodCode="EVN">');
@@ -132,8 +149,9 @@ export class XMLGeneratorService {
 
   /**
    * Build message header section
+   * @param batchReceiver - The batch receiver identifier (N.1.4): ZZFDA for postmarket, ZZFDA_PREMKT for premarket
    */
-  private buildMessageHeader(messageId: string, creationTime: string, caseData: Case): string {
+  private buildMessageHeader(messageId: string, creationTime: string, caseData: Case, batchReceiver: string): string {
     const lines: string[] = [];
 
     // Message ID
@@ -149,10 +167,14 @@ export class XMLGeneratorService {
     lines.push('  <processingModeCode code="T"/>');
     lines.push('  <acceptAckCode code="AL"/>');
 
-    // Receiver (FDA)
+    // Receiver (FDA) with Batch Receiver (N.1.4)
+    // Uses routing identifier based on report type (same for Test and Production):
+    // - Postmarket: ZZFDA
+    // - Premarket: ZZFDA_PREMKT
+    // The distinction between test/production is made in FDA ESG NextGen USP portal, not in XML
     lines.push('  <receiver typeCode="RCV">');
     lines.push('    <device classCode="DEV" determinerCode="INSTANCE">');
-    lines.push('      <id root="2.16.840.1.113883.3.989.2.1.3.14" extension="FDA-CBER-CDER"/>');
+    lines.push(`      <id root="2.16.840.1.113883.3.989.2.1.3.14" extension="${this.escapeXml(batchReceiver)}"/>`);
     lines.push('    </device>');
     lines.push('  </receiver>');
 

@@ -9,6 +9,7 @@ import { app, BrowserWindow, shell, Menu, MenuItemConstructorOptions } from 'ele
 import { join } from 'path';
 import { initDatabase, closeDatabase } from './database/connection';
 import { registerIpcHandlers } from './ipc/case.handlers';
+import { registerSubmissionHandlers } from './ipc/submission.handlers';
 
 let mainWindow: BrowserWindow | null = null;
 
@@ -246,6 +247,7 @@ app.whenReady().then(() => {
   // Register IPC handlers
   console.log('Registering IPC handlers...');
   registerIpcHandlers();
+  registerSubmissionHandlers();
 
   // Create menu
   createMenu();

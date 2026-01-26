@@ -2,8 +2,27 @@
  * FAERS Case Types - E2B(R3) compliant data structures
  */
 
-// Case status enum
-export type CaseStatus = 'Draft' | 'Ready' | 'Exported';
+// Case status enum - Phase 2: Extended for FDA ESG NextGen USP submission workflow
+export type CaseStatus =
+  | 'Draft'
+  | 'Ready for Export'
+  | 'Exported'
+  | 'Submitted'
+  | 'Acknowledged'
+  | 'Rejected';
+
+// Submission History Event Types (Phase 2)
+export type SubmissionEventType =
+  | 'created'
+  | 'marked_ready'
+  | 'returned_to_draft'
+  | 'exported'
+  | 'submitted'
+  | 'acknowledged'
+  | 'rejected';
+
+// Acknowledgment Type (Phase 2)
+export type AcknowledgmentType = 'Accepted' | 'Rejected';
 
 // E2B Report Types (A.1.2)
 export enum ReportType {
@@ -369,6 +388,13 @@ export interface Case {
   exportedAt?: string;
   exportedXmlPath?: string;
 
+  // Phase 2: Submission Tracking
+  submissionId?: number;
+  lastSubmittedAt?: string;
+  srpConfirmationNumber?: string;
+  fdaCaseNumber?: string;
+  acknowledgmentDate?: string;
+
   // Related data (loaded separately)
   reporters?: CaseReporter[];
   identifiers?: CaseIdentifier[];
@@ -389,6 +415,12 @@ export interface CaseListItem {
   productName?: string;
   createdAt: string;
   updatedAt: string;
+  // Phase 2: Submission tracking fields
+  exportedAt?: string;
+  submittedAt?: string;
+  acknowledgedAt?: string;
+  srpConfirmationNumber?: string;
+  fdaCaseNumber?: string;
 }
 
 // Create case DTO
@@ -421,4 +453,117 @@ export interface ValidationError {
 export interface ValidationResult {
   valid: boolean;
   errors: ValidationError[];
+}
+
+// ============================================================
+// Phase 2: Submission Environment Types
+// ============================================================
+
+// Submission environment - For workflow tracking only (Test vs Production submission in FDA ESG NextGen USP)
+// Note: XML routing identifiers are the SAME for test and production when using USP
+export type SubmissionEnvironment = 'Test' | 'Production';
+
+// Submission report type - affects routing identifiers (Postmarket vs Premarket)
+export type SubmissionReportType = 'Postmarket' | 'Premarket';
+
+// Target FDA center
+export type TargetCenter = 'CDER' | 'CBER';
+
+// Batch receiver identifiers for FDA ESG NextGen USP
+// Note: These are the SAME for both Test and Production environments when using USP
+// The distinction between test/production is made in the FDA portal, not in the XML
+export const BATCH_RECEIVERS: Record<SubmissionReportType, string> = {
+  Postmarket: 'ZZFDA',
+  Premarket: 'ZZFDA_PREMKT'
+};
+
+// Message receiver identifiers based on target center and report type
+export const MESSAGE_RECEIVERS: Record<SubmissionReportType, Record<TargetCenter, string>> = {
+  Postmarket: {
+    CDER: 'CDER',
+    CBER: 'CBER'
+  },
+  Premarket: {
+    CDER: 'CDER_IND',
+    CBER: 'CBER_IND'
+  }
+};
+
+// ============================================================
+// Phase 2: Submission Tracking Types
+// ============================================================
+
+// Submission History Entry (append-only log)
+export interface SubmissionHistoryEntry {
+  id?: number;
+  caseId: string;
+  eventType: SubmissionEventType;
+  timestamp: string;
+  details?: string; // JSON string for event-specific data
+  notes?: string;
+  userId?: string; // Future: user tracking
+}
+
+// Submission Record (tracks FDA ESG NextGen USP submission details)
+export interface SubmissionRecord {
+  id?: number;
+  caseId: string;
+  srpConfirmationNumber?: string;
+  submissionDate?: string;
+  acknowledgmentDate?: string;
+  acknowledgmentType?: AcknowledgmentType;
+  fdaCaseNumber?: string; // FDA-assigned case number on acceptance
+  rejectionReason?: string;
+  exportedFilename?: string;
+  exportedFilePath?: string;
+  submissionEnvironment?: SubmissionEnvironment; // Test or Production
+  submissionReportType?: SubmissionReportType; // Postmarket or Premarket
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Export Sequence Tracking (for FDA filename generation)
+export interface ExportSequence {
+  date: string; // YYYYMMDD
+  lastSequence: number;
+}
+
+// Application Settings
+export interface AppSettings {
+  senderId: string;
+  senderOrganization?: string;
+  defaultExportPath?: string;
+  autoValidateOnExport: boolean;
+  warnOnExportWithWarnings: boolean;
+  // Environment settings
+  submissionEnvironment: SubmissionEnvironment;
+  submissionReportType: SubmissionReportType;
+  targetCenter: TargetCenter;
+  // Track if user has confirmed production mode
+  productionModeConfirmed: boolean;
+}
+
+// Dashboard Statistics
+export interface DashboardStats {
+  totalCases: number;
+  statusCounts: Record<CaseStatus, number>;
+  needsAttention: NeedsAttentionItem[];
+  recentActivity: RecentActivityItem[];
+}
+
+// Cases needing attention (for dashboard)
+export interface NeedsAttentionItem {
+  caseId: string;
+  reason: 'exported_not_submitted' | 'submitted_no_ack' | 'rejected';
+  daysSinceEvent: number;
+  lastEventDate: string;
+}
+
+// Recent activity item (for dashboard feed)
+export interface RecentActivityItem {
+  caseId: string;
+  eventType: SubmissionEventType;
+  timestamp: string;
+  description: string;
 }

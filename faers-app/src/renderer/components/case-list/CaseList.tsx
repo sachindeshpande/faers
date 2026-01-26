@@ -216,15 +216,21 @@ const CaseList: React.FC<CaseListProps> = ({ onSelectCase }) => {
     }
   ];
 
-  // Status tag colors
+  // Status tag colors (Phase 2: Extended statuses)
   const getStatusTag = (status: CaseStatus) => {
     switch (status) {
       case 'Draft':
         return <Tag color="blue">{status}</Tag>;
-      case 'Ready':
-        return <Tag color="green">{status}</Tag>;
+      case 'Ready for Export':
+        return <Tag color="cyan">Ready</Tag>;
       case 'Exported':
-        return <Tag color="orange">{status}</Tag>;
+        return <Tag color="purple">{status}</Tag>;
+      case 'Submitted':
+        return <Tag color="geekblue">{status}</Tag>;
+      case 'Acknowledged':
+        return <Tag color="green">{status}</Tag>;
+      case 'Rejected':
+        return <Tag color="red">{status}</Tag>;
       default:
         return <Tag>{status}</Tag>;
     }
@@ -340,14 +346,17 @@ const CaseList: React.FC<CaseListProps> = ({ onSelectCase }) => {
           />
 
           <Select
-            style={{ width: 140 }}
+            style={{ width: 160 }}
             value={statusFilter || 'all'}
             onChange={handleStatusChange}
             options={[
               { value: 'all', label: 'All Status' },
               { value: 'Draft', label: 'Draft' },
-              { value: 'Ready', label: 'Ready' },
-              { value: 'Exported', label: 'Exported' }
+              { value: 'Ready for Export', label: 'Ready for Export' },
+              { value: 'Exported', label: 'Exported' },
+              { value: 'Submitted', label: 'Submitted' },
+              { value: 'Acknowledged', label: 'Acknowledged' },
+              { value: 'Rejected', label: 'Rejected' }
             ]}
           />
 

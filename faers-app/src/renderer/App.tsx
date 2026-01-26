@@ -27,7 +27,10 @@ import {
   EditOutlined,
   UnorderedListOutlined,
   CheckCircleFilled,
-  CloseCircleFilled
+  CloseCircleFilled,
+  DashboardOutlined,
+  SettingOutlined,
+  BugOutlined
 } from '@ant-design/icons';
 import type { MenuProps } from 'antd';
 import { useCaseStore, useCurrentCase, useCaseActions } from './stores/caseStore';
@@ -41,8 +44,16 @@ import {
   DrugsSection,
   NarrativeSection
 } from './components/case-form';
-import type { Case, CaseDrug, CaseReaction, CaseReporter, ValidationResult } from '../shared/types/case.types';
+import type { Case, CaseDrug, CaseReaction, CaseReporter, ValidationResult, CaseStatus } from '../shared/types/case.types';
 import ValidationPanel from './components/validation/ValidationPanel';
+import {
+  SubmissionDashboard,
+  RecordSubmissionDialog,
+  RecordAcknowledgmentDialog,
+  SettingsDialog
+} from './components/submission';
+import { useSubmissionStore, useDashboard } from './stores/submissionStore';
+import { useSettingsStore } from './stores/settingsStore';
 
 const { Header, Sider, Content, Footer } = Layout;
 
@@ -86,6 +97,17 @@ const App: React.FC = () => {
   const [isValidating, setIsValidating] = useState(false);
   const [showValidationPanel, setShowValidationPanel] = useState(false);
 
+  // Phase 2: Submission and settings state
+  const { stats: dashboardStats, loading: loadingDashboard, fetch: fetchDashboardStats } = useDashboard();
+  const submissionStore = useSubmissionStore();
+  const settingsStore = useSettingsStore();
+
+  // Load dashboard stats on mount
+  useEffect(() => {
+    fetchDashboardStats();
+    settingsStore.loadSettings();
+  }, []);
+
   // Load cases on mount
   useEffect(() => {
     fetchCases();
@@ -101,6 +123,13 @@ const App: React.FC = () => {
       setReporters([]);
     }
   }, [currentCase?.id]);
+
+  // Close validation panel when navigating away from case form
+  useEffect(() => {
+    if (activeSection === 'dashboard' || activeSection === 'cases') {
+      setShowValidationPanel(false);
+    }
+  }, [activeSection]);
 
   const loadRelatedEntities = async (caseId: string) => {
     setLoadingRelated(true);
@@ -440,6 +469,11 @@ const App: React.FC = () => {
   // Generate nav items with indicators
   const getNavItems = (): MenuItem[] => [
     {
+      key: 'dashboard',
+      icon: <DashboardOutlined />,
+      label: 'Dashboard'
+    },
+    {
       key: 'cases',
       icon: <UnorderedListOutlined />,
       label: 'Case List'
@@ -484,22 +518,53 @@ const App: React.FC = () => {
     }
   ];
 
-  // Get status badge class
+  // Get status badge class (Phase 2: Extended statuses)
   const getStatusBadgeClass = (status?: string) => {
     switch (status) {
       case 'Draft':
         return 'status-badge draft';
-      case 'Ready':
+      case 'Ready for Export':
         return 'status-badge ready';
       case 'Exported':
         return 'status-badge exported';
+      case 'Submitted':
+        return 'status-badge submitted';
+      case 'Acknowledged':
+        return 'status-badge acknowledged';
+      case 'Rejected':
+        return 'status-badge rejected';
       default:
         return 'status-badge';
     }
   };
 
+  // Handle dashboard status click
+  const handleDashboardStatusClick = (status: CaseStatus) => {
+    useCaseStore.getState().setFilters({ status });
+    fetchCases({ status });
+    setActiveSection('cases');
+  };
+
+  // Handle dashboard case click
+  const handleDashboardCaseClick = (caseId: string) => {
+    useCaseStore.getState().fetchCase(caseId);
+    setActiveSection('report');
+  };
+
   // Render main content based on active section
   const renderContent = () => {
+    // Dashboard view (Phase 2)
+    if (activeSection === 'dashboard') {
+      return (
+        <SubmissionDashboard
+          stats={dashboardStats}
+          loading={loadingDashboard}
+          onStatusClick={handleDashboardStatusClick}
+          onCaseClick={handleDashboardCaseClick}
+        />
+      );
+    }
+
     if (activeSection === 'cases' || !currentCase) {
       return <CaseList onSelectCase={(id) => {
         useCaseStore.getState().fetchCase(id);
@@ -595,6 +660,25 @@ const App: React.FC = () => {
     <Layout className="app-layout">
       {contextHolder}
 
+      {/* Test Mode Banner */}
+      {settingsStore.settings.submissionEnvironment === 'Test' && (
+        <div style={{
+          background: '#fa8c16',
+          color: '#fff',
+          textAlign: 'center',
+          padding: '4px 16px',
+          fontSize: '12px',
+          fontWeight: 500,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 8
+        }}>
+          <BugOutlined />
+          TEST MODE - Exports will include _TEST in filename. Upload to FDA ESG NextGen USP and select "Test Submission"
+        </div>
+      )}
+
       {/* Header with Toolbar */}
       <Header className="app-header">
         <div className="logo">FAERS App</div>
@@ -664,6 +748,17 @@ const App: React.FC = () => {
                 Export XML
               </Button>
             </Tooltip>
+
+            <span className="toolbar-divider" />
+
+            <Tooltip title="Settings">
+              <Button
+                icon={<SettingOutlined />}
+                onClick={settingsStore.openSettingsDialog}
+              >
+                Settings
+              </Button>
+            </Tooltip>
           </Space>
         </div>
       </Header>
@@ -717,6 +812,15 @@ const App: React.FC = () => {
         </div>
         <div className="statusbar-right">
           <span className="status-item">
+            <strong>Environment:</strong>{' '}
+            <span style={{
+              color: settingsStore.settings.submissionEnvironment === 'Test' ? '#fa8c16' : '#52c41a',
+              fontWeight: 500
+            }}>
+              {settingsStore.settings.submissionEnvironment || 'Test'}
+            </span>
+          </span>
+          <span className="status-item">
             <strong>Last Saved:</strong>{' '}
             {currentCase?.updatedAt
               ? new Date(currentCase.updatedAt).toLocaleString()
@@ -724,6 +828,28 @@ const App: React.FC = () => {
           </span>
         </div>
       </Footer>
+
+      {/* Phase 2: Submission Dialogs */}
+      <RecordSubmissionDialog
+        visible={submissionStore.showRecordSubmissionDialog}
+        caseId={submissionStore.dialogCaseId}
+        onSubmit={submissionStore.recordSubmission}
+        onCancel={submissionStore.closeDialogs}
+      />
+
+      <RecordAcknowledgmentDialog
+        visible={submissionStore.showRecordAcknowledgmentDialog}
+        caseId={submissionStore.dialogCaseId}
+        onSubmit={submissionStore.recordAcknowledgment}
+        onCancel={submissionStore.closeDialogs}
+      />
+
+      <SettingsDialog
+        visible={settingsStore.showSettingsDialog}
+        settings={settingsStore.settings}
+        onSave={settingsStore.updateSettings}
+        onCancel={settingsStore.closeSettingsDialog}
+      />
     </Layout>
   );
 };

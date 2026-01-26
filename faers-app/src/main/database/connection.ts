@@ -154,6 +154,93 @@ function runMigrations(database: DatabaseInstance): void {
     ).run('002_drug_source_fields');
     console.log('Migration 002 applied successfully.');
   }
+
+  // Migration 003: Phase 2 - Submission tracking
+  const migration003Exists = database.prepare(
+    'SELECT 1 FROM migrations WHERE name = ?'
+  ).get('003_submission_tracking');
+
+  if (!migration003Exists) {
+    console.log('Applying migration 003: Adding submission tracking tables...');
+
+    // Create submission_records table
+    database.exec(`
+      CREATE TABLE IF NOT EXISTS submission_records (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        case_id TEXT NOT NULL REFERENCES cases(id) ON DELETE CASCADE,
+        srp_confirmation_number TEXT,
+        submission_date TEXT,
+        acknowledgment_date TEXT,
+        acknowledgment_type TEXT,
+        fda_case_number TEXT,
+        rejection_reason TEXT,
+        exported_filename TEXT,
+        exported_file_path TEXT,
+        notes TEXT,
+        created_at DATETIME NOT NULL,
+        updated_at DATETIME NOT NULL
+      )
+    `);
+
+    // Create submission_history table (append-only log)
+    database.exec(`
+      CREATE TABLE IF NOT EXISTS submission_history (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        case_id TEXT NOT NULL REFERENCES cases(id) ON DELETE CASCADE,
+        event_type TEXT NOT NULL,
+        timestamp DATETIME NOT NULL,
+        details TEXT,
+        notes TEXT,
+        user_id TEXT
+      )
+    `);
+
+    // Create export_sequences table for FDA filename generation
+    database.exec(`
+      CREATE TABLE IF NOT EXISTS export_sequences (
+        date TEXT PRIMARY KEY,
+        last_sequence INTEGER NOT NULL DEFAULT 0
+      )
+    `);
+
+    // Add new columns to cases table for submission tracking
+    const caseColumns = database.prepare("PRAGMA table_info(cases)").all() as Array<{ name: string }>;
+    const caseColumnNames = caseColumns.map(c => c.name);
+
+    if (!caseColumnNames.includes('submission_id')) {
+      database.exec('ALTER TABLE cases ADD COLUMN submission_id INTEGER REFERENCES submission_records(id)');
+    }
+    if (!caseColumnNames.includes('last_submitted_at')) {
+      database.exec('ALTER TABLE cases ADD COLUMN last_submitted_at DATETIME');
+    }
+    if (!caseColumnNames.includes('srp_confirmation_number')) {
+      database.exec('ALTER TABLE cases ADD COLUMN srp_confirmation_number TEXT');
+    }
+    if (!caseColumnNames.includes('fda_case_number')) {
+      database.exec('ALTER TABLE cases ADD COLUMN fda_case_number TEXT');
+    }
+    if (!caseColumnNames.includes('acknowledgment_date')) {
+      database.exec('ALTER TABLE cases ADD COLUMN acknowledgment_date TEXT');
+    }
+
+    // Create indexes for new tables
+    database.exec(`
+      CREATE INDEX IF NOT EXISTS idx_submission_records_case ON submission_records(case_id);
+      CREATE INDEX IF NOT EXISTS idx_submission_history_case ON submission_history(case_id);
+      CREATE INDEX IF NOT EXISTS idx_submission_history_timestamp ON submission_history(timestamp);
+      CREATE INDEX IF NOT EXISTS idx_cases_submission_id ON cases(submission_id);
+    `);
+
+    // Migrate existing 'Ready' status to 'Ready for Export'
+    database.exec(`
+      UPDATE cases SET status = 'Ready for Export' WHERE status = 'Ready'
+    `);
+
+    database.prepare(
+      'INSERT INTO migrations (name) VALUES (?)'
+    ).run('003_submission_tracking');
+    console.log('Migration 003 applied successfully.');
+  }
 }
 
 /**
