@@ -1,7 +1,7 @@
 # FAERS Submission Application - Architecture & Design Document
 
-**Version:** 1.1
-**Phase:** 1 (Core ICSR Submission MVP)
+**Version:** 2.0
+**Phase:** 4 (Non-Expedited Reports, Follow-Ups & Periodic Safety Reports)
 **Last Updated:** January 2026
 **Status:** Implemented
 
@@ -19,7 +19,8 @@
 8. [Security Architecture](#8-security-architecture)
 9. [Design Patterns](#9-design-patterns)
 10. [Cross-Cutting Concerns](#10-cross-cutting-concerns)
-11. [Future Architecture Considerations](#11-future-architecture-considerations)
+11. [Phase 4 Architecture Extensions](#11-phase-4-architecture-extensions)
+12. [Future Architecture Considerations](#12-future-architecture-considerations)
 
 ---
 
@@ -34,11 +35,16 @@ This document describes the software architecture and design of the FAERS Submis
 
 ### 1.1 Scope
 
-This document covers the Phase 1 (MVP) architecture, which includes:
-- Single-user desktop application
-- Local SQLite database
-- E2B(R3) XML generation
-- Offline-first operation
+This document covers the architecture through Phase 4, which includes:
+- Multi-user desktop application with authentication and RBAC
+- Local SQLite database with comprehensive schema
+- E2B(R3) XML generation (single and batch)
+- Report type classification (Expedited/Non-Expedited)
+- Follow-up and nullification report support
+- Batch submission functionality
+- Product management and PSR scheduling
+- Periodic Safety Report (PSR) management
+- Offline-first operation with audit trails
 
 ### 1.2 Architecture Principles
 
@@ -1291,57 +1297,496 @@ setSetting(key: string, value: string): void
 
 ---
 
-## 11. Future Architecture Considerations
+## 11. Phase 4 Architecture Extensions
 
-### 11.1 Phase 2: ESG Integration
+Phase 4 introduces significant architectural additions to support non-expedited reporting, follow-ups, batch submissions, and periodic safety reports.
+
+### 11.1 New Service Layer Components
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                    PHASE 2: ESG INTEGRATION (Future)                         │
+│                    PHASE 4: SERVICE LAYER ADDITIONS                          │
 └─────────────────────────────────────────────────────────────────────────────┘
 
-   Current Architecture                 Phase 2 Addition
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                                                                               │
+│   ┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐                │
+│   │                 │ │                 │ │                 │                │
+│   │ ProductService  │ │  BatchService   │ │   PSRService    │                │
+│   │                 │ │                 │ │                 │                │
+│   │ • create()      │ │ • create()      │ │ • create()      │                │
+│   │ • update()      │ │ • validate()    │ │ • transition()  │                │
+│   │ • delete()      │ │ • export()      │ │ • addCases()    │                │
+│   │ • getSchedules()│ │ • submit()      │ │ • excludeCases()│                │
+│   │ • setSchedule() │ │ • acknowledge() │ │ • getDashboard()│                │
+│   │                 │ │                 │ │ • getPeriod()   │                │
+│   └─────────────────┘ └─────────────────┘ └─────────────────┘                │
+│                                                                               │
+│   ┌─────────────────┐ ┌─────────────────┐                                    │
+│   │                 │ │                 │                                    │
+│   │ FollowupService │ │ReportTypeService│                                    │
+│   │                 │ │                 │                                    │
+│   │ • create()      │ │ • classify()    │                                    │
+│   │ • getChain()    │ │ • suggest()     │                                    │
+│   │ • compare()     │ │ • getSeriousness│                                    │
+│   │ • nullify()     │ │ • setExpected() │                                    │
+│   │                 │ │                 │                                    │
+│   └─────────────────┘ └─────────────────┘                                    │
+│                                                                               │
+└──────────────────────────────────────────────────────────────────────────────┘
+```
+
+### 11.2 New Repository Layer Components
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                   PHASE 4: REPOSITORY LAYER ADDITIONS                         │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                                                                               │
+│   ┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐                │
+│   │                 │ │                 │ │                 │                │
+│   │ProductRepository│ │ BatchRepository │ │  PSRRepository  │                │
+│   │                 │ │                 │ │                 │                │
+│   │ • findAll()     │ │ • findAll()     │ │ • findAll()     │                │
+│   │ • findById()    │ │ • findById()    │ │ • findById()    │                │
+│   │ • create()      │ │ • create()      │ │ • create()      │                │
+│   │ • update()      │ │ • addCase()     │ │ • addCase()     │                │
+│   │ • delete()      │ │ • removeCase()  │ │ • excludeCase() │                │
+│   │ • getSchedules()│ │ • getCases()    │ │ • getCases()    │                │
+│   │                 │ │                 │ │ • getEligible() │                │
+│   └─────────────────┘ └─────────────────┘ └─────────────────┘                │
+│                                                                               │
+│   ┌───────────────────────────────────┐ ┌─────────────────────────────────┐  │
+│   │                                   │ │                                 │  │
+│   │  SeriousnessRepository            │ │  PSRScheduleRepository          │  │
+│   │                                   │ │                                 │  │
+│   │ • findByCaseId()                  │ │ • findByProductId()             │  │
+│   │ • setCriteria()                   │ │ • create()                      │  │
+│   │ • getCriteria()                   │ │ • update()                      │  │
+│   │ • clearCriteria()                 │ │ • delete()                      │  │
+│   │                                   │ │ • getNextPeriod()               │  │
+│   └───────────────────────────────────┘ └─────────────────────────────────┘  │
+│                                                                               │
+└──────────────────────────────────────────────────────────────────────────────┘
+```
+
+### 11.3 Extended Database Schema
+
+**New Tables (Migrations 007-012):**
+
+```sql
+-- Migration 007: Case classification fields
+ALTER TABLE cases ADD COLUMN report_type_classification TEXT;
+ALTER TABLE cases ADD COLUMN is_serious INTEGER DEFAULT 0;
+ALTER TABLE cases ADD COLUMN expectedness TEXT;
+ALTER TABLE cases ADD COLUMN expectedness_justification TEXT;
+
+CREATE TABLE case_seriousness (
+    id INTEGER PRIMARY KEY,
+    case_id TEXT REFERENCES cases(id),
+    criterion TEXT NOT NULL,
+    is_checked INTEGER DEFAULT 0,
+    notes TEXT,
+    UNIQUE(case_id, criterion)
+);
+
+-- Migration 008: Follow-up/nullification fields
+ALTER TABLE cases ADD COLUMN parent_case_id TEXT REFERENCES cases(id);
+ALTER TABLE cases ADD COLUMN case_version INTEGER DEFAULT 1;
+ALTER TABLE cases ADD COLUMN followup_type TEXT;
+ALTER TABLE cases ADD COLUMN followup_info_date TEXT;
+ALTER TABLE cases ADD COLUMN is_nullified INTEGER DEFAULT 0;
+ALTER TABLE cases ADD COLUMN nullification_reason TEXT;
+
+-- Migration 009: Products table
+CREATE TABLE products (
+    id INTEGER PRIMARY KEY,
+    product_name TEXT NOT NULL,
+    active_ingredient TEXT,
+    application_type TEXT,
+    application_number TEXT,
+    us_approval_date TEXT,
+    marketing_status TEXT DEFAULT 'approved',
+    company_name TEXT,
+    is_active INTEGER DEFAULT 1,
+    created_at DATETIME NOT NULL,
+    updated_at DATETIME NOT NULL
+);
+
+-- Migration 010: PSR schedules
+CREATE TABLE psr_schedules (
+    id INTEGER PRIMARY KEY,
+    product_id INTEGER REFERENCES products(id),
+    psr_format TEXT NOT NULL,
+    frequency TEXT NOT NULL,
+    dlp_offset_days INTEGER DEFAULT 0,
+    due_offset_days INTEGER DEFAULT 30,
+    start_date TEXT,
+    is_active INTEGER DEFAULT 1,
+    created_at DATETIME NOT NULL,
+    updated_at DATETIME NOT NULL
+);
+
+-- Migration 011: Submission batches
+CREATE TABLE submission_batches (
+    id INTEGER PRIMARY KEY,
+    batch_number TEXT UNIQUE NOT NULL,
+    batch_type TEXT NOT NULL,
+    case_count INTEGER DEFAULT 0,
+    xml_filename TEXT,
+    status TEXT DEFAULT 'created',
+    created_by TEXT,
+    submitted_at DATETIME,
+    acknowledged_at DATETIME,
+    created_at DATETIME NOT NULL,
+    updated_at DATETIME NOT NULL
+);
+
+CREATE TABLE batch_cases (
+    batch_id INTEGER REFERENCES submission_batches(id),
+    case_id TEXT REFERENCES cases(id),
+    validation_status TEXT,
+    PRIMARY KEY (batch_id, case_id)
+);
+
+-- Migration 012: PSRs
+CREATE TABLE psrs (
+    id INTEGER PRIMARY KEY,
+    psr_number TEXT UNIQUE NOT NULL,
+    product_id INTEGER REFERENCES products(id),
+    psr_format TEXT NOT NULL,
+    period_start TEXT NOT NULL,
+    period_end TEXT NOT NULL,
+    data_lock_point TEXT NOT NULL,
+    due_date TEXT NOT NULL,
+    status TEXT DEFAULT 'scheduled',
+    icsr_batch_id INTEGER REFERENCES submission_batches(id),
+    created_by TEXT,
+    approved_by TEXT,
+    approved_at DATETIME,
+    submitted_at DATETIME,
+    created_at DATETIME NOT NULL,
+    updated_at DATETIME NOT NULL
+);
+
+CREATE TABLE psr_cases (
+    psr_id INTEGER REFERENCES psrs(id),
+    case_id TEXT REFERENCES cases(id),
+    included INTEGER DEFAULT 1,
+    exclusion_reason TEXT,
+    added_at DATETIME NOT NULL,
+    added_by TEXT,
+    PRIMARY KEY (psr_id, case_id)
+);
+```
+
+### 11.4 Extended Entity-Relationship Diagram
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    PHASE 4: EXTENDED ER DIAGRAM                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+  ┌─────────────┐                    ┌─────────────┐
+  │  products   │                    │    cases    │
+  ├─────────────┤                    ├─────────────┤
+  │ PK id       │───────────────────►│ FK product_id│
+  │    name     │                    │ FK parent_case_id (self-ref)
+  │    approval │                    │    case_version│
+  │    ...      │                    │    followup_type│
+  └──────┬──────┘                    │    is_nullified│
+         │                           │    is_serious  │
+         │                           │    expectedness│
+         │                           └───────┬───────┘
+         │                                   │
+         ▼                                   │
+  ┌─────────────────┐                        │
+  │  psr_schedules  │                        │
+  ├─────────────────┤                        │
+  │ PK id           │                        │
+  │ FK product_id   │                        │
+  │    psr_format   │                        │
+  │    frequency    │                        │
+  │    dlp_offset   │                        │
+  │    due_offset   │                        │
+  └────────┬────────┘                        │
+           │                                 │
+           ▼                                 │
+  ┌─────────────────┐          ┌─────────────┴───────────┐
+  │      psrs       │          │    case_seriousness     │
+  ├─────────────────┤          ├─────────────────────────┤
+  │ PK id           │          │ PK id                   │
+  │ FK product_id   │          │ FK case_id              │
+  │    psr_number   │          │    criterion            │
+  │    period_start │          │    is_checked           │
+  │    period_end   │          └─────────────────────────┘
+  │    status       │
+  └────────┬────────┘
+           │
+           ▼
+  ┌─────────────────┐          ┌─────────────────────────┐
+  │    psr_cases    │          │   submission_batches    │
+  ├─────────────────┤          ├─────────────────────────┤
+  │ PK psr_id       │◄─────────│ FK icsr_batch_id        │
+  │ PK case_id      │          │ PK id                   │
+  │    included     │          │    batch_number         │
+  │    exclusion_   │          │    batch_type           │
+  │      reason     │          │    status               │
+  └─────────────────┘          └───────────┬─────────────┘
+                                           │
+                                           ▼
+                               ┌─────────────────────────┐
+                               │     batch_cases         │
+                               ├─────────────────────────┤
+                               │ PK batch_id             │
+                               │ PK case_id              │
+                               │    validation_status    │
+                               └─────────────────────────┘
+```
+
+### 11.5 New IPC Channels
+
+**Product Management:**
+```typescript
+PRODUCT_LIST: 'product:list',
+PRODUCT_GET: 'product:get',
+PRODUCT_CREATE: 'product:create',
+PRODUCT_UPDATE: 'product:update',
+PRODUCT_DELETE: 'product:delete',
+```
+
+**Report Type Classification:**
+```typescript
+REPORT_TYPE_SUGGEST: 'reportType:suggest',
+SERIOUSNESS_GET: 'seriousness:get',
+SERIOUSNESS_SET: 'seriousness:set',
+```
+
+**Follow-up/Nullification:**
+```typescript
+FOLLOWUP_CREATE: 'followup:create',
+FOLLOWUP_GET_CHAIN: 'followup:getChain',
+NULLIFICATION_CREATE: 'nullification:create',
+```
+
+**Batch Submission:**
+```typescript
+BATCH_CREATE: 'batch:create',
+BATCH_LIST: 'batch:list',
+BATCH_VALIDATE: 'batch:validate',
+BATCH_EXPORT: 'batch:export',
+```
+
+**PSR Management:**
+```typescript
+PSR_SCHEDULE_GET: 'psr:getSchedule',
+PSR_SCHEDULE_SET: 'psr:setSchedule',
+PSR_CREATE: 'psr:create',
+PSR_LIST: 'psr:list',
+PSR_UPDATE_CASES: 'psr:updateCases',
+PSR_GET_ELIGIBLE_CASES: 'psr:getEligibleCases',
+PSR_TRANSITION: 'psr:transition',
+PSR_DASHBOARD: 'psr:dashboard',
+```
+
+### 11.6 New Zustand Stores
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    PHASE 4: NEW STATE STORES                                 │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                                                                               │
+│   ┌─────────────────────────────────────────────────────────────────────┐    │
+│   │                         psrStore.ts                                  │    │
+│   ├─────────────────────────────────────────────────────────────────────┤    │
+│   │                                                                      │    │
+│   │   State:                              Actions:                       │    │
+│   │   • psrs: PSRListItem[]               • loadPSRs(filter)            │    │
+│   │   • currentPSR: PSR | null            • loadPSR(id)                 │    │
+│   │   • psrCases: PSRCase[]               • createPSR(data)             │    │
+│   │   • eligibleCases: PSRCase[]          • transitionPSR(id, status)   │    │
+│   │   • schedules: PSRSchedule[]          • loadSchedules(productId)    │    │
+│   │   • dashboard: PSRDashboard           • loadDashboard()             │    │
+│   │   • loading: boolean                  • addCases(psrId, caseIds)    │    │
+│   │   • error: string | null              • excludeCases(psrId, cases)  │    │
+│   │                                                                      │    │
+│   │   Selectors:                                                         │    │
+│   │   • usePSRList() - PSR list with filtering                          │    │
+│   │   • useCurrentPSR() - Current PSR details                           │    │
+│   │   • usePSRCases() - Cases in current PSR                            │    │
+│   │   • usePSRDashboard() - Dashboard data                              │    │
+│   │   • usePSRSchedules() - Schedules for product                       │    │
+│   │   • usePSRWizard() - Wizard state                                   │    │
+│   │                                                                      │    │
+│   └─────────────────────────────────────────────────────────────────────┘    │
+│                                                                               │
+│   ┌─────────────────────────────────────────────────────────────────────┐    │
+│   │                         batchStore.ts                                │    │
+│   ├─────────────────────────────────────────────────────────────────────┤    │
+│   │                                                                      │    │
+│   │   State:                              Actions:                       │    │
+│   │   • batches: BatchListItem[]          • loadBatches(filter)         │    │
+│   │   • currentBatch: Batch | null        • createBatch(data)           │    │
+│   │   • batchCases: BatchCase[]           • validateBatch(id)           │    │
+│   │   • validation: ValidationResult      • exportBatch(id)             │    │
+│   │                                                                      │    │
+│   └─────────────────────────────────────────────────────────────────────┘    │
+│                                                                               │
+│   ┌─────────────────────────────────────────────────────────────────────┐    │
+│   │                        productStore.ts                               │    │
+│   ├─────────────────────────────────────────────────────────────────────┤    │
+│   │                                                                      │    │
+│   │   State:                              Actions:                       │    │
+│   │   • products: Product[]               • loadProducts()              │    │
+│   │   • currentProduct: Product           • createProduct(data)         │    │
+│   │   • schedules: PSRSchedule[]          • updateProduct(id, data)     │    │
+│   │                                       • configureSchedule()         │    │
+│   │                                                                      │    │
+│   └─────────────────────────────────────────────────────────────────────┘    │
+│                                                                               │
+└──────────────────────────────────────────────────────────────────────────────┘
+```
+
+### 11.7 New React Components
+
+```
+src/renderer/components/
+├── psr/
+│   ├── PSRDashboard.tsx        # Dashboard with stats and deadlines
+│   ├── PSRList.tsx             # Table of all PSRs with filtering
+│   ├── PSRDetail.tsx           # View/manage PSR with case tabs
+│   ├── CreatePSRWizard.tsx     # 4-step wizard for PSR creation
+│   ├── PSRScheduleConfig.tsx   # Configure PSR schedules
+│   └── index.ts                # Component exports
+├── batch/
+│   ├── BatchList.tsx           # Table of submission batches
+│   ├── BatchDetail.tsx         # Batch details and cases
+│   ├── BatchSubmissionWizard.tsx
+│   ├── BatchCaseSelector.tsx
+│   └── BatchValidationResults.tsx
+├── products/
+│   ├── ProductList.tsx         # Product management table
+│   ├── ProductForm.tsx         # Create/edit product
+│   └── ProductSelector.tsx     # Product dropdown selector
+├── followup/
+│   ├── CreateFollowupDialog.tsx
+│   ├── CaseVersionTimeline.tsx
+│   └── VersionCompareView.tsx
+├── nullification/
+│   └── NullifyDialog.tsx
+└── case-form/
+    ├── ReportClassificationSection.tsx  # Expedited/Non-Expedited
+    └── SeriousnessCheckboxGroup.tsx     # Seriousness criteria
+```
+
+### 11.8 PSR Status Workflow
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         PSR STATUS WORKFLOW                                  │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+    ┌───────────┐     ┌───────────┐     ┌───────────────┐     ┌──────────┐
+    │ Scheduled │────►│   Draft   │────►│ Under Review  │────►│ Approved │
+    └───────────┘     └───────────┘     └───────┬───────┘     └────┬─────┘
+                                                │                   │
+                                                │ (reject)          │
+                                                ▼                   ▼
+                                        ┌───────────────┐   ┌───────────┐
+                                        │    Draft      │   │ Submitted │
+                                        │  (returned)   │   └─────┬─────┘
+                                        └───────────────┘         │
+                                                                  ▼
+                                                          ┌──────────────┐
+                                                          │ Acknowledged │
+                                                          └──────┬───────┘
+                                                                 │
+                                                                 ▼
+                                                          ┌───────────┐
+                                                          │  Closed   │
+                                                          └───────────┘
+
+Valid Transitions:
+• scheduled → draft
+• draft → under_review
+• under_review → draft (reject) | approved
+• approved → under_review (revert) | submitted
+• submitted → acknowledged
+• acknowledged → closed
+```
+
+### 11.9 Batch XML Generation
+
+The XMLGeneratorService was extended to support batch generation:
+
+```typescript
+// Extended XML structure for batches
+<MCCI_IN200100UV01>
+  <id root="batch-uuid"/>
+  <creationTime value="timestamp"/>
+  <interactionId extension="MCCI_IN200100UV01"/>
+  <processingCode code="P"/>
+  <processingModeCode code="T"/>
+  <acceptAckCode code="AL"/>
+  <receiver>...</receiver>
+  <sender>...</sender>
+
+  <!-- Multiple subjects, one per case -->
+  <subject typeCode="SUBJ">
+    <investigationEvent>
+      <!-- Case 1 ICSR data -->
+    </investigationEvent>
+  </subject>
+  <subject typeCode="SUBJ">
+    <investigationEvent>
+      <!-- Case 2 ICSR data -->
+    </investigationEvent>
+  </subject>
+  <!-- ... more cases ... -->
+</MCCI_IN200100UV01>
+```
+
+---
+
+## 12. Future Architecture Considerations
+
+### 12.1 Phase 5: Data Management & MedDRA Integration
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    PHASE 5: DATA MANAGEMENT (Future)                         │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+   Current Architecture                 Phase 5 Additions
    ┌──────────────────┐                ┌──────────────────┐
    │                  │                │                  │
-   │   Main Process   │───────────────►│  ESG Service     │
+   │   Main Process   │───────────────►│  MedDRA Service  │
    │                  │                │                  │
-   │   • Repositories │                │  • Authentication│
-   │   • E2B Generator│                │  • Submission    │
-   │   • File Export  │                │  • ACK Processing│
-   │                  │                │                  │
-   └──────────────────┘                └────────┬─────────┘
+   │   • Current      │                │  • Term lookup   │
+   │     Services     │                │  • Auto-complete │
+   │                  │                │  • Code mapping  │
+   └──────────────────┘                └──────────────────┘
                                                 │
-                                                │ HTTPS
                                                 ▼
                                        ┌──────────────────┐
                                        │                  │
-                                       │   FDA ESG        │
-                                       │   Gateway        │
+                                       │   MedDRA DB      │
+                                       │   (Local/Remote) │
                                        │                  │
                                        └──────────────────┘
+
+Additional Phase 5 features:
+• Import/Export case data (CSV, Excel)
+• Data archival and retention policies
+• Advanced reporting and analytics
+• Regulatory terminology management (WHO Drug Dictionary)
 ```
 
-### 11.2 Phase 3: Multi-User Support
-
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                    PHASE 3: MULTI-USER (Future)                              │
-└─────────────────────────────────────────────────────────────────────────────┘
-
-   Current: SQLite                      Future: PostgreSQL + Auth
-   ┌──────────────────┐                ┌──────────────────┐
-   │                  │                │                  │
-   │   Single-file DB │───────────────►│  PostgreSQL      │
-   │   (Local)        │                │  (Server)        │
-   │                  │                │                  │
-   │   No auth        │                │  + Auth Service  │
-   │                  │                │  + RBAC          │
-   │                  │                │  + Audit Trail   │
-   │                  │                │                  │
-   └──────────────────┘                └──────────────────┘
-```
-
-### 11.3 Extension Points
+### 12.2 Extension Points
 
 The architecture is designed with these extension points:
 
@@ -1352,6 +1797,8 @@ The architecture is designed with these extension points:
 | **IPC Channels** | New operations | `src/shared/types/ipc.types.ts` |
 | **Form Sections** | Additional data | `src/renderer/components/case-form/` |
 | **Lookup Tables** | Terminology | `lookup_*` tables |
+| **Stores** | State management | `src/renderer/stores/` |
+| **Repositories** | Data access | `src/main/database/repositories/` |
 
 ---
 
@@ -1361,6 +1808,7 @@ The architecture is designed with these extension points:
 |---------|------|--------|---------|
 | 1.0 | January 2026 | Claude Code | Initial architecture document |
 | 1.1 | January 2026 | Claude Code | Updated with implemented services (ValidationService, XMLGeneratorService, Form3500ImportService), PDF import flow, navigation indicators |
+| 2.0 | January 2026 | Claude Code | Phase 4: Added architecture for products, report classification, follow-ups, nullification, batch submission, PSR management; new services, repositories, stores, and component diagrams |
 
 ---
 

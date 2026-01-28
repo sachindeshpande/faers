@@ -1031,7 +1031,7 @@ Audit:
 - [FDA Guidance for Industry: Part 11](https://www.fda.gov/regulatory-information/search-fda-guidance-documents/part-11-electronic-records-electronic-signatures-scope-and-application)
 - [ICH E2B(R3) Implementation Guide](https://www.ich.org/page/e2br3-electronic-transmission-individual-case-safety-reports-icsrs-implementation-guide)
 - Phase 1 Requirements: `01_Phase1_Core_ICSR_MVP.md`
-- Phase 2 Requirements: `02_Phase2_SRP_Submission.md`
+- Phase 2 Requirements: `02_Phase2_ESG_USP_Submission.md`
 - Application Overview: `00_FAERS_Application_Overview.md`
 
 ---

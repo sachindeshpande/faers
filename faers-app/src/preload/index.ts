@@ -31,9 +31,90 @@ import type {
   RecordSubmissionRequest,
   RecordAcknowledgmentRequest,
   ExportFdaResponse,
-  MarkReadyResponse
+  MarkReadyResponse,
+  // Phase 3 types
+  LoginRequest,
+  LoginResponse,
+  ChangePasswordRequest,
+  ValidateSessionResponse,
+  CreateUserDTO,
+  UpdateUserDTO,
+  UserFilter,
+  UserListResponse,
+  WorkflowTransitionRequest,
+  WorkflowTransitionResult,
+  AvailableActionsResponse,
+  AssignCaseRequest,
+  ReassignCaseRequest,
+  CaseAssignment,
+  MyCasesResponse,
+  WorkloadSummary,
+  AddCommentRequest,
+  CaseComment,
+  AddNoteRequest,
+  CaseNote,
+  AuditLogFilter,
+  AuditLogResult,
+  AuditExportRequest,
+  AuditExportResult,
+  CaseHistoryEntry,
+  NotificationListResponse
 } from '../shared/types/ipc.types';
 import type { Form3500AImportResult } from '../shared/types/form3500.types';
+import type { User, Role, Permission, Session } from '../shared/types/auth.types';
+import type {
+  Product,
+  ProductListItem,
+  CreateProductDTO,
+  UpdateProductDTO,
+  ProductFilter,
+  ProductListResponse
+} from '../shared/types/product.types';
+import type {
+  CaseSeriousness,
+  CaseClassification,
+  ClassificationSuggestion,
+  ClassificationUpdate,
+  SeriousnessCriterion,
+  Expectedness
+} from '../shared/types/classification.types';
+import type {
+  CaseVersionChain,
+  CreateFollowupRequest,
+  CreateFollowupResponse,
+  CreateNullificationRequest,
+  CreateNullificationResponse,
+  VersionComparison,
+  FollowupDueDate
+} from '../shared/types/followup.types';
+import type {
+  SubmissionBatch,
+  BatchCase,
+  BatchType,
+  BatchFilter,
+  BatchListResponse,
+  CreateBatchRequest,
+  CreateBatchResponse,
+  BatchValidationResult,
+  ExportBatchResponse,
+  RecordBatchSubmissionRequest,
+  RecordBatchAcknowledgmentRequest,
+  BatchCaseEligibility
+} from '../shared/types/batch.types';
+import type {
+  PSRSchedule,
+  PSR,
+  PSRCase,
+  PSRFilter,
+  PSRListResponse,
+  CreatePSRScheduleDTO,
+  UpdatePSRScheduleDTO,
+  CreatePSRDTO,
+  PSRPeriodCalculation,
+  UpdatePSRCasesRequest,
+  PSRTransitionRequest,
+  PSRDashboardSummary
+} from '../shared/types/psr.types';
 
 // Create the API object
 const electronAPI: ElectronAPI = {
@@ -160,7 +241,301 @@ const electronAPI: ElectronAPI = {
     ipcRenderer.invoke(IPC_CHANNELS.CASE_MARK_READY, caseId),
 
   revertCaseToDraft: (caseId: string, reason?: string): Promise<IPCResponse<Case>> =>
-    ipcRenderer.invoke(IPC_CHANNELS.CASE_REVERT_TO_DRAFT, { caseId, reason })
+    ipcRenderer.invoke(IPC_CHANNELS.CASE_REVERT_TO_DRAFT, { caseId, reason }),
+
+  // ============================================================
+  // Phase 3: Authentication
+  // ============================================================
+  login: (request: LoginRequest): Promise<IPCResponse<LoginResponse>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.AUTH_LOGIN, request),
+
+  logout: (): Promise<IPCResponse<void>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.AUTH_LOGOUT),
+
+  validateSession: (): Promise<IPCResponse<ValidateSessionResponse>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.AUTH_VALIDATE_SESSION),
+
+  changePassword: (request: ChangePasswordRequest): Promise<IPCResponse<void>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.AUTH_CHANGE_PASSWORD, request),
+
+  getCurrentUser: (): Promise<IPCResponse<User | null>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.AUTH_GET_CURRENT_USER),
+
+  extendSession: (): Promise<IPCResponse<Session>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.AUTH_EXTEND_SESSION),
+
+  getSessionTimeoutConfig: (): Promise<IPCResponse<{ timeoutMinutes: number; warningMinutes: number }>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.AUTH_GET_SESSION_CONFIG),
+
+  validatePasswordPolicy: (password: string, username?: string): Promise<IPCResponse<{ valid: boolean; errors: string[] }>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.AUTH_VALIDATE_PASSWORD_POLICY, { password, username }),
+
+  // ============================================================
+  // Phase 3: User Management
+  // ============================================================
+  getUsers: (filter?: UserFilter): Promise<IPCResponse<UserListResponse>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.USER_LIST, filter),
+
+  getUser: (id: string): Promise<IPCResponse<User>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.USER_GET, id),
+
+  createUser: (data: CreateUserDTO): Promise<IPCResponse<User>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.USER_CREATE, data),
+
+  updateUser: (id: string, data: UpdateUserDTO): Promise<IPCResponse<User>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.USER_UPDATE, { id, data }),
+
+  deactivateUser: (id: string): Promise<IPCResponse<void>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.USER_DEACTIVATE, id),
+
+  reactivateUser: (id: string): Promise<IPCResponse<User>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.USER_REACTIVATE, id),
+
+  resetUserPassword: (id: string): Promise<IPCResponse<{ temporaryPassword: string }>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.USER_RESET_PASSWORD, id),
+
+  getUserProfile: (): Promise<IPCResponse<User>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.USER_GET_PROFILE),
+
+  updateUserProfile: (data: Partial<UpdateUserDTO>): Promise<IPCResponse<User>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.USER_UPDATE_PROFILE, data),
+
+  // ============================================================
+  // Phase 3: Role Management
+  // ============================================================
+  getRoles: (): Promise<IPCResponse<Role[]>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.ROLE_LIST),
+
+  getRole: (id: string): Promise<IPCResponse<Role>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.ROLE_GET, id),
+
+  getPermissions: (): Promise<IPCResponse<Permission[]>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.PERMISSION_LIST),
+
+  // ============================================================
+  // Phase 3: Workflow
+  // ============================================================
+  transitionWorkflow: (request: WorkflowTransitionRequest): Promise<IPCResponse<WorkflowTransitionResult>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.WORKFLOW_TRANSITION, request),
+
+  getAvailableActions: (caseId: string): Promise<IPCResponse<AvailableActionsResponse>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.WORKFLOW_GET_AVAILABLE_ACTIONS, caseId),
+
+  // ============================================================
+  // Phase 3: Case Assignment
+  // ============================================================
+  assignCase: (request: AssignCaseRequest): Promise<IPCResponse<CaseAssignment>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.CASE_ASSIGN, request),
+
+  reassignCase: (request: ReassignCaseRequest): Promise<IPCResponse<CaseAssignment>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.CASE_REASSIGN, request),
+
+  getCaseAssignments: (caseId: string): Promise<IPCResponse<CaseAssignment[]>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.CASE_GET_ASSIGNMENTS, caseId),
+
+  getMyCases: (filter?: CaseFilterOptions): Promise<IPCResponse<MyCasesResponse>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.CASE_GET_MY_CASES, filter),
+
+  getWorkloadSummary: (): Promise<IPCResponse<WorkloadSummary>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.WORKLOAD_GET_SUMMARY),
+
+  // ============================================================
+  // Phase 3: Comments & Notes
+  // ============================================================
+  addComment: (request: AddCommentRequest): Promise<IPCResponse<CaseComment>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.COMMENT_ADD, request),
+
+  getComments: (caseId: string): Promise<IPCResponse<CaseComment[]>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.COMMENT_LIST, caseId),
+
+  addNote: (request: AddNoteRequest): Promise<IPCResponse<CaseNote>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.NOTE_ADD, request),
+
+  getNotes: (caseId: string): Promise<IPCResponse<CaseNote[]>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.NOTE_LIST, caseId),
+
+  resolveNote: (noteId: number): Promise<IPCResponse<CaseNote>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.NOTE_RESOLVE, noteId),
+
+  // ============================================================
+  // Phase 3: Audit Trail
+  // ============================================================
+  getAuditLog: (filter?: AuditLogFilter): Promise<IPCResponse<AuditLogResult>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.AUDIT_GET_LOG, filter),
+
+  getCaseAuditHistory: (caseId: string): Promise<IPCResponse<CaseHistoryEntry[]>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.AUDIT_GET_CASE_HISTORY, caseId),
+
+  exportAuditLog: (request: AuditExportRequest): Promise<IPCResponse<AuditExportResult>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.AUDIT_EXPORT, request),
+
+  // ============================================================
+  // Phase 3: Notifications
+  // ============================================================
+  getNotifications: (limit?: number): Promise<IPCResponse<NotificationListResponse>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.NOTIFICATION_GET, limit),
+
+  markNotificationRead: (id: number): Promise<IPCResponse<void>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.NOTIFICATION_MARK_READ, id),
+
+  getUnreadNotificationCount: (): Promise<IPCResponse<number>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.NOTIFICATION_GET_UNREAD_COUNT),
+
+  // ============================================================
+  // Phase 4: Product Management
+  // ============================================================
+  getProducts: (filter?: ProductFilter): Promise<IPCResponse<ProductListResponse>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.PRODUCT_LIST, filter),
+
+  getProduct: (id: number): Promise<IPCResponse<Product>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.PRODUCT_GET, id),
+
+  createProduct: (data: CreateProductDTO): Promise<IPCResponse<Product>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.PRODUCT_CREATE, data),
+
+  updateProduct: (id: number, data: UpdateProductDTO): Promise<IPCResponse<Product>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.PRODUCT_UPDATE, { id, data }),
+
+  deleteProduct: (id: number): Promise<IPCResponse<void>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.PRODUCT_DELETE, id),
+
+  searchProducts: (query: string, limit?: number): Promise<IPCResponse<ProductListItem[]>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.PRODUCT_SEARCH, query, limit),
+
+  // ============================================================
+  // Phase 4: Report Type Classification
+  // ============================================================
+  getReportTypeClassification: (caseId: string): Promise<IPCResponse<CaseClassification>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.REPORT_TYPE_GET, caseId),
+
+  getReportTypeSuggestion: (caseId: string): Promise<IPCResponse<ClassificationSuggestion>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.REPORT_TYPE_SUGGEST, caseId),
+
+  classifyReportType: (caseId: string, classification: ClassificationUpdate): Promise<IPCResponse<CaseClassification>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.REPORT_TYPE_CLASSIFY, caseId, classification),
+
+  isReportTypeExpedited: (caseId: string): Promise<IPCResponse<boolean>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.REPORT_TYPE_IS_EXPEDITED, caseId),
+
+  getReportTypeDueDate: (caseId: string, awarenessDate?: string): Promise<IPCResponse<string | null>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.REPORT_TYPE_GET_DUE_DATE, caseId, awarenessDate),
+
+  getSeriousness: (caseId: string): Promise<IPCResponse<CaseSeriousness[]>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.SERIOUSNESS_GET, caseId),
+
+  setSeriousness: (caseId: string, criterion: SeriousnessCriterion, isChecked: boolean, notes?: string): Promise<IPCResponse<CaseSeriousness>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.SERIOUSNESS_SET, caseId, criterion, isChecked, notes),
+
+  setAllSeriousness: (caseId: string, criteria: Array<{ criterion: SeriousnessCriterion; isChecked: boolean; notes?: string }>): Promise<IPCResponse<CaseSeriousness[]>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.SERIOUSNESS_SET_ALL, caseId, criteria),
+
+  setExpectedness: (caseId: string, expectedness: Expectedness, justification?: string): Promise<IPCResponse<void>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.EXPECTEDNESS_SET, caseId, expectedness, justification),
+
+  // ============================================================
+  // Phase 4: Follow-up & Nullification
+  // ============================================================
+  createFollowup: (request: CreateFollowupRequest): Promise<IPCResponse<CreateFollowupResponse>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.FOLLOWUP_CREATE, request),
+
+  getVersionChain: (caseId: string): Promise<IPCResponse<CaseVersionChain>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.FOLLOWUP_GET_CHAIN, caseId),
+
+  compareVersions: (fromCaseId: string, toCaseId: string): Promise<IPCResponse<VersionComparison>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.FOLLOWUP_COMPARE, fromCaseId, toCaseId),
+
+  getFollowupDueDate: (caseId: string): Promise<IPCResponse<FollowupDueDate | null>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.FOLLOWUP_GET_DUE_DATE, caseId),
+
+  canCreateFollowup: (caseId: string): Promise<IPCResponse<{ allowed: boolean; reason?: string }>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.FOLLOWUP_CAN_CREATE, caseId),
+
+  createNullification: (request: CreateNullificationRequest): Promise<IPCResponse<CreateNullificationResponse>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.NULLIFICATION_CREATE, request),
+
+  canCreateNullification: (caseId: string): Promise<IPCResponse<{ allowed: boolean; reason?: string }>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.NULLIFICATION_CAN_CREATE, caseId),
+
+  // ============================================================
+  // Phase 4: Batch Submission
+  // ============================================================
+  createBatch: (request: CreateBatchRequest): Promise<IPCResponse<CreateBatchResponse>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.BATCH_CREATE, request),
+
+  getBatch: (batchId: number): Promise<IPCResponse<SubmissionBatch>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.BATCH_GET, batchId),
+
+  getBatches: (filter?: BatchFilter, limit?: number, offset?: number): Promise<IPCResponse<BatchListResponse>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.BATCH_LIST, filter, limit, offset),
+
+  getBatchCases: (batchId: number): Promise<IPCResponse<BatchCase[]>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.BATCH_GET_CASES, batchId),
+
+  validateBatch: (batchId: number): Promise<IPCResponse<BatchValidationResult>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.BATCH_VALIDATE, batchId),
+
+  exportBatch: (batchId: number, exportPath: string): Promise<IPCResponse<ExportBatchResponse>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.BATCH_EXPORT, batchId, exportPath),
+
+  recordBatchSubmission: (request: RecordBatchSubmissionRequest): Promise<IPCResponse<SubmissionBatch>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.BATCH_SUBMIT, request),
+
+  recordBatchAcknowledgment: (request: RecordBatchAcknowledgmentRequest): Promise<IPCResponse<SubmissionBatch>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.BATCH_ACKNOWLEDGE, request),
+
+  addCaseToBatch: (batchId: number, caseId: string): Promise<IPCResponse<void>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.BATCH_ADD_CASE, batchId, caseId),
+
+  removeCaseFromBatch: (batchId: number, caseId: string): Promise<IPCResponse<void>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.BATCH_REMOVE_CASE, batchId, caseId),
+
+  deleteBatch: (batchId: number): Promise<IPCResponse<boolean>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.BATCH_DELETE, batchId),
+
+  getEligibleCasesForBatch: (batchType: BatchType): Promise<IPCResponse<BatchCaseEligibility[]>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.BATCH_GET_ELIGIBLE_CASES, batchType),
+
+  // ============================================================
+  // Phase 4: PSR Management
+  // ============================================================
+  createPSRSchedule: (data: CreatePSRScheduleDTO): Promise<IPCResponse<PSRSchedule>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.PSR_SCHEDULE_CREATE, data),
+
+  getPSRSchedulesByProduct: (productId: number): Promise<IPCResponse<PSRSchedule[]>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.PSR_SCHEDULE_GET, productId),
+
+  updatePSRSchedule: (id: number, data: UpdatePSRScheduleDTO): Promise<IPCResponse<PSRSchedule>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.PSR_SCHEDULE_UPDATE, id, data),
+
+  deletePSRSchedule: (id: number): Promise<IPCResponse<boolean>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.PSR_SCHEDULE_DELETE, id),
+
+  getNextPSRPeriod: (scheduleId: number): Promise<IPCResponse<PSRPeriodCalculation>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.PSR_SCHEDULE_GET_NEXT_PERIOD, scheduleId),
+
+  createPSR: (data: CreatePSRDTO): Promise<IPCResponse<PSR>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.PSR_CREATE, data),
+
+  getPSR: (id: number): Promise<IPCResponse<PSR>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.PSR_GET, id),
+
+  getPSRs: (filter?: PSRFilter, limit?: number, offset?: number): Promise<IPCResponse<PSRListResponse>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.PSR_LIST, filter, limit, offset),
+
+  transitionPSR: (request: PSRTransitionRequest): Promise<IPCResponse<PSR>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.PSR_TRANSITION, request),
+
+  getPSRCases: (psrId: number): Promise<IPCResponse<PSRCase[]>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.PSR_GET_CASES, psrId),
+
+  getEligibleCasesForPSR: (psrId: number): Promise<IPCResponse<PSRCase[]>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.PSR_GET_ELIGIBLE_CASES, psrId),
+
+  updatePSRCases: (request: UpdatePSRCasesRequest): Promise<IPCResponse<PSR>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.PSR_UPDATE_CASES, request),
+
+  getPSRDashboard: (): Promise<IPCResponse<PSRDashboardSummary>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.PSR_DASHBOARD)
 };
 
 // Expose the API to the renderer process

@@ -10,6 +10,16 @@ import { join } from 'path';
 import { initDatabase, closeDatabase } from './database/connection';
 import { registerIpcHandlers } from './ipc/case.handlers';
 import { registerSubmissionHandlers } from './ipc/submission.handlers';
+import { registerAuthHandlers } from './ipc/auth.handlers';
+import { registerNotificationHandlers } from './ipc/notification.handlers';
+import { registerWorkflowHandlers } from './ipc/workflow.handlers';
+import { registerAuditHandlers } from './ipc/audit.handlers';
+// Phase 4
+import { registerProductHandlers } from './ipc/product.handlers';
+import { registerReportTypeHandlers } from './ipc/reportType.handlers';
+import { registerFollowupHandlers } from './ipc/followup.handlers';
+import { registerBatchHandlers } from './ipc/batch.handlers';
+import { registerPSRHandlers } from './ipc/psr.handlers';
 
 let mainWindow: BrowserWindow | null = null;
 
@@ -54,8 +64,8 @@ function createWindow(): void {
     mainWindow.loadFile(join(__dirname, '../renderer/index.html'));
   }
 
-  // Open DevTools in development
-  if (isDev()) {
+  // Open DevTools in development (but not during E2E tests)
+  if (isDev() && process.env.NODE_ENV !== 'test') {
     mainWindow.webContents.openDevTools();
   }
 }
@@ -248,6 +258,16 @@ app.whenReady().then(() => {
   console.log('Registering IPC handlers...');
   registerIpcHandlers();
   registerSubmissionHandlers();
+  registerAuthHandlers();
+  registerNotificationHandlers();
+  registerWorkflowHandlers();
+  registerAuditHandlers();
+  // Phase 4
+  registerProductHandlers();
+  registerReportTypeHandlers();
+  registerFollowupHandlers();
+  registerBatchHandlers();
+  registerPSRHandlers();
 
   // Create menu
   createMenu();

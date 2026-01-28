@@ -322,6 +322,25 @@ export interface CaseAttachment {
   createdAt: string;
 }
 
+// Phase 3: Workflow status (more granular than CaseStatus)
+// Phase 4: Added 'Pending PSR' and 'Included in PSR' for non-expedited workflow
+export type WorkflowStatus =
+  | 'Draft'
+  | 'Data Entry Complete'
+  | 'In Medical Review'
+  | 'Medical Review Complete'
+  | 'In QC Review'
+  | 'QC Complete'
+  | 'Approved'
+  | 'Pending PSR'        // Phase 4: Non-expedited case approved, waiting for PSR
+  | 'Included in PSR'    // Phase 4: Case linked to specific PSR
+  | 'Submitted'
+  | 'Acknowledged'
+  | 'Rejected';
+
+// Phase 3: Due date type
+export type DueDateType = 'expedited' | 'non_expedited' | 'custom';
+
 // Main Case structure
 export interface Case {
   id: string;
@@ -329,6 +348,16 @@ export interface Case {
   createdAt: string;
   updatedAt: string;
   deletedAt?: string;
+
+  // Phase 3: Workflow and Assignment fields
+  workflowStatus?: WorkflowStatus;
+  createdBy?: string;
+  currentOwner?: string;
+  currentAssignee?: string;
+  dueDate?: string;
+  dueDateType?: DueDateType;
+  rejectionCount?: number;
+  lastRejectionReason?: string;
 
   // Report Information (A.1)
   safetyReportId?: string;
@@ -395,6 +424,27 @@ export interface Case {
   fdaCaseNumber?: string;
   acknowledgmentDate?: string;
 
+  // Phase 4: Report Type Classification
+  reportTypeClassification?: 'expedited' | 'non_expedited' | 'followup' | 'nullification';
+  expeditedCriteria?: '15_day' | 'periodic' | 'remedial' | 'malfunction';
+  isSerious?: boolean;
+  expectedness?: 'expected' | 'unexpected' | 'unknown';
+  expectednessJustification?: string;
+
+  // Phase 4: Follow-up
+  parentCaseId?: string;
+  caseVersion?: number;
+  followupType?: 'additional_info' | 'outcome_update' | 'correction' | 'fda_response' | 'upgrade_serious' | 'downgrade';
+  followupInfoDate?: string;
+
+  // Phase 4: Nullification
+  isNullified?: boolean;
+  nullificationReasonCode?: 'duplicate' | 'error' | 'not_ae' | 'wrong_product' | 'consent_withdrawn';
+  nullificationReference?: string;
+
+  // Phase 4: Product link
+  productId?: number;
+
   // Related data (loaded separately)
   reporters?: CaseReporter[];
   identifiers?: CaseIdentifier[];
@@ -421,6 +471,19 @@ export interface CaseListItem {
   acknowledgedAt?: string;
   srpConfirmationNumber?: string;
   fdaCaseNumber?: string;
+  // Phase 3: Workflow and assignment fields
+  workflowStatus?: WorkflowStatus;
+  currentAssignee?: string;
+  currentAssigneeName?: string;
+  dueDate?: string;
+  dueDateType?: DueDateType;
+  isOverdue?: boolean;
+  daysUntilDue?: number;
+  // Phase 4: Report type classification
+  reportTypeClassification?: 'expedited' | 'non_expedited' | 'followup' | 'nullification';
+  isSerious?: boolean;
+  parentCaseId?: string;
+  caseVersion?: number;
 }
 
 // Create case DTO

@@ -22,7 +22,9 @@ let db: DatabaseInstance | null = null;
  */
 export function getDatabasePath(): string {
   const userDataPath = app.getPath('userData');
-  return join(userDataPath, 'faers.db');
+  // Use a test-specific database when running E2E tests
+  const dbName = process.env.NODE_ENV === 'test' ? 'faers-test.db' : 'faers.db';
+  return join(userDataPath, dbName);
 }
 
 /**
@@ -240,6 +242,684 @@ function runMigrations(database: DatabaseInstance): void {
       'INSERT INTO migrations (name) VALUES (?)'
     ).run('003_submission_tracking');
     console.log('Migration 003 applied successfully.');
+  }
+
+  // Migration 004: Phase 3 - Users, Roles, Permissions (Multi-User Support)
+  const migration004Exists = database.prepare(
+    'SELECT 1 FROM migrations WHERE name = ?'
+  ).get('004_users_roles_permissions');
+
+  if (!migration004Exists) {
+    console.log('Applying migration 004: Adding users, roles, and permissions tables...');
+
+    // Users table
+    database.exec(`
+      CREATE TABLE IF NOT EXISTS users (
+        id TEXT PRIMARY KEY,
+        username TEXT NOT NULL UNIQUE,
+        email TEXT NOT NULL UNIQUE,
+        password_hash TEXT NOT NULL,
+        first_name TEXT NOT NULL,
+        last_name TEXT NOT NULL,
+        is_active INTEGER NOT NULL DEFAULT 1,
+        must_change_password INTEGER NOT NULL DEFAULT 1,
+        password_changed_at DATETIME,
+        failed_login_attempts INTEGER NOT NULL DEFAULT 0,
+        locked_until DATETIME,
+        last_login_at DATETIME,
+        created_at DATETIME NOT NULL,
+        updated_at DATETIME NOT NULL,
+        created_by TEXT REFERENCES users(id),
+        deactivated_at DATETIME,
+        deactivated_by TEXT REFERENCES users(id)
+      )
+    `);
+
+    // Roles table
+    database.exec(`
+      CREATE TABLE IF NOT EXISTS roles (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL UNIQUE,
+        description TEXT,
+        is_system INTEGER NOT NULL DEFAULT 0,
+        created_at DATETIME NOT NULL,
+        updated_at DATETIME NOT NULL
+      )
+    `);
+
+    // Permissions table
+    database.exec(`
+      CREATE TABLE IF NOT EXISTS permissions (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL UNIQUE,
+        description TEXT,
+        category TEXT NOT NULL
+      )
+    `);
+
+    // Role-Permission junction table
+    database.exec(`
+      CREATE TABLE IF NOT EXISTS role_permissions (
+        role_id TEXT NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
+        permission_id TEXT NOT NULL REFERENCES permissions(id) ON DELETE CASCADE,
+        PRIMARY KEY (role_id, permission_id)
+      )
+    `);
+
+    // User-Role junction table
+    database.exec(`
+      CREATE TABLE IF NOT EXISTS user_roles (
+        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        role_id TEXT NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
+        assigned_at DATETIME NOT NULL,
+        assigned_by TEXT REFERENCES users(id),
+        PRIMARY KEY (user_id, role_id)
+      )
+    `);
+
+    // Sessions table
+    database.exec(`
+      CREATE TABLE IF NOT EXISTS sessions (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        created_at DATETIME NOT NULL,
+        expires_at DATETIME NOT NULL,
+        last_activity_at DATETIME NOT NULL,
+        ip_address TEXT,
+        user_agent TEXT,
+        is_active INTEGER NOT NULL DEFAULT 1
+      )
+    `);
+
+    // Password history table (for preventing password reuse)
+    database.exec(`
+      CREATE TABLE IF NOT EXISTS password_history (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        password_hash TEXT NOT NULL,
+        created_at DATETIME NOT NULL
+      )
+    `);
+
+    // Create indexes
+    database.exec(`
+      CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
+      CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+      CREATE INDEX IF NOT EXISTS idx_users_is_active ON users(is_active);
+      CREATE INDEX IF NOT EXISTS idx_user_roles_user ON user_roles(user_id);
+      CREATE INDEX IF NOT EXISTS idx_user_roles_role ON user_roles(role_id);
+      CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id);
+      CREATE INDEX IF NOT EXISTS idx_sessions_active ON sessions(is_active);
+      CREATE INDEX IF NOT EXISTS idx_password_history_user ON password_history(user_id);
+    `);
+
+    // Seed default permissions
+    const permissions = [
+      // Case permissions
+      { id: 'case.create', name: 'case.create', category: 'case', description: 'Create new cases' },
+      { id: 'case.view.own', name: 'case.view.own', category: 'case', description: 'View own/assigned cases' },
+      { id: 'case.view.all', name: 'case.view.all', category: 'case', description: 'View all cases' },
+      { id: 'case.edit.own', name: 'case.edit.own', category: 'case', description: 'Edit own/assigned cases' },
+      { id: 'case.edit.all', name: 'case.edit.all', category: 'case', description: 'Edit any case' },
+      { id: 'case.delete', name: 'case.delete', category: 'case', description: 'Delete cases' },
+      { id: 'case.assign', name: 'case.assign', category: 'case', description: 'Assign cases to users' },
+      // Workflow permissions
+      { id: 'workflow.submit_review', name: 'workflow.submit_review', category: 'workflow', description: 'Submit case for review' },
+      { id: 'workflow.approve', name: 'workflow.approve', category: 'workflow', description: 'Approve cases' },
+      { id: 'workflow.reject', name: 'workflow.reject', category: 'workflow', description: 'Reject cases' },
+      { id: 'workflow.submit_fda', name: 'workflow.submit_fda', category: 'workflow', description: 'Submit to FDA' },
+      // User permissions
+      { id: 'user.view', name: 'user.view', category: 'user', description: 'View user list' },
+      { id: 'user.create', name: 'user.create', category: 'user', description: 'Create users' },
+      { id: 'user.edit', name: 'user.edit', category: 'user', description: 'Edit users' },
+      { id: 'user.deactivate', name: 'user.deactivate', category: 'user', description: 'Deactivate users' },
+      // System permissions
+      { id: 'system.configure', name: 'system.configure', category: 'system', description: 'System settings' },
+      { id: 'system.audit.view', name: 'system.audit.view', category: 'system', description: 'View audit logs' },
+      { id: 'system.reports', name: 'system.reports', category: 'system', description: 'Run reports' }
+    ];
+
+    const insertPermission = database.prepare(
+      'INSERT INTO permissions (id, name, description, category) VALUES (?, ?, ?, ?)'
+    );
+    for (const p of permissions) {
+      insertPermission.run(p.id, p.name, p.description, p.category);
+    }
+
+    // Seed default roles
+    const now = new Date().toISOString();
+    const roles = [
+      { id: 'admin', name: 'Administrator', description: 'Full system access', isSystem: 1 },
+      { id: 'manager', name: 'Manager', description: 'Oversight and reporting', isSystem: 1 },
+      { id: 'data_entry', name: 'Data Entry', description: 'Create and edit cases', isSystem: 1 },
+      { id: 'medical_reviewer', name: 'Medical Reviewer', description: 'Medical review and assessment', isSystem: 1 },
+      { id: 'qc_reviewer', name: 'QC Reviewer', description: 'Quality control review', isSystem: 1 },
+      { id: 'submitter', name: 'Submitter', description: 'FDA submissions', isSystem: 1 },
+      { id: 'read_only', name: 'Read Only', description: 'View cases only', isSystem: 1 }
+    ];
+
+    const insertRole = database.prepare(
+      'INSERT INTO roles (id, name, description, is_system, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)'
+    );
+    for (const r of roles) {
+      insertRole.run(r.id, r.name, r.description, r.isSystem, now, now);
+    }
+
+    // Assign permissions to roles
+    const rolePermissions: Record<string, string[]> = {
+      admin: ['*'], // Special marker for all permissions
+      manager: ['case.view.all', 'case.assign', 'system.reports', 'user.view'],
+      data_entry: ['case.create', 'case.view.own', 'case.edit.own', 'workflow.submit_review'],
+      medical_reviewer: ['case.view.own', 'case.edit.own', 'workflow.approve', 'workflow.reject'],
+      qc_reviewer: ['case.view.own', 'case.edit.own', 'workflow.approve', 'workflow.reject'],
+      submitter: ['case.view.all', 'workflow.submit_fda'],
+      read_only: ['case.view.all']
+    };
+
+    const insertRolePermission = database.prepare(
+      'INSERT INTO role_permissions (role_id, permission_id) VALUES (?, ?)'
+    );
+
+    for (const [roleId, perms] of Object.entries(rolePermissions)) {
+      if (perms.includes('*')) {
+        // Admin gets all permissions
+        for (const p of permissions) {
+          insertRolePermission.run(roleId, p.id);
+        }
+      } else {
+        for (const permId of perms) {
+          insertRolePermission.run(roleId, permId);
+        }
+      }
+    }
+
+    database.prepare(
+      'INSERT INTO migrations (name) VALUES (?)'
+    ).run('004_users_roles_permissions');
+    console.log('Migration 004 applied successfully.');
+  }
+
+  // Migration 005: Phase 3 - Audit Trail and Electronic Signatures (21 CFR Part 11)
+  const migration005Exists = database.prepare(
+    'SELECT 1 FROM migrations WHERE name = ?'
+  ).get('005_audit_trail');
+
+  if (!migration005Exists) {
+    console.log('Applying migration 005: Adding audit trail and electronic signatures...');
+
+    // Audit log table (append-only, 21 CFR Part 11 compliant)
+    database.exec(`
+      CREATE TABLE IF NOT EXISTS audit_log (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        timestamp DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        user_id TEXT REFERENCES users(id),
+        username TEXT,
+        session_id TEXT,
+        action_type TEXT NOT NULL,
+        entity_type TEXT NOT NULL,
+        entity_id TEXT,
+        field_name TEXT,
+        old_value TEXT,
+        new_value TEXT,
+        details TEXT,
+        ip_address TEXT
+      )
+    `);
+
+    // Electronic signatures table (21 CFR Part 11 compliant)
+    database.exec(`
+      CREATE TABLE IF NOT EXISTS electronic_signatures (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id TEXT NOT NULL REFERENCES users(id),
+        username TEXT NOT NULL,
+        timestamp DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        entity_type TEXT NOT NULL,
+        entity_id TEXT NOT NULL,
+        action TEXT NOT NULL,
+        meaning TEXT NOT NULL,
+        record_version INTEGER NOT NULL,
+        signature_hash TEXT NOT NULL
+      )
+    `);
+
+    // Create indexes for efficient audit queries
+    database.exec(`
+      CREATE INDEX IF NOT EXISTS idx_audit_timestamp ON audit_log(timestamp);
+      CREATE INDEX IF NOT EXISTS idx_audit_user ON audit_log(user_id);
+      CREATE INDEX IF NOT EXISTS idx_audit_entity ON audit_log(entity_type, entity_id);
+      CREATE INDEX IF NOT EXISTS idx_audit_action ON audit_log(action_type);
+      CREATE INDEX IF NOT EXISTS idx_signatures_entity ON electronic_signatures(entity_type, entity_id);
+      CREATE INDEX IF NOT EXISTS idx_signatures_user ON electronic_signatures(user_id);
+    `);
+
+    database.prepare(
+      'INSERT INTO migrations (name) VALUES (?)'
+    ).run('005_audit_trail');
+    console.log('Migration 005 applied successfully.');
+  }
+
+  // Migration 006: Phase 3 - Case Workflow, Assignments, Comments, Notes
+  const migration006Exists = database.prepare(
+    'SELECT 1 FROM migrations WHERE name = ?'
+  ).get('006_workflow_assignments');
+
+  if (!migration006Exists) {
+    console.log('Applying migration 006: Adding workflow, assignments, comments, notes...');
+
+    // Case assignments table
+    database.exec(`
+      CREATE TABLE IF NOT EXISTS case_assignments (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        case_id TEXT NOT NULL REFERENCES cases(id) ON DELETE CASCADE,
+        assigned_to TEXT NOT NULL REFERENCES users(id),
+        assigned_by TEXT NOT NULL REFERENCES users(id),
+        assigned_at DATETIME NOT NULL,
+        due_date DATETIME,
+        priority TEXT DEFAULT 'normal',
+        notes TEXT,
+        is_current INTEGER NOT NULL DEFAULT 1
+      )
+    `);
+
+    // Case comments table
+    database.exec(`
+      CREATE TABLE IF NOT EXISTS case_comments (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        case_id TEXT NOT NULL REFERENCES cases(id) ON DELETE CASCADE,
+        user_id TEXT NOT NULL REFERENCES users(id),
+        comment_type TEXT NOT NULL DEFAULT 'general',
+        content TEXT NOT NULL,
+        created_at DATETIME NOT NULL,
+        mentions TEXT
+      )
+    `);
+
+    // Case notes table (internal notes)
+    database.exec(`
+      CREATE TABLE IF NOT EXISTS case_notes (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        case_id TEXT NOT NULL REFERENCES cases(id) ON DELETE CASCADE,
+        user_id TEXT NOT NULL REFERENCES users(id),
+        visibility TEXT NOT NULL DEFAULT 'team',
+        content TEXT NOT NULL,
+        created_at DATETIME NOT NULL,
+        resolved_at DATETIME,
+        resolved_by TEXT REFERENCES users(id)
+      )
+    `);
+
+    // Notifications table
+    database.exec(`
+      CREATE TABLE IF NOT EXISTS notifications (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        type TEXT NOT NULL,
+        title TEXT NOT NULL,
+        message TEXT NOT NULL,
+        entity_type TEXT,
+        entity_id TEXT,
+        is_read INTEGER NOT NULL DEFAULT 0,
+        created_at DATETIME NOT NULL,
+        read_at DATETIME
+      )
+    `);
+
+    // Add workflow columns to cases table
+    const caseColumns = database.prepare("PRAGMA table_info(cases)").all() as Array<{ name: string }>;
+    const caseColumnNames = caseColumns.map(c => c.name);
+
+    if (!caseColumnNames.includes('workflow_status')) {
+      database.exec("ALTER TABLE cases ADD COLUMN workflow_status TEXT DEFAULT 'Draft'");
+    }
+    if (!caseColumnNames.includes('created_by')) {
+      database.exec('ALTER TABLE cases ADD COLUMN created_by TEXT REFERENCES users(id)');
+    }
+    if (!caseColumnNames.includes('current_owner')) {
+      database.exec('ALTER TABLE cases ADD COLUMN current_owner TEXT REFERENCES users(id)');
+    }
+    if (!caseColumnNames.includes('current_assignee')) {
+      database.exec('ALTER TABLE cases ADD COLUMN current_assignee TEXT REFERENCES users(id)');
+    }
+    if (!caseColumnNames.includes('due_date')) {
+      database.exec('ALTER TABLE cases ADD COLUMN due_date DATETIME');
+    }
+    if (!caseColumnNames.includes('due_date_type')) {
+      database.exec('ALTER TABLE cases ADD COLUMN due_date_type TEXT');
+    }
+    if (!caseColumnNames.includes('rejection_count')) {
+      database.exec('ALTER TABLE cases ADD COLUMN rejection_count INTEGER DEFAULT 0');
+    }
+    if (!caseColumnNames.includes('last_rejection_reason')) {
+      database.exec('ALTER TABLE cases ADD COLUMN last_rejection_reason TEXT');
+    }
+
+    // Create indexes
+    database.exec(`
+      CREATE INDEX IF NOT EXISTS idx_assignments_case ON case_assignments(case_id);
+      CREATE INDEX IF NOT EXISTS idx_assignments_user ON case_assignments(assigned_to);
+      CREATE INDEX IF NOT EXISTS idx_assignments_current ON case_assignments(is_current);
+      CREATE INDEX IF NOT EXISTS idx_comments_case ON case_comments(case_id);
+      CREATE INDEX IF NOT EXISTS idx_notes_case ON case_notes(case_id);
+      CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id);
+      CREATE INDEX IF NOT EXISTS idx_notifications_unread ON notifications(user_id, is_read);
+      CREATE INDEX IF NOT EXISTS idx_cases_workflow ON cases(workflow_status);
+      CREATE INDEX IF NOT EXISTS idx_cases_assignee ON cases(current_assignee);
+      CREATE INDEX IF NOT EXISTS idx_cases_due_date ON cases(due_date);
+    `);
+
+    // Initialize workflow_status from existing status for existing cases
+    database.exec(`
+      UPDATE cases SET workflow_status = status WHERE workflow_status IS NULL OR workflow_status = ''
+    `);
+
+    database.prepare(
+      'INSERT INTO migrations (name) VALUES (?)'
+    ).run('006_workflow_assignments');
+    console.log('Migration 006 applied successfully.');
+  }
+
+  // Migration 007: Phase 4 - Report Type Classification and Seriousness
+  const migration007Exists = database.prepare(
+    'SELECT 1 FROM migrations WHERE name = ?'
+  ).get('007_report_type_classification');
+
+  if (!migration007Exists) {
+    console.log('Applying migration 007: Adding report type classification fields...');
+
+    // Add report classification columns to cases table
+    const caseColumns = database.prepare("PRAGMA table_info(cases)").all() as Array<{ name: string }>;
+    const caseColumnNames = caseColumns.map(c => c.name);
+
+    if (!caseColumnNames.includes('report_type_classification')) {
+      database.exec("ALTER TABLE cases ADD COLUMN report_type_classification TEXT DEFAULT 'expedited'");
+    }
+    if (!caseColumnNames.includes('expedited_criteria')) {
+      database.exec('ALTER TABLE cases ADD COLUMN expedited_criteria TEXT');
+    }
+    if (!caseColumnNames.includes('is_serious')) {
+      database.exec('ALTER TABLE cases ADD COLUMN is_serious INTEGER DEFAULT 0');
+    }
+    if (!caseColumnNames.includes('expectedness')) {
+      database.exec('ALTER TABLE cases ADD COLUMN expectedness TEXT');
+    }
+    if (!caseColumnNames.includes('expectedness_justification')) {
+      database.exec('ALTER TABLE cases ADD COLUMN expectedness_justification TEXT');
+    }
+
+    // Create case_seriousness table for normalized seriousness criteria
+    database.exec(`
+      CREATE TABLE IF NOT EXISTS case_seriousness (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        case_id TEXT NOT NULL REFERENCES cases(id) ON DELETE CASCADE,
+        criterion TEXT NOT NULL,
+        is_checked INTEGER DEFAULT 0,
+        notes TEXT,
+        UNIQUE(case_id, criterion)
+      )
+    `);
+
+    // Create indexes
+    database.exec(`
+      CREATE INDEX IF NOT EXISTS idx_case_seriousness_case ON case_seriousness(case_id);
+      CREATE INDEX IF NOT EXISTS idx_cases_report_type ON cases(report_type_classification);
+      CREATE INDEX IF NOT EXISTS idx_cases_is_serious ON cases(is_serious);
+    `);
+
+    database.prepare(
+      'INSERT INTO migrations (name) VALUES (?)'
+    ).run('007_report_type_classification');
+    console.log('Migration 007 applied successfully.');
+  }
+
+  // Migration 008: Phase 4 - Follow-Up and Nullification Fields
+  const migration008Exists = database.prepare(
+    'SELECT 1 FROM migrations WHERE name = ?'
+  ).get('008_followup_nullification');
+
+  if (!migration008Exists) {
+    console.log('Applying migration 008: Adding follow-up and nullification fields...');
+
+    const caseColumns = database.prepare("PRAGMA table_info(cases)").all() as Array<{ name: string }>;
+    const caseColumnNames = caseColumns.map(c => c.name);
+
+    // Follow-up tracking fields
+    if (!caseColumnNames.includes('parent_case_id')) {
+      database.exec('ALTER TABLE cases ADD COLUMN parent_case_id TEXT REFERENCES cases(id)');
+    }
+    if (!caseColumnNames.includes('case_version')) {
+      database.exec('ALTER TABLE cases ADD COLUMN case_version INTEGER DEFAULT 1');
+    }
+    if (!caseColumnNames.includes('followup_type')) {
+      database.exec('ALTER TABLE cases ADD COLUMN followup_type TEXT');
+    }
+    if (!caseColumnNames.includes('followup_info_date')) {
+      database.exec('ALTER TABLE cases ADD COLUMN followup_info_date TEXT');
+    }
+
+    // Nullification fields
+    if (!caseColumnNames.includes('is_nullified')) {
+      database.exec('ALTER TABLE cases ADD COLUMN is_nullified INTEGER DEFAULT 0');
+    }
+    if (!caseColumnNames.includes('nullification_reason_text')) {
+      database.exec('ALTER TABLE cases ADD COLUMN nullification_reason_text TEXT');
+    }
+    if (!caseColumnNames.includes('nullification_reference')) {
+      database.exec('ALTER TABLE cases ADD COLUMN nullification_reference TEXT');
+    }
+
+    // Create indexes
+    database.exec(`
+      CREATE INDEX IF NOT EXISTS idx_cases_parent ON cases(parent_case_id);
+      CREATE INDEX IF NOT EXISTS idx_cases_is_nullified ON cases(is_nullified);
+    `);
+
+    database.prepare(
+      'INSERT INTO migrations (name) VALUES (?)'
+    ).run('008_followup_nullification');
+    console.log('Migration 008 applied successfully.');
+  }
+
+  // Migration 009: Phase 4 - Products Table
+  const migration009Exists = database.prepare(
+    'SELECT 1 FROM migrations WHERE name = ?'
+  ).get('009_products');
+
+  if (!migration009Exists) {
+    console.log('Applying migration 009: Adding products table...');
+
+    // Create products table
+    database.exec(`
+      CREATE TABLE IF NOT EXISTS products (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        product_name TEXT NOT NULL,
+        active_ingredient TEXT,
+        application_type TEXT,
+        application_number TEXT,
+        us_approval_date TEXT,
+        marketing_status TEXT DEFAULT 'approved',
+        company_name TEXT,
+        is_active INTEGER DEFAULT 1,
+        created_at DATETIME NOT NULL,
+        updated_at DATETIME NOT NULL
+      )
+    `);
+
+    // Add product_id to cases table
+    const caseColumns = database.prepare("PRAGMA table_info(cases)").all() as Array<{ name: string }>;
+    const caseColumnNames = caseColumns.map(c => c.name);
+
+    if (!caseColumnNames.includes('product_id')) {
+      database.exec('ALTER TABLE cases ADD COLUMN product_id INTEGER REFERENCES products(id)');
+    }
+
+    // Create indexes
+    database.exec(`
+      CREATE INDEX IF NOT EXISTS idx_products_name ON products(product_name);
+      CREATE INDEX IF NOT EXISTS idx_products_app_number ON products(application_number);
+      CREATE INDEX IF NOT EXISTS idx_products_active ON products(is_active);
+      CREATE INDEX IF NOT EXISTS idx_cases_product ON cases(product_id);
+    `);
+
+    database.prepare(
+      'INSERT INTO migrations (name) VALUES (?)'
+    ).run('009_products');
+    console.log('Migration 009 applied successfully.');
+  }
+
+  // Migration 010: Phase 4 - PSR Schedules
+  const migration010Exists = database.prepare(
+    'SELECT 1 FROM migrations WHERE name = ?'
+  ).get('010_psr_schedules');
+
+  if (!migration010Exists) {
+    console.log('Applying migration 010: Adding PSR schedules table...');
+
+    // Create PSR schedules table
+    database.exec(`
+      CREATE TABLE IF NOT EXISTS psr_schedules (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+        psr_format TEXT NOT NULL,
+        frequency TEXT NOT NULL,
+        dlp_offset_days INTEGER DEFAULT 0,
+        due_offset_days INTEGER DEFAULT 30,
+        start_date TEXT,
+        is_active INTEGER DEFAULT 1,
+        created_at DATETIME NOT NULL,
+        updated_at DATETIME NOT NULL
+      )
+    `);
+
+    // Create indexes
+    database.exec(`
+      CREATE INDEX IF NOT EXISTS idx_psr_schedules_product ON psr_schedules(product_id);
+      CREATE INDEX IF NOT EXISTS idx_psr_schedules_active ON psr_schedules(is_active);
+    `);
+
+    database.prepare(
+      'INSERT INTO migrations (name) VALUES (?)'
+    ).run('010_psr_schedules');
+    console.log('Migration 010 applied successfully.');
+  }
+
+  // Migration 011: Phase 4 - Submission Batches
+  const migration011Exists = database.prepare(
+    'SELECT 1 FROM migrations WHERE name = ?'
+  ).get('011_submission_batches');
+
+  if (!migration011Exists) {
+    console.log('Applying migration 011: Adding submission batches tables...');
+
+    // Create submission batches table
+    database.exec(`
+      CREATE TABLE IF NOT EXISTS submission_batches (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        batch_number TEXT UNIQUE NOT NULL,
+        batch_type TEXT NOT NULL,
+        case_count INTEGER DEFAULT 0,
+        valid_case_count INTEGER DEFAULT 0,
+        invalid_case_count INTEGER DEFAULT 0,
+        xml_filename TEXT,
+        xml_file_path TEXT,
+        status TEXT DEFAULT 'created',
+        submission_mode TEXT,
+        esg_core_id TEXT,
+        submitted_at DATETIME,
+        acknowledged_at DATETIME,
+        ack_type TEXT,
+        ack_details TEXT,
+        notes TEXT,
+        created_by TEXT REFERENCES users(id),
+        created_at DATETIME NOT NULL,
+        updated_at DATETIME NOT NULL
+      )
+    `);
+
+    // Create batch_cases junction table
+    database.exec(`
+      CREATE TABLE IF NOT EXISTS batch_cases (
+        batch_id INTEGER NOT NULL REFERENCES submission_batches(id) ON DELETE CASCADE,
+        case_id TEXT NOT NULL REFERENCES cases(id) ON DELETE CASCADE,
+        validation_status TEXT DEFAULT 'pending',
+        validation_errors TEXT,
+        added_at DATETIME NOT NULL,
+        PRIMARY KEY (batch_id, case_id)
+      )
+    `);
+
+    // Create indexes
+    database.exec(`
+      CREATE INDEX IF NOT EXISTS idx_batches_type ON submission_batches(batch_type);
+      CREATE INDEX IF NOT EXISTS idx_batches_status ON submission_batches(status);
+      CREATE INDEX IF NOT EXISTS idx_batches_created ON submission_batches(created_at);
+      CREATE INDEX IF NOT EXISTS idx_batch_cases_batch ON batch_cases(batch_id);
+      CREATE INDEX IF NOT EXISTS idx_batch_cases_case ON batch_cases(case_id);
+    `);
+
+    database.prepare(
+      'INSERT INTO migrations (name) VALUES (?)'
+    ).run('011_submission_batches');
+    console.log('Migration 011 applied successfully.');
+  }
+
+  // Migration 012: Phase 4 - PSRs Table
+  const migration012Exists = database.prepare(
+    'SELECT 1 FROM migrations WHERE name = ?'
+  ).get('012_psrs');
+
+  if (!migration012Exists) {
+    console.log('Applying migration 012: Adding PSRs table...');
+
+    // Create PSRs table
+    database.exec(`
+      CREATE TABLE IF NOT EXISTS psrs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        psr_number TEXT UNIQUE NOT NULL,
+        product_id INTEGER REFERENCES products(id),
+        psr_format TEXT NOT NULL,
+        period_start TEXT NOT NULL,
+        period_end TEXT NOT NULL,
+        data_lock_point TEXT NOT NULL,
+        due_date TEXT NOT NULL,
+        status TEXT DEFAULT 'draft',
+        descriptive_portion_path TEXT,
+        ectd_submission_ref TEXT,
+        icsr_batch_id INTEGER REFERENCES submission_batches(id),
+        created_by TEXT REFERENCES users(id),
+        approved_by TEXT REFERENCES users(id),
+        approved_at DATETIME,
+        submitted_at DATETIME,
+        created_at DATETIME NOT NULL,
+        updated_at DATETIME NOT NULL
+      )
+    `);
+
+    // Create PSR cases junction table
+    database.exec(`
+      CREATE TABLE IF NOT EXISTS psr_cases (
+        psr_id INTEGER NOT NULL REFERENCES psrs(id) ON DELETE CASCADE,
+        case_id TEXT NOT NULL REFERENCES cases(id) ON DELETE CASCADE,
+        included INTEGER DEFAULT 1,
+        exclusion_reason TEXT,
+        added_at DATETIME NOT NULL,
+        added_by TEXT REFERENCES users(id),
+        PRIMARY KEY (psr_id, case_id)
+      )
+    `);
+
+    // Create indexes
+    database.exec(`
+      CREATE INDEX IF NOT EXISTS idx_psrs_product ON psrs(product_id);
+      CREATE INDEX IF NOT EXISTS idx_psrs_status ON psrs(status);
+      CREATE INDEX IF NOT EXISTS idx_psrs_due_date ON psrs(due_date);
+      CREATE INDEX IF NOT EXISTS idx_psr_cases_psr ON psr_cases(psr_id);
+      CREATE INDEX IF NOT EXISTS idx_psr_cases_case ON psr_cases(case_id);
+    `);
+
+    database.prepare(
+      'INSERT INTO migrations (name) VALUES (?)'
+    ).run('012_psrs');
+    console.log('Migration 012 applied successfully.');
   }
 }
 

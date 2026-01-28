@@ -7,14 +7,17 @@
  * - Initial/Follow-up
  * - Receipt/Receive Dates
  * - Expedited Report flag
+ * - Product (Phase 4: for PSR linking)
  */
 
 import React from 'react';
-import { Form, Input, Select, DatePicker, Switch, Card, Row, Col, Divider } from 'antd';
+import { Form, Input, Select, DatePicker, Switch, Card, Row, Col, Divider, Typography } from 'antd';
 import dayjs from 'dayjs';
 import type { Case } from '../../../shared/types/case.types';
+import { ProductSelector } from '../products';
 
 const { Option } = Select;
+const { Text } = Typography;
 
 interface ReportInfoSectionProps {
   caseData: Case;
@@ -129,6 +132,27 @@ const ReportInfoSection: React.FC<ReportInfoSectionProps> = ({
                 disabled={disabled}
               />
             </Form.Item>
+          </Col>
+        </Row>
+
+        <Divider orientation="left">Product Information (Phase 4)</Divider>
+
+        <Row gutter={24}>
+          <Col span={24}>
+            <Form.Item
+              label="Product"
+              tooltip="Select the product for PSR (Periodic Safety Report) aggregation"
+            >
+              <ProductSelector
+                value={caseData.productId}
+                onChange={(productId) => onChange('productId', productId)}
+                disabled={disabled}
+                placeholder="Search and select a product..."
+              />
+            </Form.Item>
+            <Text type="secondary" style={{ fontSize: 12 }}>
+              Linking a case to a product enables it to be included in Periodic Safety Reports (PSR) for that product.
+            </Text>
           </Col>
         </Row>
       </Card>

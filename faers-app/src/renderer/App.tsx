@@ -7,10 +7,12 @@
  * - Navigation Panel (sidebar)
  * - Main Content Area
  * - Status Bar
+ *
+ * Phase 3: Added authentication flow with multi-user support
  */
 
 import React, { useEffect, useState, useCallback } from 'react';
-import { Layout, Menu, Button, Space, Tooltip, message, Form, Spin } from 'antd';
+import { Layout, Menu, Button, Space, Tooltip, message, Form, Spin, Dropdown, Modal } from 'antd';
 import {
   PlusOutlined,
   FolderOpenOutlined,
@@ -30,11 +32,31 @@ import {
   CloseCircleFilled,
   DashboardOutlined,
   SettingOutlined,
-  BugOutlined
+  BugOutlined,
+  LogoutOutlined,
+  LockOutlined,
+  DownOutlined,
+  SafetyCertificateOutlined,
+  AppstoreOutlined,
+  MoreOutlined,
+  FileAddOutlined,
+  StopOutlined,
+  HistoryOutlined,
+  InboxOutlined,
+  ScheduleOutlined
 } from '@ant-design/icons';
 import type { MenuProps } from 'antd';
 import { useCaseStore, useCurrentCase, useCaseActions } from './stores/caseStore';
+import { useAuthActions, useUser, useIsAuthenticated, useAuthLoading, useMustChangePassword } from './stores/authStore';
+import { LoginPage, ChangePasswordDialog, SessionTimeoutDialog } from './components/auth';
 import CaseList from './components/case-list/CaseList';
+import UserListPage from './components/users/UserListPage';
+import { ProductList } from './components/products';
+import { BatchList, CreateBatchWizard, BatchDetail } from './components/batch';
+import { PSRList, PSRDashboard, PSRDetail, CreatePSRWizard } from './components/psr';
+import { CreateFollowupDialog, NullifyDialog, CaseVersionTimeline } from './components/followup';
+import NotificationCenter from './components/notifications/NotificationCenter';
+import { usePermissions } from './components/common/PermissionGate';
 import {
   ReportInfoSection,
   ReporterSection,
@@ -42,7 +64,8 @@ import {
   PatientSection,
   ReactionsSection,
   DrugsSection,
-  NarrativeSection
+  NarrativeSection,
+  ReportClassificationSection
 } from './components/case-form';
 import type { Case, CaseDrug, CaseReaction, CaseReporter, ValidationResult, CaseStatus } from '../shared/types/case.types';
 import ValidationPanel from './components/validation/ValidationPanel';
@@ -81,6 +104,14 @@ const createNavLabel = (label: string, hasData: boolean, hasError: boolean) => (
 const App: React.FC = () => {
   const [messageApi, contextHolder] = message.useMessage();
 
+  // Phase 3: Authentication state
+  const user = useUser();
+  const isAuthenticated = useIsAuthenticated();
+  const isAuthLoading = useAuthLoading();
+  const mustChangePassword = useMustChangePassword();
+  const { validateSession, logout, updateActivity } = useAuthActions();
+  const [showChangePasswordDialog, setShowChangePasswordDialog] = useState(false);
+
   const { case: currentCase, isDirty, isSaving, isLoading: isCaseLoading } = useCurrentCase();
   const { createCase, updateCase, fetchCases, updateCurrentCaseField } = useCaseActions();
   const activeSection = useCaseStore((s) => s.activeSection);
@@ -102,16 +133,61 @@ const App: React.FC = () => {
   const submissionStore = useSubmissionStore();
   const settingsStore = useSettingsStore();
 
-  // Load dashboard stats on mount
-  useEffect(() => {
-    fetchDashboardStats();
-    settingsStore.loadSettings();
-  }, []);
+  // Phase 4: Follow-up and Nullification dialogs
+  const [showFollowupDialog, setShowFollowupDialog] = useState(false);
+  const [showNullifyDialog, setShowNullifyDialog] = useState(false);
+  const [showVersionTimeline, setShowVersionTimeline] = useState(false);
 
-  // Load cases on mount
+  // Phase 4: Batch management state
+  const [showCreateBatchWizard, setShowCreateBatchWizard] = useState(false);
+  const [selectedBatchId, setSelectedBatchId] = useState<number | null>(null);
+
+  // Phase 4: PSR management state
+  const [psrView, setPsrView] = useState<'dashboard' | 'list'>('dashboard');
+  const [selectedPsrId, setSelectedPsrId] = useState<number | null>(null);
+  const [showCreatePsrWizard, setShowCreatePsrWizard] = useState(false);
+
+  // Phase 3: Validate session on mount
   useEffect(() => {
-    fetchCases();
-  }, [fetchCases]);
+    validateSession();
+  }, [validateSession]);
+
+  // Phase 3: Track user activity for session timeout
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    const handleActivity = () => {
+      updateActivity();
+    };
+
+    // Track mouse and keyboard activity
+    window.addEventListener('mousemove', handleActivity, { passive: true });
+    window.addEventListener('keydown', handleActivity, { passive: true });
+    window.addEventListener('click', handleActivity, { passive: true });
+    window.addEventListener('scroll', handleActivity, { passive: true });
+
+    return () => {
+      window.removeEventListener('mousemove', handleActivity);
+      window.removeEventListener('keydown', handleActivity);
+      window.removeEventListener('click', handleActivity);
+      window.removeEventListener('scroll', handleActivity);
+    };
+  }, [isAuthenticated, updateActivity]);
+
+  // Load dashboard stats on mount (only when authenticated)
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchDashboardStats();
+      settingsStore.loadSettings();
+    }
+  }, [isAuthenticated]);
+
+  // Load cases on mount (only when authenticated)
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchCases();
+    }
+  }, [fetchCases, isAuthenticated]);
 
   // Load related entities when current case changes
   useEffect(() => {
@@ -314,6 +390,9 @@ const App: React.FC = () => {
     if (field.startsWith('report') || field === 'receiptDate' || field === 'receiveDate' ||
         field === 'initialOrFollowup' || field.includes('nullification')) {
       setActiveSection('report');
+    } else if (field.includes('classification') || field === 'isSerious' || field === 'expectedness' ||
+               field.includes('seriousness') || field.includes('expedited')) {
+      setActiveSection('classification');
     } else if (field.startsWith('reporter') || field === 'reporters') {
       setActiveSection('reporter');
     } else if (field.startsWith('sender')) {
@@ -427,6 +506,7 @@ const App: React.FC = () => {
 
     const sectionFieldMap: Record<string, string[]> = {
       report: ['reportType', 'initialOrFollowup', 'receiptDate', 'receiveDate', 'nullification'],
+      classification: ['reportTypeClassification', 'isSerious', 'expectedness', 'seriousness'],
       reporter: ['reporters', 'qualification'],
       sender: ['senderType', 'senderOrganization', 'senderGivenName', 'senderFamilyName', 'senderEmail'],
       patient: ['patientSex', 'patientAge', 'patientWeight', 'patientHeight', 'patientDeath', 'deathDate'],
@@ -449,6 +529,8 @@ const App: React.FC = () => {
     switch (sectionKey) {
       case 'report':
         return !!(currentCase.reportType || currentCase.receiptDate || currentCase.receiveDate);
+      case 'classification':
+        return !!(currentCase.reportTypeClassification || currentCase.isSerious !== undefined || currentCase.expectedness);
       case 'reporter':
         return reporters.length > 0;
       case 'sender':
@@ -466,57 +548,100 @@ const App: React.FC = () => {
     }
   };
 
+  // Phase 3: Permission check for admin functions
+  const { canViewUsers } = usePermissions();
+
   // Generate nav items with indicators
-  const getNavItems = (): MenuItem[] => [
-    {
-      key: 'dashboard',
-      icon: <DashboardOutlined />,
-      label: 'Dashboard'
-    },
-    {
-      key: 'cases',
-      icon: <UnorderedListOutlined />,
-      label: 'Case List'
-    },
-    {
-      type: 'divider'
-    },
-    {
-      key: 'report',
-      icon: <FileTextOutlined />,
-      label: createNavLabel('Report Info', getSectionHasData('report'), getSectionErrors('report'))
-    },
-    {
-      key: 'reporter',
-      icon: <UserOutlined />,
-      label: createNavLabel('Reporter', getSectionHasData('reporter'), getSectionErrors('reporter'))
-    },
-    {
-      key: 'sender',
-      icon: <SendOutlined />,
-      label: createNavLabel('Sender', getSectionHasData('sender'), getSectionErrors('sender'))
-    },
-    {
-      key: 'patient',
-      icon: <MedicineBoxOutlined />,
-      label: createNavLabel('Patient', getSectionHasData('patient'), getSectionErrors('patient'))
-    },
-    {
-      key: 'reactions',
-      icon: <WarningOutlined />,
-      label: createNavLabel('Reactions', getSectionHasData('reactions'), getSectionErrors('reactions'))
-    },
-    {
-      key: 'drugs',
-      icon: <ExperimentOutlined />,
-      label: createNavLabel('Drugs', getSectionHasData('drugs'), getSectionErrors('drugs'))
-    },
-    {
-      key: 'narrative',
-      icon: <EditOutlined />,
-      label: createNavLabel('Narrative', getSectionHasData('narrative'), getSectionErrors('narrative'))
+  const getNavItems = (): MenuItem[] => {
+    const items: MenuItem[] = [
+      {
+        key: 'dashboard',
+        icon: <DashboardOutlined />,
+        label: <span data-testid="nav-dashboard">Dashboard</span>
+      },
+      {
+        key: 'cases',
+        icon: <UnorderedListOutlined />,
+        label: <span data-testid="nav-cases">Case List</span>
+      }
+    ];
+
+    // Add User Management for admins
+    if (canViewUsers) {
+      items.push({
+        key: 'users',
+        icon: <UserOutlined />,
+        label: <span data-testid="nav-users">User Management</span>
+      });
     }
-  ];
+
+    // Products Management
+    items.push({
+      key: 'products',
+      icon: <AppstoreOutlined />,
+      label: <span data-testid="nav-products">Products</span>
+    });
+
+    // Batches (Phase 4)
+    items.push({
+      key: 'batches',
+      icon: <InboxOutlined />,
+      label: <span data-testid="nav-batches">Batches</span>
+    });
+
+    // PSR Management (Phase 4)
+    items.push({
+      key: 'psr',
+      icon: <ScheduleOutlined />,
+      label: <span data-testid="nav-psr">PSR</span>
+    });
+
+    items.push({ type: 'divider' });
+
+    return [
+      ...items,
+      {
+        key: 'report',
+        icon: <FileTextOutlined />,
+        label: <span data-testid="nav-report">{createNavLabel('Report Info', getSectionHasData('report'), getSectionErrors('report'))}</span>
+      },
+      {
+        key: 'classification',
+        icon: <SafetyCertificateOutlined />,
+        label: <span data-testid="nav-classification">{createNavLabel('Classification', getSectionHasData('classification'), getSectionErrors('classification'))}</span>
+      },
+      {
+        key: 'reporter',
+        icon: <UserOutlined />,
+        label: <span data-testid="nav-reporter">{createNavLabel('Reporter', getSectionHasData('reporter'), getSectionErrors('reporter'))}</span>
+      },
+      {
+        key: 'sender',
+        icon: <SendOutlined />,
+        label: <span data-testid="nav-sender">{createNavLabel('Sender', getSectionHasData('sender'), getSectionErrors('sender'))}</span>
+      },
+      {
+        key: 'patient',
+        icon: <MedicineBoxOutlined />,
+        label: <span data-testid="nav-patient">{createNavLabel('Patient', getSectionHasData('patient'), getSectionErrors('patient'))}</span>
+      },
+      {
+        key: 'reactions',
+        icon: <WarningOutlined />,
+        label: <span data-testid="nav-reactions">{createNavLabel('Reactions', getSectionHasData('reactions'), getSectionErrors('reactions'))}</span>
+      },
+      {
+        key: 'drugs',
+        icon: <ExperimentOutlined />,
+        label: <span data-testid="nav-drugs">{createNavLabel('Drugs', getSectionHasData('drugs'), getSectionErrors('drugs'))}</span>
+      },
+      {
+        key: 'narrative',
+        icon: <EditOutlined />,
+        label: <span data-testid="nav-narrative">{createNavLabel('Narrative', getSectionHasData('narrative'), getSectionErrors('narrative'))}</span>
+      }
+    ];
+  };
 
   // Get status badge class (Phase 2: Extended statuses)
   const getStatusBadgeClass = (status?: string) => {
@@ -551,6 +676,130 @@ const App: React.FC = () => {
     setActiveSection('report');
   };
 
+  // Phase 3: User menu items
+  const userMenuItems: MenuProps['items'] = [
+    {
+      key: 'profile',
+      icon: <UserOutlined />,
+      label: `${user?.firstName} ${user?.lastName}`,
+      disabled: true
+    },
+    { type: 'divider' },
+    {
+      key: 'change-password',
+      icon: <LockOutlined />,
+      label: <span data-testid="change-password-button">Change Password</span>,
+      onClick: () => setShowChangePasswordDialog(true)
+    },
+    { type: 'divider' },
+    {
+      key: 'logout',
+      icon: <LogoutOutlined />,
+      label: <span data-testid="logout-button">Logout</span>,
+      onClick: () => {
+        logout();
+        messageApi.info('You have been logged out');
+      }
+    }
+  ];
+
+  // Phase 4: Actions menu items (context-sensitive based on case status)
+  const getActionsMenuItems = (): MenuProps['items'] => {
+    if (!currentCase) return [];
+
+    const status = currentCase.status;
+    const canCreateFollowup = status === 'Submitted' || status === 'Acknowledged';
+    const canNullify = status === 'Submitted' || status === 'Acknowledged';
+
+    return [
+      {
+        key: 'create-followup',
+        icon: <FileAddOutlined />,
+        label: canCreateFollowup
+          ? 'Create Follow-Up'
+          : `Create Follow-Up (requires Submitted status, current: ${status})`,
+        disabled: !canCreateFollowup,
+        onClick: canCreateFollowup ? () => setShowFollowupDialog(true) : undefined
+      },
+      {
+        key: 'nullify',
+        icon: <StopOutlined />,
+        label: canNullify
+          ? 'Nullify Case'
+          : `Nullify Case (requires Submitted status, current: ${status})`,
+        disabled: !canNullify,
+        onClick: canNullify ? () => setShowNullifyDialog(true) : undefined
+      },
+      { type: 'divider' },
+      {
+        key: 'version-history',
+        icon: <HistoryOutlined />,
+        label: 'Version History',
+        onClick: () => setShowVersionTimeline(true)
+      }
+    ];
+  };
+
+  // Handle follow-up creation success
+  const handleFollowupSuccess = (newCaseId: string) => {
+    messageApi.success('Follow-up case created. Navigating to new case...');
+    useCaseStore.getState().fetchCase(newCaseId);
+    setActiveSection('report');
+  };
+
+  // Handle nullification success
+  const handleNullifySuccess = (nullificationCaseId: string) => {
+    messageApi.success('Nullification case created. Navigating to new case...');
+    useCaseStore.getState().fetchCase(nullificationCaseId);
+    setActiveSection('report');
+  };
+
+  // Phase 3: Show loading while checking auth
+  if (isAuthLoading) {
+    return (
+      <div
+        data-testid="loading-screen"
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'center',
+          height: '100vh',
+          background: '#f0f2f5'
+        }}
+      >
+        <Spin size="large" />
+        <div style={{ marginTop: 16, color: '#666' }}>Loading...</div>
+      </div>
+    );
+  }
+
+  // Phase 3: Show login page if not authenticated
+  if (!isAuthenticated) {
+    return <LoginPage />;
+  }
+
+  // Phase 3: Show force change password if required
+  if (mustChangePassword) {
+    return (
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        height: '100vh',
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+      }}>
+        <ChangePasswordDialog
+          visible={true}
+          forced={true}
+          onSuccess={() => {
+            messageApi.success('Password changed successfully');
+          }}
+        />
+      </div>
+    );
+  }
+
   // Render main content based on active section
   const renderContent = () => {
     // Dashboard view (Phase 2)
@@ -561,6 +810,66 @@ const App: React.FC = () => {
           loading={loadingDashboard}
           onStatusClick={handleDashboardStatusClick}
           onCaseClick={handleDashboardCaseClick}
+        />
+      );
+    }
+
+    // Phase 3: User Management (admin only)
+    if (activeSection === 'users') {
+      return <UserListPage />;
+    }
+
+    // Phase 4: Products Management
+    if (activeSection === 'products') {
+      return <ProductList />;
+    }
+
+    // Phase 4: Batches Management
+    if (activeSection === 'batches') {
+      // Show detail view if a batch is selected
+      if (selectedBatchId !== null) {
+        return (
+          <BatchDetail
+            batchId={selectedBatchId}
+            onBack={() => setSelectedBatchId(null)}
+          />
+        );
+      }
+      // Show batch list
+      return (
+        <BatchList
+          onCreateBatch={() => setShowCreateBatchWizard(true)}
+          onSelectBatch={(batchId) => setSelectedBatchId(batchId)}
+        />
+      );
+    }
+
+    // Phase 4: PSR Management
+    if (activeSection === 'psr') {
+      // Show detail view if a PSR is selected
+      if (selectedPsrId !== null) {
+        return (
+          <PSRDetail
+            psrId={selectedPsrId}
+            onBack={() => setSelectedPsrId(null)}
+          />
+        );
+      }
+      // Show dashboard or list based on view mode
+      if (psrView === 'dashboard') {
+        return (
+          <PSRDashboard
+            onViewPSR={(psrId) => setSelectedPsrId(psrId)}
+            onCreatePSR={() => setShowCreatePsrWizard(true)}
+            onViewAllPSRs={() => setPsrView('list')}
+          />
+        );
+      }
+      // Show PSR list
+      return (
+        <PSRList
+          onViewPSR={(psrId) => setSelectedPsrId(psrId)}
+          onCreatePSR={() => setShowCreatePsrWizard(true)}
         />
       );
     }
@@ -588,6 +897,17 @@ const App: React.FC = () => {
             <ReportInfoSection
               caseData={currentCase}
               onChange={handleFieldChange}
+            />
+          );
+        case 'classification':
+          return (
+            <ReportClassificationSection
+              caseId={currentCase.id}
+              disabled={currentCase.status !== 'Draft'}
+              onChange={() => {
+                // Refresh case data after classification changes
+                useCaseStore.getState().fetchCase(currentCase.id);
+              }}
             />
           );
         case 'reporter':
@@ -650,14 +970,15 @@ const App: React.FC = () => {
     };
 
     return (
-      <Form layout="vertical" className="case-form">
+      <Form layout="vertical" className="case-form" data-testid="case-form">
+        <span data-testid="case-id" data-value={currentCase?.id} style={{ display: 'none' }} />
         {renderFormSection()}
       </Form>
     );
   };
 
   return (
-    <Layout className="app-layout">
+    <Layout className="app-layout" data-testid="main-layout">
       {contextHolder}
 
       {/* Test Mode Banner */}
@@ -675,7 +996,7 @@ const App: React.FC = () => {
           gap: 8
         }}>
           <BugOutlined />
-          TEST MODE - Exports will include _TEST in filename. Upload to FDA ESG NextGen USP and select "Test Submission"
+          TEST MODE - Exports will include _TEST in filename. Upload to FDA ESG NextGen USP and select &quot;Test Submission&quot;
         </div>
       )}
 
@@ -689,6 +1010,7 @@ const App: React.FC = () => {
                 type="primary"
                 icon={<PlusOutlined />}
                 onClick={handleNewCase}
+                data-testid="new-case-button"
               >
                 New
               </Button>
@@ -749,6 +1071,21 @@ const App: React.FC = () => {
               </Button>
             </Tooltip>
 
+            {/* Phase 4: Actions Menu */}
+            <Dropdown
+              menu={{ items: getActionsMenuItems() }}
+              trigger={['click']}
+              disabled={!currentCase}
+            >
+              <Button
+                icon={<MoreOutlined />}
+                disabled={!currentCase}
+                data-testid="actions-menu"
+              >
+                Actions <DownOutlined />
+              </Button>
+            </Dropdown>
+
             <span className="toolbar-divider" />
 
             <Tooltip title="Settings">
@@ -759,6 +1096,26 @@ const App: React.FC = () => {
                 Settings
               </Button>
             </Tooltip>
+
+            <span className="toolbar-divider" />
+
+            {/* Phase 3: Notifications */}
+            <NotificationCenter
+              onNotificationClick={(notification) => {
+                // Navigate to case if notification is case-related
+                if (notification.entityType === 'case' && notification.entityId) {
+                  useCaseStore.getState().fetchCase(notification.entityId);
+                  setActiveSection('report');
+                }
+              }}
+            />
+
+            {/* Phase 3: User Menu */}
+            <Dropdown menu={{ items: userMenuItems }} trigger={['click']}>
+              <Button icon={<UserOutlined />} data-testid="user-menu">
+                {user?.username} <DownOutlined />
+              </Button>
+            </Dropdown>
           </Space>
         </div>
       </Header>
@@ -850,6 +1207,81 @@ const App: React.FC = () => {
         onSave={settingsStore.updateSettings}
         onCancel={settingsStore.closeSettingsDialog}
       />
+
+      {/* Phase 3: Auth Dialogs */}
+      <ChangePasswordDialog
+        visible={showChangePasswordDialog}
+        forced={false}
+        onClose={() => setShowChangePasswordDialog(false)}
+        onSuccess={() => {
+          setShowChangePasswordDialog(false);
+          messageApi.success('Password changed successfully');
+        }}
+      />
+
+      <SessionTimeoutDialog
+        onLogout={() => {
+          messageApi.info('Session expired. Please log in again.');
+        }}
+      />
+
+      {/* Phase 4: Batch Creation Wizard */}
+      <CreateBatchWizard
+        open={showCreateBatchWizard}
+        onClose={() => setShowCreateBatchWizard(false)}
+        onSuccess={(batchId) => {
+          setShowCreateBatchWizard(false);
+          setSelectedBatchId(batchId);
+          messageApi.success('Batch created successfully');
+        }}
+      />
+
+      {/* Phase 4: PSR Creation Wizard */}
+      <CreatePSRWizard
+        visible={showCreatePsrWizard}
+        onClose={() => setShowCreatePsrWizard(false)}
+        onSuccess={(psrId) => {
+          setShowCreatePsrWizard(false);
+          setSelectedPsrId(psrId);
+          messageApi.success('PSR created successfully');
+        }}
+      />
+
+      {/* Phase 4: Follow-up and Nullification Dialogs */}
+      {currentCase && (
+        <>
+          <CreateFollowupDialog
+            caseId={currentCase.id}
+            visible={showFollowupDialog}
+            onClose={() => setShowFollowupDialog(false)}
+            onSuccess={handleFollowupSuccess}
+          />
+
+          <NullifyDialog
+            caseId={currentCase.id}
+            visible={showNullifyDialog}
+            onClose={() => setShowNullifyDialog(false)}
+            onSuccess={handleNullifySuccess}
+          />
+
+          <Modal
+            title="Case Version History"
+            open={showVersionTimeline}
+            onCancel={() => setShowVersionTimeline(false)}
+            footer={null}
+            width={700}
+          >
+            <CaseVersionTimeline
+              caseId={currentCase.id}
+              onVersionSelect={(versionCaseId) => {
+                setShowVersionTimeline(false);
+                useCaseStore.getState().fetchCase(versionCaseId);
+                setActiveSection('report');
+              }}
+            />
+          </Modal>
+        </>
+      )}
     </Layout>
   );
 };
