@@ -2,6 +2,7 @@
  * Settings Dialog Component (Phase 2)
  *
  * Modal dialog to configure application settings.
+ * Phase 5: Added Dictionaries tab for MedDRA and WHO Drug management
  */
 
 import React, { useState, useEffect } from 'react';
@@ -16,11 +17,15 @@ import {
   Typography,
   Radio,
   Alert,
-  Checkbox
+  Checkbox,
+  Tabs
 } from 'antd';
-import { FolderOpenOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
+import { FolderOpenOutlined, ExclamationCircleOutlined, SettingOutlined, DatabaseOutlined, ApiOutlined } from '@ant-design/icons';
 import type { RadioChangeEvent } from 'antd';
 import type { AppSettings, SubmissionEnvironment } from '../../../shared/types/case.types';
+import { MedDRAVersionManager } from '../meddra/MedDRAVersionManager';
+import { WHODrugVersionManager } from '../whodrug/WHODrugVersionManager';
+import EsgApiSettingsTab from './EsgApiSettingsTab';
 
 const { Text } = Typography;
 
@@ -136,20 +141,36 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({
     }
   };
 
+  const [activeTab, setActiveTab] = useState('general');
+
   return (
     <>
       <Modal
         title="Settings"
         open={visible}
-        onOk={handleOk}
+        onOk={activeTab === 'general' ? handleOk : undefined}
         onCancel={onCancel}
         confirmLoading={loading}
-        okText="Save Settings"
-        width={550}
+        okText={activeTab === 'general' ? 'Save Settings' : undefined}
+        okButtonProps={{ style: activeTab !== 'general' ? { display: 'none' } : {} }}
+        width={750}
         destroyOnClose
       >
-        <Form form={form} layout="vertical" style={{ marginTop: 16 }}>
-          <Divider orientation="left">Submission Environment</Divider>
+        <Tabs
+          activeKey={activeTab}
+          onChange={setActiveTab}
+          items={[
+            {
+              key: 'general',
+              label: (
+                <span>
+                  <SettingOutlined />
+                  General
+                </span>
+              ),
+              children: (
+                <Form form={form} layout="vertical" style={{ marginTop: 16 }}>
+                  <Divider orientation="left">Submission Environment</Divider>
 
           <Form.Item
             name="submissionEnvironment"
@@ -274,6 +295,41 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({
             Show confirmation dialog when exporting cases with warnings
           </Text>
         </Form>
+              )
+            },
+            {
+              key: 'api',
+              label: (
+                <span>
+                  <ApiOutlined />
+                  API Configuration
+                </span>
+              ),
+              children: (
+                <div style={{ marginTop: 16 }}>
+                  <EsgApiSettingsTab />
+                </div>
+              )
+            },
+            {
+              key: 'dictionaries',
+              label: (
+                <span>
+                  <DatabaseOutlined />
+                  Dictionaries
+                </span>
+              ),
+              children: (
+                <div style={{ marginTop: 16 }}>
+                  <MedDRAVersionManager />
+                  <div style={{ marginTop: 24 }}>
+                    <WHODrugVersionManager />
+                  </div>
+                </div>
+              )
+            }
+          ]}
+        />
       </Modal>
 
       {/* Production Mode Confirmation Modal */}

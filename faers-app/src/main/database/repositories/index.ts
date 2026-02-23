@@ -9,3 +9,5 @@ export { SessionRepository } from './session.repository';
 // Phase 4
 export { ProductRepository } from './product.repository';
 export { SeriousnessRepository } from './seriousness.repository';
+// Phase 2B - ESG API Submission
+export { EsgSubmissionRepository } from './esgSubmission.repository';

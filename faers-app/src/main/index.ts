@@ -20,8 +20,44 @@ import { registerReportTypeHandlers } from './ipc/reportType.handlers';
 import { registerFollowupHandlers } from './ipc/followup.handlers';
 import { registerBatchHandlers } from './ipc/batch.handlers';
 import { registerPSRHandlers } from './ipc/psr.handlers';
+// Phase 5
+import { registerMedDRAHandlers } from './ipc/meddra.handlers';
+import { MedDRAService } from './services/meddraService';
+import { MedDRARepository } from './database/repositories/meddra.repository';
+import { registerWHODrugHandlers } from './ipc/whodrug.handlers';
+import { WHODrugService } from './services/whodrugService';
+import { WHODrugRepository } from './database/repositories/whodrug.repository';
+import { registerSearchHandlers } from './ipc/search.handlers';
+import { SearchService } from './services/searchService';
+import { SearchRepository } from './database/repositories/search.repository';
+import { registerDuplicateHandlers } from './ipc/duplicate.handlers';
+import { DuplicateService } from './services/duplicateService';
+import { DuplicateRepository } from './database/repositories/duplicate.repository';
+import { registerTemplateHandlers } from './ipc/template.handlers';
+import { TemplateService } from './services/templateService';
+import { TemplateRepository } from './database/repositories/template.repository';
+import { registerImportHandlers } from './ipc/import.handlers';
+import { ImportService } from './services/importService';
+import { ImportRepository } from './database/repositories/import.repository';
+import { registerValidationHandlers } from './ipc/validation.handlers';
+import { ValidationEngineService } from './services/validationEngineService';
+import { ValidationRepository } from './database/repositories/validation.repository';
+import { SYSTEM_VALIDATION_RULES } from '../shared/types/validation.types';
+import { getDatabase } from './database/connection';
+// Phase 2B - ESG API Integration
+import { registerEsgApiHandlers } from './ipc/esgApi.handlers';
+import { EsgSubmissionRepository } from './database/repositories/esgSubmission.repository';
+import { CredentialStorageService } from './services/credentialStorageService';
+import { EsgAuthService } from './services/esgAuthService';
+import { EsgApiService } from './services/esgApiService';
+import { EsgSubmissionService } from './services/esgSubmissionService';
+import { EsgPollingService } from './services/esgPollingService';
+import { StatusTransitionService } from './services/statusTransitionService';
+import { XMLGeneratorService } from './services/xmlGeneratorService';
+import { MockEsgApiService } from './services/mockEsgApiService';
 
 let mainWindow: BrowserWindow | null = null;
+let esgPollingService: EsgPollingService | null = null;
 
 // Development mode check - evaluated lazily to avoid issues at module load time
 const isDev = (): boolean => !app.isPackaged;
@@ -268,12 +304,62 @@ app.whenReady().then(() => {
   registerFollowupHandlers();
   registerBatchHandlers();
   registerPSRHandlers();
+  // Phase 5
+  const db = getDatabase();
+  const meddraRepository = new MedDRARepository(db);
+  const meddraService = new MedDRAService(meddraRepository);
+  registerMedDRAHandlers(meddraService);
+  const whodrugRepository = new WHODrugRepository(db);
+  const whodrugService = new WHODrugService(whodrugRepository);
+  registerWHODrugHandlers(whodrugService);
+  const searchRepository = new SearchRepository(db);
+  const searchService = new SearchService(searchRepository);
+  registerSearchHandlers(searchService);
+  const duplicateRepository = new DuplicateRepository(db);
+  const duplicateService = new DuplicateService(duplicateRepository);
+  registerDuplicateHandlers(duplicateService);
+  const templateRepository = new TemplateRepository(db);
+  const templateService = new TemplateService(templateRepository);
+  registerTemplateHandlers(templateService);
+  const importRepository = new ImportRepository(db);
+  const importService = new ImportService(importRepository);
+  registerImportHandlers(importService);
+  const validationRepository = new ValidationRepository(db);
+  const validationEngineService = new ValidationEngineService(validationRepository);
+  validationEngineService.initializeSystemRules(SYSTEM_VALIDATION_RULES);
+  registerValidationHandlers(validationEngineService, db);
+
+  // Phase 2B - ESG API Services
+  console.log('Initializing ESG API services...');
+  const esgRepo = new EsgSubmissionRepository(db);
+  const credentialStorage = new CredentialStorageService();
+  const esgAuthService = new EsgAuthService(credentialStorage);
+  const esgApiService = new EsgApiService(esgAuthService);
+  const statusTransitionService = new StatusTransitionService(db);
+  const xmlGeneratorService = new XMLGeneratorService(db);
+  const mockApiService = new MockEsgApiService();
+  const esgSubmissionService = new EsgSubmissionService(db, esgApiService, xmlGeneratorService, statusTransitionService);
+  esgPollingService = new EsgPollingService(db, esgApiService, statusTransitionService);
+  registerEsgApiHandlers({
+    credentialStorage,
+    authService: esgAuthService,
+    submissionService: esgSubmissionService,
+    pollingService: esgPollingService,
+    esgRepo,
+    mockApiService
+  });
 
   // Create menu
   createMenu();
 
   // Create main window
   createWindow();
+
+  // Start ESG acknowledgment polling after window is ready
+  if (esgPollingService) {
+    console.log('Starting ESG acknowledgment polling...');
+    esgPollingService.startPolling();
+  }
 
   // macOS: recreate window when dock icon clicked
   app.on('activate', () => {
@@ -292,6 +378,11 @@ app.on('window-all-closed', () => {
 
 // Clean up on quit
 app.on('before-quit', () => {
+  // Stop ESG polling
+  if (esgPollingService) {
+    console.log('Stopping ESG acknowledgment polling...');
+    esgPollingService.stopPolling();
+  }
   console.log('Closing database...');
   closeDatabase();
 });

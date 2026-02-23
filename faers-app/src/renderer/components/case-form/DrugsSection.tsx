@@ -8,7 +8,7 @@
  * - Action taken
  */
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Form,
   Input,
@@ -24,14 +24,18 @@ import {
   Space,
   Divider,
   Popconfirm,
-  Tag
+  Tag,
+  Typography
 } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import type { CaseDrug, CaseDrugDosage, DrugCharacterization } from '../../../shared/types/case.types';
+import type { WHODrugCoding } from '../../../shared/types/whodrug.types';
+import { WHODrugAutocomplete } from '../whodrug/WHODrugAutocomplete';
 
 const { Option } = Select;
 const { TextArea } = Input;
+const { Text } = Typography;
 
 interface DrugsSectionProps {
   drugs: CaseDrug[];
@@ -62,6 +66,45 @@ const DrugsSection: React.FC<DrugsSectionProps> = ({
   const [modalVisible, setModalVisible] = useState(false);
   const [editingDrug, setEditingDrug] = useState<Partial<CaseDrug> | null>(null);
   const [editingId, setEditingId] = useState<number | null>(null);
+
+  // Convert drug to WHODrugCoding for autocomplete
+  const currentCoding: WHODrugCoding | undefined = useMemo(() => {
+    if (!editingDrug?.whodrugCode || !editingDrug?.productName) {
+      return undefined;
+    }
+    return {
+      verbatimName: editingDrug.verbatimName || '',
+      whodrugCode: editingDrug.whodrugCode,
+      codedDrugName: editingDrug.productName,
+      atcCode: editingDrug.atcCode,
+      atcName: editingDrug.atcName,
+      whodrugVersion: editingDrug.whodrugVersion
+    };
+  }, [editingDrug?.whodrugCode, editingDrug?.productName, editingDrug?.verbatimName, editingDrug?.atcCode, editingDrug?.atcName, editingDrug?.whodrugVersion]);
+
+  // Handle WHO Drug coding selection
+  const handleWHODrugCodingChange = (coding: WHODrugCoding | null) => {
+    if (coding) {
+      setEditingDrug(prev => ({
+        ...prev,
+        productName: coding.codedDrugName || coding.verbatimName,
+        whodrugCode: coding.whodrugCode,
+        whodrugVersion: coding.whodrugVersion,
+        atcCode: coding.atcCode,
+        atcName: coding.atcName,
+        verbatimName: coding.verbatimName || prev?.verbatimName
+      }));
+    } else {
+      setEditingDrug(prev => ({
+        ...prev,
+        productName: '',
+        whodrugCode: undefined,
+        whodrugVersion: undefined,
+        atcCode: undefined,
+        atcName: undefined
+      }));
+    }
+  };
 
   const handleAdd = () => {
     setEditingDrug({ ...emptyDrug });
@@ -253,15 +296,46 @@ const DrugsSection: React.FC<DrugsSectionProps> = ({
                 </Form.Item>
               </Col>
               <Col span={12}>
-                <Form.Item label="Product Name" required>
+                <Form.Item label="Verbatim Name (as reported)">
                   <Input
-                    value={editingDrug.productName || ''}
-                    onChange={(e) => updateField('productName', e.target.value)}
-                    placeholder="Enter drug/product name"
+                    value={editingDrug.verbatimName || ''}
+                    onChange={(e) => updateField('verbatimName', e.target.value)}
+                    placeholder="Original drug name as reported"
                   />
                 </Form.Item>
               </Col>
             </Row>
+
+            <Row gutter={24}>
+              <Col span={24}>
+                <Form.Item
+                  label="Product Name (WHO Drug Coded)"
+                  required
+                  tooltip="Search for WHO Drug terms to auto-code the product"
+                >
+                  <WHODrugAutocomplete
+                    value={currentCoding}
+                    onChange={handleWHODrugCodingChange}
+                    verbatimText={editingDrug.verbatimName || ''}
+                    placeholder="Type to search WHO Drug dictionary..."
+                    disabled={disabled}
+                  />
+                </Form.Item>
+              </Col>
+            </Row>
+
+            {editingDrug.whodrugCode && (
+              <Row style={{ marginBottom: 16 }}>
+                <Col span={24}>
+                  <Text type="secondary" style={{ fontSize: 12 }}>
+                    Coded: <Text strong>{editingDrug.productName}</Text>
+                    {' '}(Code: {editingDrug.whodrugCode})
+                    {editingDrug.atcCode && ` | ATC: ${editingDrug.atcCode}`}
+                    {editingDrug.whodrugVersion && ` | v${editingDrug.whodrugVersion}`}
+                  </Text>
+                </Col>
+              </Row>
+            )}
 
             <Row gutter={24}>
               <Col span={12}>

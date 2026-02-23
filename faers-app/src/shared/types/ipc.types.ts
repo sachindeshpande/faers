@@ -119,6 +119,98 @@ import type {
   AuditExportResult
 } from './audit.types';
 
+// Phase 5 imports
+import type {
+  MedDRAVersion,
+  MedDRASearchResult,
+  MedDRAHierarchy,
+  MedDRACoding,
+  MedDRATreeNode,
+  MedDRAImportProgress,
+  MedDRAImportRequest,
+  MedDRASearchOptions,
+  MedDRABrowseRequest
+} from './meddra.types';
+import type {
+  WHODrugVersion,
+  WHODrugSearchResult,
+  WHODrugProduct,
+  WHODrugCoding,
+  ATCCode,
+  ATCTreeNode,
+  WHODrugImportProgress,
+  WHODrugImportRequest,
+  WHODrugSearchOptions,
+  WHODrugBrowseATCRequest
+} from './whodrug.types';
+import type {
+  SearchQuery,
+  SavedSearch,
+  SearchResults,
+  SearchableField
+} from './search.types';
+import type {
+  DuplicateCandidate,
+  DuplicateCheckResult,
+  DuplicateFilter,
+  DuplicateListItem,
+  MergeCasesRequest,
+  MergeCasesResult,
+  DuplicateResolution,
+  BatchDuplicateScanRequest,
+  BatchDuplicateScanResult,
+  MergedCase,
+  DuplicateCheckSettings
+} from './duplicate.types';
+import type {
+  CaseTemplate,
+  TemplateListItem,
+  TemplateFilter,
+  CreateTemplateRequest,
+  UpdateTemplateRequest,
+  ApplyTemplateResult
+} from './template.types';
+import type {
+  ImportJob,
+  ImportJobListItem,
+  ImportUploadResponse,
+  ColumnMapping,
+  ImportValidationSummary,
+  ImportExecuteOptions,
+  ImportExecuteResult,
+  SavedColumnMapping
+} from './import.types';
+import type {
+  ValidationRule,
+  ValidationRuleListItem,
+  ValidationSummary,
+  CreateValidationRuleRequest,
+  UpdateValidationRuleRequest,
+  TestRuleRequest,
+  TestRuleResult,
+  ValidationRuleFilter,
+  AcknowledgeWarningRequest
+} from './validation.types';
+import type {
+  EsgApiSettings,
+  TestConnectionResult,
+  SubmitToFdaRequest,
+  SubmitToFdaResult,
+  CheckAcknowledgmentResult,
+  PollingStatus,
+  PreSubmissionSummary,
+  ApiSubmissionAttempt,
+  SaveCredentialsRequest,
+  SaveEsgSettingsRequest,
+  ApiSubmissionProgress,
+  DemoModeConfig,
+  DemoScenario,
+  DemoSpeed,
+  DemoSampleCase,
+  ResetDemoDataResult,
+  SetDemoConfigRequest
+} from './esgApi.types';
+
 // IPC Channel names
 export const IPC_CHANNELS = {
   // Case operations
@@ -321,7 +413,146 @@ export const IPC_CHANNELS = {
   PSR_GET_CASES: 'psr:getCases',
   PSR_GET_ELIGIBLE_CASES: 'psr:getEligibleCases',
   PSR_UPDATE_CASES: 'psr:updateCases',
-  PSR_DASHBOARD: 'psr:dashboard'
+  PSR_DASHBOARD: 'psr:dashboard',
+
+  // ============================================================
+  // Phase 5: MedDRA Dictionary
+  // ============================================================
+  MEDDRA_VERSIONS: 'meddra:versions',
+  MEDDRA_ACTIVE_VERSION: 'meddra:activeVersion',
+  MEDDRA_ACTIVATE_VERSION: 'meddra:activateVersion',
+  MEDDRA_DELETE_VERSION: 'meddra:deleteVersion',
+  MEDDRA_IMPORT: 'meddra:import',
+  MEDDRA_IMPORT_PROGRESS: 'meddra:importProgress',
+  MEDDRA_SEARCH: 'meddra:search',
+  MEDDRA_BROWSE: 'meddra:browse',
+  MEDDRA_HIERARCHY: 'meddra:hierarchy',
+  MEDDRA_HIERARCHY_LLT: 'meddra:hierarchyLlt',
+  MEDDRA_CODE: 'meddra:code',
+  MEDDRA_CODE_PT: 'meddra:codePt',
+  MEDDRA_SELECT_FOLDER: 'meddra:selectFolder',
+
+  // ============================================================
+  // Phase 5: WHO Drug Dictionary
+  // ============================================================
+  WHODRUG_VERSIONS: 'whodrug:versions',
+  WHODRUG_ACTIVE_VERSION: 'whodrug:activeVersion',
+  WHODRUG_ACTIVATE_VERSION: 'whodrug:activateVersion',
+  WHODRUG_DELETE_VERSION: 'whodrug:deleteVersion',
+  WHODRUG_IMPORT: 'whodrug:import',
+  WHODRUG_IMPORT_PROGRESS: 'whodrug:importProgress',
+  WHODRUG_SEARCH: 'whodrug:search',
+  WHODRUG_GET_PRODUCT: 'whodrug:getProduct',
+  WHODRUG_BROWSE_ATC: 'whodrug:browseAtc',
+  WHODRUG_PRODUCTS_BY_ATC: 'whodrug:productsByAtc',
+  WHODRUG_ATC_HIERARCHY: 'whodrug:atcHierarchy',
+  WHODRUG_CODE: 'whodrug:code',
+  WHODRUG_SELECT_FOLDER: 'whodrug:selectFolder',
+
+  // ============================================================
+  // Phase 5: Advanced Search
+  // ============================================================
+  SEARCH_FULLTEXT: 'search:fulltext',
+  SEARCH_ADVANCED: 'search:advanced',
+  SEARCH_SAVE: 'search:save',
+  SEARCH_UPDATE_SAVED: 'search:updateSaved',
+  SEARCH_DELETE_SAVED: 'search:deleteSaved',
+  SEARCH_LIST_SAVED: 'search:listSaved',
+  SEARCH_EXECUTE_SAVED: 'search:executeSaved',
+  SEARCH_GET_FIELDS: 'search:getFields',
+
+  // ============================================================
+  // Phase 5: Duplicate Detection
+  // ============================================================
+  DUPLICATE_CHECK: 'duplicate:check',
+  DUPLICATE_GET_CANDIDATES: 'duplicate:getCandidates',
+  DUPLICATE_GET_CANDIDATE: 'duplicate:getCandidate',
+  DUPLICATE_RESOLVE: 'duplicate:resolve',
+  DUPLICATE_GET_PENDING: 'duplicate:getPending',
+  DUPLICATE_GET_STATS: 'duplicate:getStats',
+  DUPLICATE_MERGE: 'duplicate:merge',
+  DUPLICATE_GET_MERGE_HISTORY: 'duplicate:getMergeHistory',
+  DUPLICATE_GET_SETTINGS: 'duplicate:getSettings',
+  DUPLICATE_UPDATE_SETTINGS: 'duplicate:updateSettings',
+  DUPLICATE_BATCH_SCAN: 'duplicate:batchScan',
+  DUPLICATE_GET_SCAN_STATUS: 'duplicate:getScanStatus',
+
+  // ============================================================
+  // Phase 5: Case Templates
+  // ============================================================
+  TEMPLATE_CREATE: 'template:create',
+  TEMPLATE_UPDATE: 'template:update',
+  TEMPLATE_DELETE: 'template:delete',
+  TEMPLATE_GET: 'template:get',
+  TEMPLATE_LIST: 'template:list',
+  TEMPLATE_APPLY: 'template:apply',
+  TEMPLATE_APPROVE: 'template:approve',
+  TEMPLATE_CREATE_FROM_CASE: 'template:createFromCase',
+
+  // ============================================================
+  // Phase 5: Bulk Import
+  // ============================================================
+  IMPORT_UPLOAD: 'import:upload',
+  IMPORT_SET_MAPPING: 'import:setMapping',
+  IMPORT_VALIDATE: 'import:validate',
+  IMPORT_EXECUTE: 'import:execute',
+  IMPORT_GET: 'import:get',
+  IMPORT_LIST: 'import:list',
+  IMPORT_GET_ERRORS: 'import:getErrors',
+  IMPORT_CANCEL: 'import:cancel',
+  IMPORT_SAVE_MAPPING: 'import:saveMapping',
+  IMPORT_LIST_MAPPINGS: 'import:listMappings',
+  IMPORT_DELETE_MAPPING: 'import:deleteMapping',
+
+  // ============================================================
+  // Phase 5: Validation Engine
+  // ============================================================
+  VALIDATION_RUN: 'validation:run',
+  VALIDATION_ACKNOWLEDGE: 'validation:acknowledge',
+  VALIDATION_GET_RESULTS: 'validation:getResults',
+  VALIDATION_RULES_LIST: 'validation:rulesList',
+  VALIDATION_RULE_GET: 'validation:ruleGet',
+  VALIDATION_RULE_CREATE: 'validation:ruleCreate',
+  VALIDATION_RULE_UPDATE: 'validation:ruleUpdate',
+  VALIDATION_RULE_DELETE: 'validation:ruleDelete',
+  VALIDATION_RULE_TEST: 'validation:ruleTest',
+  VALIDATION_RULE_TOGGLE: 'validation:ruleToggle',
+
+  // ============================================================
+  // Phase 2B: ESG NextGen API Integration
+  // ============================================================
+  ESG_API_TEST_CONNECTION: 'esg:testConnection',
+  ESG_API_GET_SETTINGS: 'esg:getSettings',
+  ESG_API_SAVE_SETTINGS: 'esg:saveSettings',
+  ESG_API_SAVE_CREDENTIALS: 'esg:saveCredentials',
+  ESG_API_HAS_CREDENTIALS: 'esg:hasCredentials',
+  ESG_API_CLEAR_CREDENTIALS: 'esg:clearCredentials',
+  ESG_API_SUBMIT_CASE: 'esg:submitCase',
+  ESG_API_RETRY_SUBMISSION: 'esg:retrySubmission',
+  ESG_API_CANCEL_SUBMISSION: 'esg:cancelSubmission',
+  ESG_API_GET_PROGRESS: 'esg:getProgress',
+  ESG_API_GET_PRE_SUMMARY: 'esg:getPreSubmissionSummary',
+  ESG_API_CHECK_ACK: 'esg:checkAcknowledgment',
+  ESG_API_GET_ATTEMPTS: 'esg:getAttempts',
+  ESG_API_POLLING_START: 'esg:pollingStart',
+  ESG_API_POLLING_STOP: 'esg:pollingStop',
+  ESG_API_POLLING_STATUS: 'esg:pollingStatus',
+  // Event channel (main -> renderer push)
+  ESG_SUBMISSION_PROGRESS: 'esg:submission-progress',
+
+  // ============================================================
+  // Phase 2B: Demo Mode
+  // ============================================================
+  DEMO_GET_STATUS: 'demo:getStatus',
+  DEMO_ACTIVATE: 'demo:activate',
+  DEMO_DEACTIVATE: 'demo:deactivate',
+  DEMO_GET_CONFIG: 'demo:getConfig',
+  DEMO_SET_CONFIG: 'demo:setConfig',
+  DEMO_GET_SAMPLE_CASES: 'demo:getSampleCases',
+  DEMO_CREATE_SAMPLE_CASES: 'demo:createSampleCases',
+  DEMO_RESET_DATA: 'demo:resetData',
+  // Event channel (main -> renderer push)
+  DEMO_MODE_CHANGED: 'demo:mode-changed'
 } as const;
 
 // Type for channel names
@@ -705,6 +936,144 @@ export interface NotificationListResponse {
   unreadCount: number;
 }
 
+// ============================================================
+// Phase 5: MedDRA Types (re-export for convenience)
+// ============================================================
+
+export type {
+  MedDRAVersion,
+  MedDRASearchResult,
+  MedDRAHierarchy,
+  MedDRACoding,
+  MedDRATreeNode,
+  MedDRAImportProgress,
+  MedDRAImportRequest,
+  MedDRASearchOptions,
+  MedDRABrowseRequest
+};
+
+// ============================================================
+// Phase 5: WHO Drug Types (re-export for convenience)
+// ============================================================
+
+export type {
+  WHODrugVersion,
+  WHODrugSearchResult,
+  WHODrugProduct,
+  WHODrugCoding,
+  ATCTreeNode,
+  WHODrugImportProgress,
+  WHODrugImportRequest,
+  WHODrugSearchOptions,
+  WHODrugBrowseATCRequest
+};
+
+// ============================================================
+// Phase 5: Search Types (re-export for convenience)
+// ============================================================
+
+export type {
+  SearchQuery,
+  SavedSearch,
+  SearchResults,
+  SearchableField
+};
+
+// ============================================================
+// Phase 5: Duplicate Types (re-export for convenience)
+// ============================================================
+
+export type {
+  DuplicateCandidate,
+  DuplicateCheckResult,
+  DuplicateFilter,
+  DuplicateListItem,
+  MergeCasesRequest,
+  MergeCasesResult,
+  DuplicateResolution,
+  BatchDuplicateScanRequest,
+  BatchDuplicateScanResult,
+  MergedCase,
+  DuplicateCheckSettings
+};
+
+// ============================================================
+// Phase 5: Template Types (re-export for convenience)
+// ============================================================
+
+export type {
+  CaseTemplate,
+  TemplateListItem,
+  TemplateFilter,
+  CreateTemplateRequest,
+  UpdateTemplateRequest,
+  ApplyTemplateResult
+};
+
+// ============================================================
+// Phase 5: Import Types (re-export for convenience)
+// ============================================================
+
+export type {
+  ImportJob,
+  ImportJobListItem,
+  ImportUploadResponse,
+  ColumnMapping,
+  ImportValidationSummary,
+  ImportExecuteOptions,
+  ImportExecuteResult,
+  SavedColumnMapping
+};
+
+// ============================================================
+// Phase 5: Validation Types (re-export for convenience)
+// ============================================================
+
+export type {
+  ValidationRule,
+  ValidationRuleListItem,
+  ValidationSummary,
+  CreateValidationRuleRequest,
+  UpdateValidationRuleRequest,
+  TestRuleRequest,
+  TestRuleResult,
+  ValidationRuleFilter,
+  AcknowledgeWarningRequest
+};
+
+// ============================================================
+// Phase 2B: ESG API Types (re-export for convenience)
+// ============================================================
+
+export type {
+  EsgApiSettings,
+  TestConnectionResult,
+  SubmitToFdaRequest,
+  SubmitToFdaResult,
+  CheckAcknowledgmentResult,
+  PollingStatus,
+  PreSubmissionSummary,
+  ApiSubmissionAttempt,
+  SaveCredentialsRequest,
+  SaveEsgSettingsRequest,
+  ApiSubmissionProgress,
+  DemoModeConfig,
+  DemoScenario,
+  DemoSpeed,
+  DemoSampleCase,
+  ResetDemoDataResult,
+  SetDemoConfigRequest
+} from './esgApi.types';
+
+// Demo mode status response
+export interface DemoModeStatus {
+  isActive: boolean;
+  scenario: DemoScenario;
+  speed: DemoSpeed;
+  sampleCasesAvailable: number;
+  mockSubmissionsCount: number;
+}
+
 // Exposed API interface for renderer
 export interface ElectronAPI {
   // Case operations
@@ -908,6 +1277,143 @@ export interface ElectronAPI {
   getEligibleCasesForPSR: (psrId: number) => Promise<IPCResponse<PSRCase[]>>;
   updatePSRCases: (request: UpdatePSRCasesRequest) => Promise<IPCResponse<PSR>>;
   getPSRDashboard: () => Promise<IPCResponse<PSRDashboardSummary>>;
+
+  // ============================================================
+  // Phase 5: MedDRA Dictionary
+  // ============================================================
+  meddraVersions: () => Promise<IPCResponse<MedDRAVersion[]>>;
+  meddraActiveVersion: () => Promise<IPCResponse<MedDRAVersion | null>>;
+  meddraActivateVersion: (id: number) => Promise<IPCResponse<void>>;
+  meddraDeleteVersion: (id: number) => Promise<IPCResponse<void>>;
+  meddraImport: (request: MedDRAImportRequest, importedBy?: string) => Promise<IPCResponse<MedDRAVersion>>;
+  meddraImportProgress: () => Promise<IPCResponse<MedDRAImportProgress | null>>;
+  meddraSearch: (options: MedDRASearchOptions) => Promise<IPCResponse<MedDRASearchResult[]>>;
+  meddraBrowse: (request: MedDRABrowseRequest) => Promise<IPCResponse<MedDRATreeNode[]>>;
+  meddraHierarchy: (ptCode: number, versionId?: number) => Promise<IPCResponse<MedDRAHierarchy[]>>;
+  meddraHierarchyLLT: (lltCode: number, versionId?: number) => Promise<IPCResponse<MedDRAHierarchy[]>>;
+  meddraCode: (lltCode: number, verbatimText: string, codedBy?: string) => Promise<IPCResponse<MedDRACoding | null>>;
+  meddraCodePT: (ptCode: number, verbatimText: string, codedBy?: string) => Promise<IPCResponse<MedDRACoding | null>>;
+  meddraSelectFolder: () => Promise<IPCResponse<{ folderPath: string; filePaths: Record<string, string> } | null>>;
+
+  // ============================================================
+  // Phase 5: WHO Drug Dictionary
+  // ============================================================
+  whodrugVersions: () => Promise<IPCResponse<WHODrugVersion[]>>;
+  whodrugActiveVersion: () => Promise<IPCResponse<WHODrugVersion | null>>;
+  whodrugActivateVersion: (id: number) => Promise<IPCResponse<void>>;
+  whodrugDeleteVersion: (id: number) => Promise<IPCResponse<void>>;
+  whodrugImport: (request: WHODrugImportRequest, importedBy?: string) => Promise<IPCResponse<WHODrugVersion>>;
+  whodrugImportProgress: () => Promise<IPCResponse<WHODrugImportProgress | null>>;
+  whodrugSearch: (options: WHODrugSearchOptions) => Promise<IPCResponse<WHODrugSearchResult[]>>;
+  whodrugGetProduct: (drugCode: string, versionId?: number) => Promise<IPCResponse<WHODrugProduct | null>>;
+  whodrugBrowseATC: (request: WHODrugBrowseATCRequest) => Promise<IPCResponse<ATCTreeNode[]>>;
+  whodrugProductsByATC: (atcCode: string, versionId?: number, limit?: number) => Promise<IPCResponse<WHODrugSearchResult[]>>;
+  whodrugATCHierarchy: (drugCode: string, versionId?: number) => Promise<IPCResponse<ATCCode[]>>;
+  whodrugCode: (drugCode: string, verbatimText: string, codedBy?: string) => Promise<IPCResponse<WHODrugCoding | null>>;
+  whodrugSelectFolder: () => Promise<IPCResponse<{ folderPath: string; filePaths: Record<string, string> } | null>>;
+
+  // ============================================================
+  // Phase 5: Advanced Search
+  // ============================================================
+  searchCasesFulltext: (query: string, page?: number, pageSize?: number) => Promise<IPCResponse<SearchResults>>;
+  searchCasesAdvanced: (query: SearchQuery, page?: number, pageSize?: number) => Promise<IPCResponse<SearchResults>>;
+  saveSearch: (name: string, description: string | undefined, query: SearchQuery, isShared: boolean) => Promise<IPCResponse<SavedSearch>>;
+  updateSavedSearch: (id: number, updates: Partial<SavedSearch>) => Promise<IPCResponse<SavedSearch>>;
+  deleteSavedSearch: (id: number) => Promise<IPCResponse<void>>;
+  getSavedSearches: (includeShared?: boolean) => Promise<IPCResponse<SavedSearch[]>>;
+  executeSavedSearch: (id: number, page?: number, pageSize?: number) => Promise<IPCResponse<SearchResults>>;
+  getSearchableFields: () => Promise<IPCResponse<SearchableField[]>>;
+
+  // ============================================================
+  // Phase 5: Duplicate Detection
+  // ============================================================
+  checkDuplicates: (caseId: string, threshold?: number) => Promise<IPCResponse<DuplicateCheckResult>>;
+  getDuplicateCandidates: (filter?: DuplicateFilter, limit?: number, offset?: number) => Promise<IPCResponse<{ items: DuplicateListItem[]; total: number }>>;
+  getDuplicateCandidate: (id: number) => Promise<IPCResponse<DuplicateCandidate>>;
+  resolveDuplicate: (id: number, resolution: DuplicateResolution, resolvedBy?: string, notes?: string) => Promise<IPCResponse<DuplicateCandidate>>;
+  getPendingDuplicates: (caseId: string) => Promise<IPCResponse<DuplicateCandidate[]>>;
+  getDuplicateStats: () => Promise<IPCResponse<{ pending: number; dismissed: number; confirmed: number; merged: number }>>;
+  mergeCases: (request: MergeCasesRequest) => Promise<IPCResponse<MergeCasesResult>>;
+  getMergeHistory: (caseId: string) => Promise<IPCResponse<MergedCase[]>>;
+  getDuplicateSettings: () => Promise<IPCResponse<DuplicateCheckSettings>>;
+  updateDuplicateSettings: (settings: Partial<DuplicateCheckSettings>) => Promise<IPCResponse<DuplicateCheckSettings>>;
+  startBatchDuplicateScan: (request: BatchDuplicateScanRequest) => Promise<IPCResponse<{ jobId: string }>>;
+  getBatchDuplicateScanStatus: (jobId: string) => Promise<IPCResponse<BatchDuplicateScanResult>>;
+
+  // ============================================================
+  // Phase 5: Case Templates
+  // ============================================================
+  createTemplate: (request: CreateTemplateRequest) => Promise<IPCResponse<CaseTemplate>>;
+  updateTemplate: (request: UpdateTemplateRequest) => Promise<IPCResponse<CaseTemplate>>;
+  deleteTemplate: (id: number) => Promise<IPCResponse<void>>;
+  getTemplate: (id: number) => Promise<IPCResponse<CaseTemplate>>;
+  getTemplates: (filter?: TemplateFilter, limit?: number, offset?: number) => Promise<IPCResponse<{ items: TemplateListItem[]; total: number }>>;
+  applyTemplate: (templateId: number) => Promise<IPCResponse<ApplyTemplateResult>>;
+  approveTemplate: (id: number) => Promise<IPCResponse<CaseTemplate>>;
+  createTemplateFromCase: (caseId: string, name: string, description?: string, category?: string) => Promise<IPCResponse<CaseTemplate>>;
+
+  // ============================================================
+  // Phase 5: Bulk Import
+  // ============================================================
+  uploadImportFile: (filePath: string) => Promise<IPCResponse<ImportUploadResponse>>;
+  setImportMapping: (jobId: number, mapping: ColumnMapping[]) => Promise<IPCResponse<ImportJob>>;
+  validateImport: (jobId: number) => Promise<IPCResponse<ImportValidationSummary>>;
+  executeImport: (jobId: number, options: ImportExecuteOptions) => Promise<IPCResponse<ImportExecuteResult>>;
+  getImportJob: (jobId: number) => Promise<IPCResponse<ImportJob>>;
+  getImportJobs: (limit?: number, offset?: number) => Promise<IPCResponse<{ items: ImportJobListItem[]; total: number }>>;
+  getImportErrors: (jobId: number) => Promise<IPCResponse<{ rowNumber: number; errors: string[] }[]>>;
+  cancelImport: (jobId: number) => Promise<IPCResponse<void>>;
+  saveColumnMapping: (name: string, description: string | undefined, mapping: ColumnMapping[]) => Promise<IPCResponse<SavedColumnMapping>>;
+  getSavedColumnMappings: () => Promise<IPCResponse<SavedColumnMapping[]>>;
+  deleteColumnMapping: (id: number) => Promise<IPCResponse<void>>;
+
+  // ============================================================
+  // Phase 5: Validation Engine
+  // ============================================================
+  runValidation: (caseId: string) => Promise<IPCResponse<ValidationSummary>>;
+  acknowledgeWarnings: (request: AcknowledgeWarningRequest) => Promise<IPCResponse<void>>;
+  getValidationResults: (caseId: string) => Promise<IPCResponse<ValidationSummary>>;
+  getValidationRules: (filter?: ValidationRuleFilter) => Promise<IPCResponse<ValidationRuleListItem[]>>;
+  getValidationRule: (id: number) => Promise<IPCResponse<ValidationRule>>;
+  createValidationRule: (request: CreateValidationRuleRequest) => Promise<IPCResponse<ValidationRule>>;
+  updateValidationRule: (request: UpdateValidationRuleRequest) => Promise<IPCResponse<ValidationRule>>;
+  deleteValidationRule: (id: number) => Promise<IPCResponse<void>>;
+  testValidationRule: (request: TestRuleRequest) => Promise<IPCResponse<TestRuleResult>>;
+  toggleValidationRule: (id: number, isActive: boolean) => Promise<IPCResponse<ValidationRule>>;
+
+  // ============================================================
+  // Phase 2B: ESG NextGen API
+  // ============================================================
+  esgTestConnection: () => Promise<IPCResponse<TestConnectionResult>>;
+  esgGetSettings: () => Promise<IPCResponse<EsgApiSettings>>;
+  esgSaveSettings: (settings: SaveEsgSettingsRequest) => Promise<IPCResponse<void>>;
+  esgSaveCredentials: (data: SaveCredentialsRequest) => Promise<IPCResponse<void>>;
+  esgHasCredentials: () => Promise<IPCResponse<boolean>>;
+  esgClearCredentials: () => Promise<IPCResponse<void>>;
+  esgSubmitCase: (data: SubmitToFdaRequest) => Promise<IPCResponse<SubmitToFdaResult>>;
+  esgRetrySubmission: (caseId: string) => Promise<IPCResponse<SubmitToFdaResult>>;
+  esgCancelSubmission: (caseId: string) => Promise<IPCResponse<void>>;
+  esgGetProgress: (caseId: string) => Promise<IPCResponse<ApiSubmissionProgress | null>>;
+  esgGetPreSubmissionSummary: (caseId: string) => Promise<IPCResponse<PreSubmissionSummary>>;
+  esgCheckAcknowledgment: (caseId: string) => Promise<IPCResponse<CheckAcknowledgmentResult>>;
+  esgGetAttempts: (caseId: string) => Promise<IPCResponse<ApiSubmissionAttempt[]>>;
+  esgStartPolling: () => Promise<IPCResponse<void>>;
+  esgStopPolling: () => Promise<IPCResponse<void>>;
+  esgGetPollingStatus: () => Promise<IPCResponse<PollingStatus>>;
+  onEsgSubmissionProgress: (callback: (progress: ApiSubmissionProgress) => void) => () => void;
+
+  // ============================================================
+  // Phase 2B: Demo Mode
+  // ============================================================
+  demoGetStatus: () => Promise<IPCResponse<DemoModeStatus>>;
+  demoActivate: () => Promise<IPCResponse<void>>;
+  demoDeactivate: () => Promise<IPCResponse<void>>;
+  demoGetConfig: () => Promise<IPCResponse<DemoModeConfig>>;
+  demoSetConfig: (config: SetDemoConfigRequest) => Promise<IPCResponse<void>>;
+  demoGetSampleCases: () => Promise<IPCResponse<DemoSampleCase[]>>;
+  demoCreateSampleCases: () => Promise<IPCResponse<{ created: number; errors: string[] }>>;
+  demoResetData: () => Promise<IPCResponse<ResetDemoDataResult>>;
+  onDemoModeChanged: (callback: (data: { isActive: boolean; config: DemoModeConfig }) => void) => () => void;
 }
 
 // Declare the electronAPI on the window object

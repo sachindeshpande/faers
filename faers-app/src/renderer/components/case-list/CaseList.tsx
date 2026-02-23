@@ -53,13 +53,19 @@ const CaseList: React.FC<CaseListProps> = ({ onSelectCase }) => {
   const { cases, totalCases, isLoading, filters } = useCaseList();
   const { fetchCases, createCase, deleteCase, duplicateCase } = useCaseActions();
 
-  const [searchText, setSearchText] = useState('');
-  const [statusFilter, setStatusFilter] = useState<CaseStatus | undefined>();
+  const [searchText, setSearchText] = useState(filters.search || '');
+  const [statusFilter, setStatusFilter] = useState<CaseStatus | undefined>(filters.status);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [caseToDelete, setCaseToDelete] = useState<string | null>(null);
 
-  // Fetch cases when filters change
+  // Sync local state with store filters when they change externally (e.g., from dashboard)
+  useEffect(() => {
+    setStatusFilter(filters.status);
+    setSearchText(filters.search || '');
+  }, [filters.status, filters.search]);
+
+  // Fetch cases on mount
   useEffect(() => {
     fetchCases();
   }, []);
@@ -216,7 +222,7 @@ const CaseList: React.FC<CaseListProps> = ({ onSelectCase }) => {
     }
   ];
 
-  // Status tag colors (Phase 2: Extended statuses)
+  // Status tag colors (Phase 2 & 2B: Extended statuses)
   const getStatusTag = (status: CaseStatus) => {
     switch (status) {
       case 'Draft':
@@ -225,8 +231,12 @@ const CaseList: React.FC<CaseListProps> = ({ onSelectCase }) => {
         return <Tag color="cyan">Ready</Tag>;
       case 'Exported':
         return <Tag color="purple">{status}</Tag>;
+      case 'Submitting':
+        return <Tag color="orange">{status}</Tag>;
       case 'Submitted':
         return <Tag color="geekblue">{status}</Tag>;
+      case 'Submission Failed':
+        return <Tag color="red">{status}</Tag>;
       case 'Acknowledged':
         return <Tag color="green">{status}</Tag>;
       case 'Rejected':
@@ -346,7 +356,7 @@ const CaseList: React.FC<CaseListProps> = ({ onSelectCase }) => {
           />
 
           <Select
-            style={{ width: 160 }}
+            style={{ width: 180 }}
             value={statusFilter || 'all'}
             onChange={handleStatusChange}
             options={[
@@ -354,7 +364,9 @@ const CaseList: React.FC<CaseListProps> = ({ onSelectCase }) => {
               { value: 'Draft', label: 'Draft' },
               { value: 'Ready for Export', label: 'Ready for Export' },
               { value: 'Exported', label: 'Exported' },
+              { value: 'Submitting', label: 'Submitting' },
               { value: 'Submitted', label: 'Submitted' },
+              { value: 'Submission Failed', label: 'Submission Failed' },
               { value: 'Acknowledged', label: 'Acknowledged' },
               { value: 'Rejected', label: 'Rejected' }
             ]}

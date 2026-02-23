@@ -42,6 +42,7 @@ export class CaseRepository {
    * Get list of cases with optional filtering
    */
   findAll(options: CaseFilterOptions = {}): { cases: CaseListItem[]; total: number } {
+    console.log('[CaseRepo.findAll] Called with options:', JSON.stringify(options));
     const { status, search, startDate, endDate, limit = 50, offset = 0 } = options;
 
     let whereClause = 'WHERE deleted_at IS NULL';
@@ -96,6 +97,10 @@ export class CaseRepository {
       updated_at: string;
       product_name: string | null;
     }>;
+
+    // Log first few cases for debugging
+    console.log('[CaseRepo.findAll] Found', cases.length, 'cases, statuses:',
+      cases.slice(0, 5).map(c => `${c.id}:${c.status}`).join(', '));
 
     return {
       cases: cases.map(row => ({
@@ -160,10 +165,15 @@ export class CaseRepository {
    * Update an existing case
    */
   update(id: string, data: UpdateCaseDTO): Case | null {
+    console.log(`[CaseRepo.update] Updating case ${id} with data:`, JSON.stringify(data));
+
     const existingCase = this.findById(id);
     if (!existingCase) {
+      console.log(`[CaseRepo.update] Case not found: ${id}`);
       return null;
     }
+
+    console.log(`[CaseRepo.update] Existing case status: '${existingCase.status}'`);
 
     const now = new Date().toISOString();
     const updates: string[] = ['updated_at = ?'];
@@ -216,7 +226,18 @@ export class CaseRepository {
       senderComments: 'sender_comments',
       senderDiagnosis: 'sender_diagnosis',
       exportedAt: 'exported_at',
-      exportedXmlPath: 'exported_xml_path'
+      exportedXmlPath: 'exported_xml_path',
+      // Phase 2: Submission tracking fields
+      submissionId: 'submission_id',
+      lastSubmittedAt: 'last_submitted_at',
+      srpConfirmationNumber: 'srp_confirmation_number',
+      acknowledgmentDate: 'acknowledgment_date',
+      fdaCaseNumber: 'fda_case_number',
+      // Phase 2B: ESG API submission fields
+      esgSubmissionId: 'esg_submission_id',
+      esgCoreId: 'esg_core_id',
+      apiAttemptCount: 'api_attempt_count',
+      apiLastError: 'api_last_error'
     };
 
     for (const [key, column] of Object.entries(fieldMappings)) {
@@ -233,9 +254,16 @@ export class CaseRepository {
     const query = `UPDATE cases SET ${updates.join(', ')} WHERE id = ? AND deleted_at IS NULL`;
     values.push(id);
 
-    this.db.prepare(query).run(...values);
+    console.log(`[CaseRepo.update] Executing SQL: ${query}`);
+    console.log(`[CaseRepo.update] Values:`, values);
 
-    return this.findById(id);
+    const result = this.db.prepare(query).run(...values);
+    console.log(`[CaseRepo.update] SQL result - changes: ${result.changes}`);
+
+    const updatedCase = this.findById(id);
+    console.log(`[CaseRepo.update] After update, status: '${updatedCase?.status}'`);
+
+    return updatedCase;
   }
 
   /**
@@ -474,7 +502,23 @@ export class CaseRepository {
       // Metadata
       version: row.version as number,
       exportedAt: row.exported_at as string | undefined,
-      exportedXmlPath: row.exported_xml_path as string | undefined
+      exportedXmlPath: row.exported_xml_path as string | undefined,
+
+      // Workflow Status (Phase 3)
+      workflowStatus: row.workflow_status as string | undefined,
+
+      // Phase 2: Submission tracking fields
+      submissionId: row.submission_id as string | undefined,
+      lastSubmittedAt: row.last_submitted_at as string | undefined,
+      srpConfirmationNumber: row.srp_confirmation_number as string | undefined,
+      acknowledgmentDate: row.acknowledgment_date as string | undefined,
+      fdaCaseNumber: row.fda_case_number as string | undefined,
+
+      // Phase 2B: ESG API submission fields
+      esgSubmissionId: row.esg_submission_id as string | undefined,
+      esgCoreId: row.esg_core_id as string | undefined,
+      apiAttemptCount: row.api_attempt_count as number | undefined,
+      apiLastError: row.api_last_error as string | undefined
     };
   }
 }

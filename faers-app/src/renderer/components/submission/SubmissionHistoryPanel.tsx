@@ -13,7 +13,9 @@ import {
   SendOutlined,
   SafetyCertificateOutlined,
   CloseCircleOutlined,
-  RollbackOutlined
+  RollbackOutlined,
+  LoadingOutlined,
+  ReloadOutlined
 } from '@ant-design/icons';
 import type { SubmissionHistoryEntry, SubmissionEventType } from '../../../shared/types/case.types';
 import dayjs from 'dayjs';
@@ -66,6 +68,36 @@ const eventConfig: Record<
     icon: <CloseCircleOutlined />,
     color: 'red',
     label: 'FDA Rejected'
+  },
+  api_submitting: {
+    icon: <LoadingOutlined />,
+    color: 'orange',
+    label: 'API Submission In Progress'
+  },
+  api_submit_success: {
+    icon: <CheckCircleOutlined />,
+    color: 'green',
+    label: 'API Submission Successful'
+  },
+  api_submit_failed: {
+    icon: <CloseCircleOutlined />,
+    color: 'red',
+    label: 'API Submission Failed'
+  },
+  api_retry: {
+    icon: <ReloadOutlined />,
+    color: 'orange',
+    label: 'API Submission Retry'
+  },
+  ack_received: {
+    icon: <SafetyCertificateOutlined />,
+    color: 'green',
+    label: 'Acknowledgment Received'
+  },
+  nack_received: {
+    icon: <CloseCircleOutlined />,
+    color: 'red',
+    label: 'Negative Acknowledgment (NACK)'
   }
 };
 
@@ -166,6 +198,69 @@ const SubmissionHistoryPanel: React.FC<SubmissionHistoryPanelProps> = ({
         <div key="prev">
           <Text type="secondary">Previous Status: </Text>
           <Tag>{details.previousStatus as string}</Tag>
+        </div>
+      );
+    }
+
+    // ESG API submission details
+    if (details.esgSubmissionId) {
+      items.push(
+        <div key="esgSubmissionId">
+          <Text type="secondary">ESG Submission ID: </Text>
+          <Text code>{details.esgSubmissionId as string}</Text>
+        </div>
+      );
+    }
+
+    if (details.esgCoreId) {
+      items.push(
+        <div key="esgCoreId">
+          <Text type="secondary">ESG Core ID: </Text>
+          <Text strong>{details.esgCoreId as string}</Text>
+        </div>
+      );
+    }
+
+    if (details.error) {
+      items.push(
+        <div key="apiError">
+          <Text type="secondary">Error: </Text>
+          <Text type="danger">{details.error as string}</Text>
+        </div>
+      );
+    }
+
+    if (details.errorCategory) {
+      items.push(
+        <div key="errorCategory">
+          <Text type="secondary">Error Category: </Text>
+          <Tag color="red">{details.errorCategory as string}</Tag>
+        </div>
+      );
+    }
+
+    if (details.ackType) {
+      const ackColors: Record<string, string> = {
+        ACK1: 'processing',
+        ACK2: 'success',
+        ACK3: 'success',
+        NACK: 'error'
+      };
+      items.push(
+        <div key="ackType">
+          <Text type="secondary">Acknowledgment: </Text>
+          <Tag color={ackColors[details.ackType as string] || 'default'}>
+            {details.ackType as string}
+          </Tag>
+        </div>
+      );
+    }
+
+    if (details.attemptNumber) {
+      items.push(
+        <div key="attemptNumber">
+          <Text type="secondary">Attempt: </Text>
+          <Text>#{details.attemptNumber as number}</Text>
         </div>
       );
     }

@@ -3,15 +3,19 @@
  */
 
 // Case status enum - Phase 2: Extended for FDA ESG NextGen USP submission workflow
+// Phase 2B: Added 'Submitting' and 'Submission Failed' for API submission
 export type CaseStatus =
   | 'Draft'
   | 'Ready for Export'
   | 'Exported'
+  | 'Submitting'
   | 'Submitted'
   | 'Acknowledged'
+  | 'Submission Failed'
   | 'Rejected';
 
 // Submission History Event Types (Phase 2)
+// Phase 2B: Added API submission event types
 export type SubmissionEventType =
   | 'created'
   | 'marked_ready'
@@ -19,10 +23,17 @@ export type SubmissionEventType =
   | 'exported'
   | 'submitted'
   | 'acknowledged'
-  | 'rejected';
+  | 'rejected'
+  | 'api_submitting'
+  | 'api_submit_success'
+  | 'api_submit_failed'
+  | 'api_retry'
+  | 'ack_received'
+  | 'nack_received';
 
 // Acknowledgment Type (Phase 2)
-export type AcknowledgmentType = 'Accepted' | 'Rejected';
+// Phase 2B: Added granular ACK types for API acknowledgments
+export type AcknowledgmentType = 'Accepted' | 'Rejected' | 'ACK1' | 'ACK2' | 'ACK3' | 'NACK';
 
 // E2B Report Types (A.1.2)
 export enum ReportType {
@@ -298,6 +309,13 @@ export interface CaseDrug {
   manufacturerName?: string;
   lotNumber?: string;
   expirationDate?: string;
+
+  // Phase 5: WHO Drug coding fields
+  whodrugCode?: string;
+  whodrugVersion?: string;
+  atcCode?: string;
+  atcName?: string;
+  verbatimName?: string; // Original name as reported
 }
 
 // Drug-Reaction Matrix (B.4.k.16)
@@ -423,6 +441,13 @@ export interface Case {
   srpConfirmationNumber?: string;
   fdaCaseNumber?: string;
   acknowledgmentDate?: string;
+
+  // Phase 2B: ESG API Submission Tracking
+  esgSubmissionId?: string;
+  esgCoreId?: string;
+  apiSubmissionStartedAt?: string;
+  apiLastError?: string;
+  apiAttemptCount?: number;
 
   // Phase 4: Report Type Classification
   reportTypeClassification?: 'expedited' | 'non_expedited' | 'followup' | 'nullification';
@@ -605,6 +630,17 @@ export interface AppSettings {
   targetCenter: TargetCenter;
   // Track if user has confirmed production mode
   productionModeConfirmed: boolean;
+
+  // Phase 2B: ESG API Settings
+  esgApiConfigured?: boolean;
+  esgApiEnvironment?: SubmissionEnvironment;
+  esgSenderCompanyName?: string;
+  esgSenderContactName?: string;
+  esgSenderContactEmail?: string;
+  esgPollingIntervalMinutes?: number;
+  esgPollingTimeoutHours?: number;
+  esgMaxAutomaticRetries?: number;
+  esgMaxTotalAttempts?: number;
 }
 
 // Dashboard Statistics
@@ -616,9 +652,10 @@ export interface DashboardStats {
 }
 
 // Cases needing attention (for dashboard)
+// Phase 2B: Added API submission failure and ACK timeout reasons
 export interface NeedsAttentionItem {
   caseId: string;
-  reason: 'exported_not_submitted' | 'submitted_no_ack' | 'rejected';
+  reason: 'exported_not_submitted' | 'submitted_no_ack' | 'rejected' | 'submission_failed' | 'awaiting_ack_timeout';
   daysSinceEvent: number;
   lastEventDate: string;
 }

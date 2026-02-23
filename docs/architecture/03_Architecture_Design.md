@@ -1,7 +1,7 @@
 # FAERS Submission Application - Architecture & Design Document
 
-**Version:** 2.0
-**Phase:** 4 (Non-Expedited Reports, Follow-Ups & Periodic Safety Reports)
+**Version:** 3.0
+**Phase:** 4 (Non-Expedited Reports) + Phase 2B (ESG NextGen API Integration)
 **Last Updated:** January 2026
 **Status:** Implemented
 
@@ -20,7 +20,8 @@
 9. [Design Patterns](#9-design-patterns)
 10. [Cross-Cutting Concerns](#10-cross-cutting-concerns)
 11. [Phase 4 Architecture Extensions](#11-phase-4-architecture-extensions)
-12. [Future Architecture Considerations](#12-future-architecture-considerations)
+12. [Phase 2B Architecture Extensions](#12-phase-2b-architecture-extensions-esg-nextgen-api)
+13. [Future Architecture Considerations](#13-future-architecture-considerations)
 
 ---
 
@@ -1752,9 +1753,404 @@ The XMLGeneratorService was extended to support batch generation:
 
 ---
 
-## 12. Future Architecture Considerations
+## 12. Phase 2B Architecture Extensions: ESG NextGen API
 
-### 12.1 Phase 5: Data Management & MedDRA Integration
+Phase 2B adds automated FDA ESG NextGen API submission, replacing the manual USP upload workflow with direct REST API integration.
+
+### 12.1 New Service Layer Components
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    PHASE 2B: ESG API SERVICE LAYER                           │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                                                                               │
+│   ┌───────────────────────┐ ┌───────────────────────┐                        │
+│   │                       │ │                       │                        │
+│   │CredentialStorageService│ │    EsgAuthService    │                        │
+│   │                       │ │                       │                        │
+│   │ • saveCredentials()   │ │ • getAccessToken()    │                        │
+│   │ • getCredentials()    │ │ • refreshToken()      │                        │
+│   │ • hasCredentials()    │ │ • isTokenValid()      │                        │
+│   │ • clearCredentials()  │ │ • testConnection()    │                        │
+│   │                       │ │ • clearTokenCache()   │                        │
+│   │ Uses Electron         │ │                       │                        │
+│   │ safeStorage API       │ │ OAuth 2.0 Client      │                        │
+│   │ + AES-256 fallback    │ │ Credentials flow      │                        │
+│   │                       │ │                       │                        │
+│   └───────────────────────┘ └───────────────────────┘                        │
+│                                                                               │
+│   ┌───────────────────────┐ ┌───────────────────────┐                        │
+│   │                       │ │                       │                        │
+│   │    EsgApiService      │ │ EsgSubmissionService  │                        │
+│   │                       │ │                       │                        │
+│   │ • createSubmission()  │ │ • submitCase()        │                        │
+│   │ • uploadXml()         │ │ • retryFailed()       │                        │
+│   │ • finalize()          │ │ • cancelSubmission()  │                        │
+│   │ • getStatus()         │ │ • getProgress()       │                        │
+│   │ • checkAck()          │ │ • getPreSummary()     │                        │
+│   │                       │ │                       │                        │
+│   │ HTTPS client with     │ │ Orchestrates:         │                        │
+│   │ 30s timeout per req   │ │ validate → XML →      │                        │
+│   │ Error categorization  │ │ auth → submit →       │                        │
+│   │                       │ │ finalize              │                        │
+│   └───────────────────────┘ └───────────────────────┘                        │
+│                                                                               │
+│   ┌───────────────────────┐ ┌───────────────────────┐                        │
+│   │                       │ │                       │                        │
+│   │  EsgPollingService    │ │StatusTransitionService│                        │
+│   │                       │ │     (extended)        │                        │
+│   │ • startPolling()      │ │                       │                        │
+│   │ • stopPolling()       │ │ • markSubmitting()    │                        │
+│   │ • isPolling()         │ │ • markSubmitFailed()  │                        │
+│   │ • getStatus()         │ │ • markSubmitted()     │                        │
+│   │ • checkAckForCase()   │ │ • markAcknowledged()  │                        │
+│   │                       │ │                       │                        │
+│   │ Recursive setTimeout  │ │ New statuses:         │                        │
+│   │ Configurable interval │ │ - Submitting          │                        │
+│   │ (default 5 min)       │ │ - Submission Failed   │                        │
+│   │                       │ │                       │                        │
+│   └───────────────────────┘ └───────────────────────┘                        │
+│                                                                               │
+└──────────────────────────────────────────────────────────────────────────────┘
+```
+
+### 12.2 Credential Storage Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    SECURE CREDENTIAL STORAGE                                  │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+  CredentialStorageService
+          │
+          ▼
+  ┌───────────────────┐
+  │ safeStorage       │ Primary: Electron's safeStorage API
+  │ available?        │ Uses OS keychain (macOS Keychain, Windows DPAPI)
+  └─────────┬─────────┘
+            │
+    ┌───────┴───────┐
+    │ Yes           │ No
+    ▼               ▼
+┌───────────┐   ┌───────────────┐
+│ encrypt   │   │ AES-256-GCM   │ Fallback: AES-256 encryption
+│ String()  │   │ with machine- │ with machine-derived key
+│           │   │ derived key   │
+└───────────┘   └───────────────┘
+    │               │
+    ▼               ▼
+  Store encrypted data to:
+  {userData}/esg-credentials.enc
+
+Security measures:
+• Credentials never stored in plain text
+• Secret key buffer zeroed after use
+• File permissions restricted to user only
+```
+
+### 12.3 API Submission Flow
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    ESG API SUBMISSION DATA FLOW                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+   User           Renderer            Main Process              FDA ESG API
+    │                │                      │                        │
+    │ Click          │                      │                        │
+    │ "Submit to FDA"│                      │                        │
+    │───────────────►│                      │                        │
+    │                │                      │                        │
+    │                │ esgSubmitCase(id)    │                        │
+    │                │─────────────────────►│                        │
+    │                │                      │                        │
+    │                │◄─ progress event ────│ Step: Authenticating  │
+    │                │                      │                        │
+    │                │                      │ EsgAuthService         │
+    │                │                      │ .getAccessToken()      │
+    │                │                      │─────────────────────────►
+    │                │                      │◄── OAuth token ─────────│
+    │                │                      │                        │
+    │                │◄─ progress event ────│ Step: Creating         │
+    │                │                      │       Submission       │
+    │                │                      │                        │
+    │                │                      │ POST /submissions      │
+    │                │                      │─────────────────────────►
+    │                │                      │◄── submission_id ───────│
+    │                │                      │                        │
+    │                │◄─ progress event ────│ Step: Uploading XML   │
+    │                │                      │                        │
+    │                │                      │ PUT /submissions/{id}  │
+    │                │                      │     /content           │
+    │                │                      │─────────────────────────►
+    │                │                      │◄── 200 OK ──────────────│
+    │                │                      │                        │
+    │                │◄─ progress event ────│ Step: Finalizing      │
+    │                │                      │                        │
+    │                │                      │ POST /submissions/{id} │
+    │                │                      │       /finalize        │
+    │                │                      │─────────────────────────►
+    │                │                      │◄── esg_core_id ─────────│
+    │                │                      │                        │
+    │                │◄─ progress event ────│ Step: Complete        │
+    │                │   (ESG Core ID)      │                        │
+    │                │                      │                        │
+    │ Show success   │                      │                        │
+    │◄───────────────│                      │                        │
+    │                │                      │                        │
+```
+
+### 12.4 Acknowledgment Polling Flow
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    ACKNOWLEDGMENT POLLING FLOW                               │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+  App Start
+      │
+      ▼
+  EsgPollingService.startPolling()
+      │
+      ▼
+  ┌─────────────────────────────────┐
+  │                                 │
+  │  Get cases awaiting ACK         │◄───────────────────────┐
+  │  (status = 'Submitted')         │                        │
+  │                                 │                        │
+  └──────────────┬──────────────────┘                        │
+                 │                                           │
+                 ▼                                           │
+  ┌─────────────────────────────────┐                        │
+  │                                 │                        │
+  │  For each case:                 │                        │
+  │  GET /submissions/{id}/ack      │──► FDA ESG API         │
+  │                                 │                        │
+  └──────────────┬──────────────────┘                        │
+                 │                                           │
+         ┌───────┴───────┐                                   │
+         │               │                                   │
+    ACK received    No ACK yet                               │
+         │               │                                   │
+         ▼               ▼                                   │
+  ┌─────────────┐  ┌─────────────┐                          │
+  │ Update case │  │ Check if    │                          │
+  │ status to   │  │ timeout     │                          │
+  │ Acknowledged│  │ exceeded    │                          │
+  │             │  │             │                          │
+  │ Store ACK   │  │ If yes:     │                          │
+  │ details:    │  │ mark for    │                          │
+  │ - ACK type  │  │ attention   │                          │
+  │ - FDA Core  │  │             │                          │
+  │   ID        │  └──────┬──────┘                          │
+  │ - Timestamp │         │                                  │
+  └─────────────┘         │                                  │
+                          │                                  │
+                          ▼                                  │
+               setTimeout(poll, interval)────────────────────┘
+               (recursive, prevents overlap)
+
+ACK Types:
+• ACK1 - Received by gateway
+• ACK2 - Syntactically valid
+• ACK3 - Semantically valid (accepted by FDA)
+• NACK - Rejected (errors in ack_errors JSON)
+```
+
+### 12.5 Retry Logic with Exponential Backoff
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    RETRY LOGIC WITH EXPONENTIAL BACKOFF                      │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+  Submission Attempt
+        │
+        ▼
+  ┌─────────────────────────────────┐
+  │ Error occurred?                 │
+  └──────────────┬──────────────────┘
+                 │
+         ┌───────┴───────┐
+         │ Yes           │ No
+         ▼               ▼
+  ┌─────────────┐   ┌─────────────┐
+  │ Categorize  │   │ Success     │
+  │ error       │   │ (complete)  │
+  └──────┬──────┘   └─────────────┘
+         │
+         ▼
+  ┌─────────────────────────────────┐
+  │ Is error retryable?             │
+  │                                 │
+  │ Retryable:                      │
+  │ • network (connection errors)   │
+  │ • rate_limit (429)              │
+  │ • server_error (5xx)            │
+  │                                 │
+  │ Non-retryable:                  │
+  │ • authentication (401)          │
+  │ • validation (400)              │
+  │ • unknown                       │
+  └──────────────┬──────────────────┘
+                 │
+         ┌───────┴───────┐
+         │ Yes           │ No
+         ▼               ▼
+  ┌─────────────┐   ┌─────────────┐
+  │ Retry?      │   │ Mark as     │
+  │ (< max)     │   │ Failed      │
+  └──────┬──────┘   └─────────────┘
+         │
+         ▼
+  Calculate delay with jitter:
+  delay = min(30s, 1s * 2^attempt) + random(0-500ms)
+
+  Example progression:
+  Attempt 1: 1.0s - 1.5s
+  Attempt 2: 2.0s - 2.5s
+  Attempt 3: 4.0s - 4.5s
+  Attempt 4: 8.0s - 8.5s
+  ...
+  Max: 30.0s - 30.5s
+```
+
+### 12.6 New Database Schema (Migration 020)
+
+```sql
+-- API submission attempts tracking
+CREATE TABLE IF NOT EXISTS api_submission_attempts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    case_id TEXT NOT NULL REFERENCES cases(id) ON DELETE CASCADE,
+    attempt_number INTEGER NOT NULL DEFAULT 1,
+    esg_submission_id TEXT,
+    esg_core_id TEXT,
+    environment TEXT NOT NULL,           -- 'Test' or 'Production'
+    status TEXT NOT NULL DEFAULT 'in_progress',
+    started_at DATETIME NOT NULL,
+    completed_at DATETIME,
+    error TEXT,
+    error_category TEXT,                 -- network, auth, rate_limit, etc.
+    http_status_code INTEGER,
+    ack_type TEXT,                       -- ACK1, ACK2, ACK3, NACK
+    ack_timestamp DATETIME,
+    ack_fda_core_id TEXT,
+    ack_errors TEXT,                     -- JSON array of errors
+    created_at DATETIME NOT NULL,
+    updated_at DATETIME NOT NULL
+);
+
+-- Indexes for efficient queries
+CREATE INDEX idx_api_attempts_case_id ON api_submission_attempts(case_id);
+CREATE INDEX idx_api_attempts_status ON api_submission_attempts(status);
+CREATE INDEX idx_api_attempts_esg_submission_id ON api_submission_attempts(esg_submission_id);
+
+-- Case table extensions
+ALTER TABLE cases ADD COLUMN esg_submission_id TEXT;
+ALTER TABLE cases ADD COLUMN esg_core_id TEXT;
+ALTER TABLE cases ADD COLUMN api_submission_started_at DATETIME;
+ALTER TABLE cases ADD COLUMN api_last_error TEXT;
+ALTER TABLE cases ADD COLUMN api_attempt_count INTEGER DEFAULT 0;
+```
+
+### 12.7 New IPC Channels
+
+```typescript
+// Credential management
+ESG_SAVE_CREDENTIALS:     'esg:saveCredentials',
+ESG_HAS_CREDENTIALS:      'esg:hasCredentials',
+ESG_CLEAR_CREDENTIALS:    'esg:clearCredentials',
+
+// Settings management
+ESG_GET_SETTINGS:         'esg:getSettings',
+ESG_SAVE_SETTINGS:        'esg:saveSettings',
+ESG_TEST_CONNECTION:      'esg:testConnection',
+
+// Submission operations
+ESG_SUBMIT_CASE:          'esg:submitCase',
+ESG_RETRY_SUBMISSION:     'esg:retrySubmission',
+ESG_CANCEL_SUBMISSION:    'esg:cancelSubmission',
+ESG_GET_PROGRESS:         'esg:getProgress',
+ESG_GET_PRE_SUMMARY:      'esg:getPreSubmissionSummary',
+ESG_GET_ATTEMPTS:         'esg:getAttempts',
+
+// Acknowledgment polling
+ESG_CHECK_ACK:            'esg:checkAcknowledgment',
+ESG_POLLING_START:        'esg:pollingStart',
+ESG_POLLING_STOP:         'esg:pollingStop',
+ESG_POLLING_STATUS:       'esg:pollingStatus',
+
+// Event channel (main → renderer push via webContents.send)
+ESG_SUBMISSION_PROGRESS:  'esg:submission-progress',
+```
+
+### 12.8 New React Components
+
+```
+src/renderer/components/submission/
+├── EsgApiSettingsTab.tsx       # API credentials & configuration
+├── SubmitToFdaDialog.tsx       # Pre-submission confirmation dialog
+├── SubmissionProgressDialog.tsx # Real-time progress with Steps
+├── AcknowledgmentDisplay.tsx   # ACK/NACK display with details
+└── PollingStatusIndicator.tsx  # Status badge for dashboard
+```
+
+### 12.9 Extended Workflow Status
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    EXTENDED CASE WORKFLOW WITH API SUBMISSION                 │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+                                    (existing workflow)
+Draft → Data Entry Complete → In Medical Review → Medical Review Complete
+      → In QC Review → QC Complete → Approved
+                                        │
+                                        │ (Phase 2B additions)
+                                        ▼
+                               ┌─────────────────┐
+                               │   Submitting    │◄──── Submit via API
+                               └────────┬────────┘
+                                        │
+                        ┌───────────────┴───────────────┐
+                        │                               │
+                        ▼                               ▼
+               ┌─────────────────┐             ┌─────────────────┐
+               │    Submitted    │             │Submission Failed│
+               └────────┬────────┘             └────────┬────────┘
+                        │                               │
+                        │ (ACK received)                │ (Retry or)
+                        ▼                               │ (Return to Draft)
+               ┌─────────────────┐                      │
+               │  Acknowledged   │◄─────────────────────┘
+               └─────────────────┘
+
+New Status Transitions:
+• 'Ready for Export' → 'Submitting' (API submission started)
+• 'Exported' → 'Submitting' (API submission started)
+• 'Submitting' → 'Submitted' (API success)
+• 'Submitting' → 'Submission Failed' (API error)
+• 'Submission Failed' → 'Submitting' (Retry)
+• 'Submission Failed' → 'Draft' (Return for correction)
+```
+
+### 12.10 Security Considerations
+
+| Threat | Mitigation |
+|--------|------------|
+| **Credential Theft** | Electron safeStorage (OS keychain) + AES-256 fallback |
+| **Token Exposure** | Tokens cached in memory only, never persisted |
+| **MitM Attack** | HTTPS only, TLS 1.2+ required |
+| **Secret Leakage** | Secret buffer zeroed after use |
+| **Log Exposure** | Secrets redacted in all log output |
+
+---
+
+## 13. Future Architecture Considerations
+
+### 13.1 Phase 5: Data Management & MedDRA Integration
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
@@ -1786,7 +2182,7 @@ Additional Phase 5 features:
 • Regulatory terminology management (WHO Drug Dictionary)
 ```
 
-### 12.2 Extension Points
+### 13.2 Extension Points
 
 The architecture is designed with these extension points:
 
@@ -1809,6 +2205,7 @@ The architecture is designed with these extension points:
 | 1.0 | January 2026 | Claude Code | Initial architecture document |
 | 1.1 | January 2026 | Claude Code | Updated with implemented services (ValidationService, XMLGeneratorService, Form3500ImportService), PDF import flow, navigation indicators |
 | 2.0 | January 2026 | Claude Code | Phase 4: Added architecture for products, report classification, follow-ups, nullification, batch submission, PSR management; new services, repositories, stores, and component diagrams |
+| 3.0 | January 2026 | Claude Code | Phase 2B: ESG NextGen API integration - credential storage (safeStorage + AES-256), OAuth 2.0 authentication, API submission service with retry logic, acknowledgment polling, real-time progress events, new workflow statuses (Submitting, Submission Failed) |
 
 ---
 

@@ -54,15 +54,19 @@ const statusConfig: Record<
   Draft: { icon: <FileTextOutlined />, color: '#1890ff' },
   'Ready for Export': { icon: <CheckCircleOutlined />, color: '#13c2c2' },
   Exported: { icon: <ExportOutlined />, color: '#722ed1' },
+  Submitting: { icon: <SendOutlined />, color: '#fa8c16' },
   Submitted: { icon: <SendOutlined />, color: '#2f54eb' },
   Acknowledged: { icon: <SafetyCertificateOutlined />, color: '#52c41a' },
+  'Submission Failed': { icon: <CloseCircleOutlined />, color: '#ff4d4f' },
   Rejected: { icon: <CloseCircleOutlined />, color: '#f5222d' }
 };
 
 const attentionReasonLabels: Record<NeedsAttentionItem['reason'], string> = {
   exported_not_submitted: 'Exported but not submitted',
   submitted_no_ack: 'Awaiting FDA acknowledgment',
-  rejected: 'Rejected by FDA'
+  rejected: 'Rejected by FDA',
+  submission_failed: 'API submission failed',
+  awaiting_ack_timeout: 'Acknowledgment polling timed out'
 };
 
 const SubmissionDashboard: React.FC<SubmissionDashboardProps> = ({
@@ -83,8 +87,10 @@ const SubmissionDashboard: React.FC<SubmissionDashboardProps> = ({
     'Draft',
     'Ready for Export',
     'Exported',
+    'Submitting',
     'Submitted',
     'Acknowledged',
+    'Submission Failed',
     'Rejected'
   ];
 

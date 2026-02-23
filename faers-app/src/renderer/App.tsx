@@ -11,8 +11,8 @@
  * Phase 3: Added authentication flow with multi-user support
  */
 
-import React, { useEffect, useState, useCallback } from 'react';
-import { Layout, Menu, Button, Space, Tooltip, message, Form, Spin, Dropdown, Modal } from 'antd';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import { Layout, Menu, Button, Space, Tooltip, message, Form, Spin, Dropdown, Modal, Input, Select } from 'antd';
 import {
   PlusOutlined,
   FolderOpenOutlined,
@@ -29,6 +29,7 @@ import {
   EditOutlined,
   UnorderedListOutlined,
   CheckCircleFilled,
+  CheckCircleOutlined,
   CloseCircleFilled,
   DashboardOutlined,
   SettingOutlined,
@@ -67,16 +68,21 @@ import {
   NarrativeSection,
   ReportClassificationSection
 } from './components/case-form';
-import type { Case, CaseDrug, CaseReaction, CaseReporter, ValidationResult, CaseStatus } from '../shared/types/case.types';
+import type { Case, CaseDrug, CaseReaction, CaseReporter, ValidationResult, CaseStatus, WorkflowStatus } from '../shared/types/case.types';
+import type { AvailableActionsResponse } from '../shared/types/ipc.types';
 import ValidationPanel from './components/validation/ValidationPanel';
 import {
   SubmissionDashboard,
   RecordSubmissionDialog,
   RecordAcknowledgmentDialog,
-  SettingsDialog
+  SettingsDialog,
+  DemoModeBanner,
+  SubmitToFdaDialog,
+  SubmissionProgressDialog
 } from './components/submission';
 import { useSubmissionStore, useDashboard } from './stores/submissionStore';
 import { useSettingsStore } from './stores/settingsStore';
+import { useEsgApiStore } from './stores/esgApiStore';
 
 const { Header, Sider, Content, Footer } = Layout;
 
@@ -133,6 +139,9 @@ const App: React.FC = () => {
   const submissionStore = useSubmissionStore();
   const settingsStore = useSettingsStore();
 
+  // Phase 2B: ESG API / Demo mode state
+  const [esgApiEnvironment, setEsgApiEnvironment] = useState<'Test' | 'Production' | 'Demo'>('Test');
+
   // Phase 4: Follow-up and Nullification dialogs
   const [showFollowupDialog, setShowFollowupDialog] = useState(false);
   const [showNullifyDialog, setShowNullifyDialog] = useState(false);
@@ -146,6 +155,21 @@ const App: React.FC = () => {
   const [psrView, setPsrView] = useState<'dashboard' | 'list'>('dashboard');
   const [selectedPsrId, setSelectedPsrId] = useState<number | null>(null);
   const [showCreatePsrWizard, setShowCreatePsrWizard] = useState(false);
+
+  // Phase 3: Workflow actions state
+  const [availableWorkflowActions, setAvailableWorkflowActions] = useState<AvailableActionsResponse['actions']>([]);
+  const [workflowActionModalVisible, setWorkflowActionModalVisible] = useState(false);
+  const [pendingWorkflowAction, setPendingWorkflowAction] = useState<{
+    toStatus: WorkflowStatus;
+    label: string;
+    requiresComment?: boolean;
+    requiresSignature?: boolean;
+    requiresAssignment?: boolean;
+  } | null>(null);
+  const [workflowComment, setWorkflowComment] = useState('');
+  const [workflowAssignee, setWorkflowAssignee] = useState<string | null>(null);
+  const [assignableUsers, setAssignableUsers] = useState<Array<{ id: string; username: string; firstName: string; lastName: string }>>([]);
+  const [signaturePassword, setSignaturePassword] = useState('');
 
   // Phase 3: Validate session on mount
   useEffect(() => {
@@ -182,6 +206,17 @@ const App: React.FC = () => {
     }
   }, [isAuthenticated]);
 
+  // Phase 2B: Load ESG API settings to check for Demo mode
+  useEffect(() => {
+    if (isAuthenticated) {
+      window.electronAPI.esgGetSettings().then((result) => {
+        if (result.success && result.data) {
+          setEsgApiEnvironment(result.data.environment || 'Test');
+        }
+      }).catch(console.error);
+    }
+  }, [isAuthenticated]);
+
   // Load cases on mount (only when authenticated)
   useEffect(() => {
     if (isAuthenticated) {
@@ -199,6 +234,29 @@ const App: React.FC = () => {
       setReporters([]);
     }
   }, [currentCase?.id]);
+
+  // Load available workflow actions when case changes
+  useEffect(() => {
+    const fetchWorkflowActions = async () => {
+      if (currentCase?.id && isAuthenticated) {
+        try {
+          const result = await window.electronAPI.getAvailableActions(currentCase.id);
+          if (result.success && result.data) {
+            setAvailableWorkflowActions(result.data.actions || []);
+          } else {
+            setAvailableWorkflowActions([]);
+          }
+        } catch (error) {
+          console.error('Error fetching workflow actions:', error);
+          setAvailableWorkflowActions([]);
+        }
+      } else {
+        setAvailableWorkflowActions([]);
+      }
+    };
+
+    fetchWorkflowActions();
+  }, [currentCase?.id, currentCase?.workflowStatus, isAuthenticated]);
 
   // Close validation panel when navigating away from case form
   useEffect(() => {
@@ -497,6 +555,12 @@ const App: React.FC = () => {
 
   // Handle navigation
   const handleNavClick: MenuProps['onClick'] = (e) => {
+    // When navigating to cases via sidebar, clear any status filters
+    // This prevents the issue where filters set by dashboard persist unexpectedly
+    if (e.key === 'cases') {
+      useCaseStore.getState().setFilters({ status: undefined, search: undefined });
+      fetchCases({ status: undefined, search: undefined, offset: 0 });
+    }
     setActiveSection(e.key);
   };
 
@@ -703,15 +767,122 @@ const App: React.FC = () => {
     }
   ];
 
+  // Handle Mark Ready for Export
+  const handleMarkReady = async () => {
+    if (!currentCase) return;
+
+    console.log('[App] handleMarkReady called for case:', currentCase.id, 'current status:', currentCase.status);
+    try {
+      const result = await window.electronAPI.markCaseReady(currentCase.id);
+      console.log('[App] markCaseReady IPC result:', JSON.stringify(result));
+      if (result.success) {
+        messageApi.success('Case marked as Ready for Export');
+        // Refresh case data
+        console.log('[App] Refreshing case and list...');
+        await useCaseStore.getState().fetchCase(currentCase.id);
+        await useCaseStore.getState().fetchCases();
+        fetchDashboardStats();
+        console.log('[App] Refreshes complete');
+      } else {
+        // Show validation errors if available
+        const validationResult = result.data?.validationResult;
+        if (validationResult && validationResult.errors && validationResult.errors.length > 0) {
+          const errorMessages = validationResult.errors
+            .filter((e: { severity: string }) => e.severity === 'error')
+            .slice(0, 3) // Show first 3 errors
+            .map((e: { message: string }) => e.message)
+            .join('; ');
+          const errorCount = validationResult.errors.filter((e: { severity: string }) => e.severity === 'error').length;
+          const moreText = errorCount > 3 ? ` (+${errorCount - 3} more)` : '';
+          messageApi.error(`Validation failed: ${errorMessages}${moreText}. Fix errors and try again.`);
+        } else {
+          messageApi.error(`Failed to mark ready: ${result.error}`);
+        }
+      }
+    } catch (error) {
+      console.error('Mark ready error:', error);
+      messageApi.error('Failed to mark case as ready for export');
+    }
+  };
+
   // Phase 4: Actions menu items (context-sensitive based on case status)
-  const getActionsMenuItems = (): MenuProps['items'] => {
+  // Memoized to prevent excessive re-rendering
+  const actionsMenuItems = useMemo((): MenuProps['items'] => {
     if (!currentCase) return [];
 
     const status = currentCase.status;
+    const workflowStatus = currentCase.workflowStatus;
+    // Submit to FDA available when:
+    // 1. Status is Ready for Export or Exported (already validated/marked ready)
+    // 2. OR Status is Draft AND workflowStatus is 'Approved' (completed internal review)
+    // Cases in Draft without approval must go through internal workflow first
+    const canSubmitToFda = (
+      status === 'Ready for Export' ||
+      status === 'Exported' ||
+      (status === 'Draft' && workflowStatus === 'Approved')
+    );
     const canCreateFollowup = status === 'Submitted' || status === 'Acknowledged';
     const canNullify = status === 'Submitted' || status === 'Acknowledged';
 
-    return [
+    // Log only once when dependencies change
+    console.log(`[App] actionsMenuItems computed: case=${currentCase.id}, status='${status}', workflowStatus='${workflowStatus}', canSubmitToFda=${canSubmitToFda}, workflowActionsCount=${availableWorkflowActions.length}`);
+
+    // Build workflow action items
+    // Filter out "Submit to FDA" workflow action since we have a dedicated submission option
+    const filteredWorkflowActions = availableWorkflowActions.filter(
+      action => action.toStatus !== 'Submitted' || action.label !== 'Submit to FDA'
+    );
+    const workflowItems: MenuProps['items'] = filteredWorkflowActions.map((action) => ({
+      key: `workflow-${action.toStatus}`,
+      icon: action.toStatus === 'Rejected' ? <CloseCircleFilled style={{ color: '#ff4d4f' }} /> :
+            action.toStatus === 'Approved' ? <CheckCircleFilled style={{ color: '#52c41a' }} /> :
+            <CheckSquareOutlined />,
+      label: action.label,
+      onClick: () => {
+        console.log(`[App] Workflow action clicked: ${action.label} (toStatus: ${action.toStatus})`);
+        handleWorkflowActionClick({
+          toStatus: action.toStatus as WorkflowStatus,
+          label: action.label,
+          requiresComment: action.requiresComment,
+          requiresSignature: action.requiresSignature,
+          requiresAssignment: action.requiresAssignment
+        });
+      }
+    }));
+
+    const items: MenuProps['items'] = [];
+
+    // Submission options available when case is approved
+    if (canSubmitToFda) {
+      items.push({
+        key: 'submit-to-fda',
+        icon: <SendOutlined style={{ color: '#2f54eb' }} />,
+        label: 'Submit to FDA',
+        onClick: () => {
+          console.log('[App] Submit to FDA menu item clicked for case:', currentCase.id);
+          useEsgApiStore.getState().openSubmitDialog(currentCase.id);
+        }
+      });
+      items.push({
+        key: 'export-xml',
+        icon: <ExportOutlined />,
+        label: 'Export XML (for manual SRP upload)',
+        onClick: () => {
+          console.log('[App] Export XML menu item clicked for case:', currentCase.id);
+          handleExportXML();
+        }
+      });
+      items.push({ type: 'divider' });
+    }
+
+    // Add workflow actions if any
+    if (workflowItems.length > 0) {
+      items.push(...workflowItems);
+      items.push({ type: 'divider' });
+    }
+
+    // Follow-up and Nullification
+    items.push(
       {
         key: 'create-followup',
         icon: <FileAddOutlined />,
@@ -737,8 +908,10 @@ const App: React.FC = () => {
         label: 'Version History',
         onClick: () => setShowVersionTimeline(true)
       }
-    ];
-  };
+    );
+
+    return items;
+  }, [currentCase?.id, currentCase?.status, currentCase?.workflowStatus, availableWorkflowActions]);
 
   // Handle follow-up creation success
   const handleFollowupSuccess = (newCaseId: string) => {
@@ -752,6 +925,127 @@ const App: React.FC = () => {
     messageApi.success('Nullification case created. Navigating to new case...');
     useCaseStore.getState().fetchCase(nullificationCaseId);
     setActiveSection('report');
+  };
+
+  // Handle workflow action click
+  const handleWorkflowActionClick = async (action: { toStatus: WorkflowStatus; label: string; requiresComment?: boolean; requiresSignature?: boolean; requiresAssignment?: boolean }) => {
+    if (action.requiresComment || action.requiresSignature || action.requiresAssignment) {
+      setPendingWorkflowAction(action);
+      setWorkflowComment('');
+      setWorkflowAssignee(null);
+      setSignaturePassword('');
+
+      // Load users if assignment is required
+      if (action.requiresAssignment) {
+        try {
+          const usersResult = await window.electronAPI.getUsers({ isActive: true });
+          if (usersResult.success && usersResult.data) {
+            setAssignableUsers(usersResult.data.users.map(u => ({
+              id: u.id,
+              username: u.username,
+              firstName: u.firstName || '',
+              lastName: u.lastName || ''
+            })));
+          }
+        } catch (error) {
+          console.error('Error loading users for assignment:', error);
+          setAssignableUsers([]);
+        }
+      }
+
+      setWorkflowActionModalVisible(true);
+    } else {
+      executeWorkflowTransition(action.toStatus, action.label);
+    }
+  };
+
+  // Execute workflow transition
+  const executeWorkflowTransition = async (
+    toStatus: WorkflowStatus,
+    label: string,
+    comment?: string,
+    assignTo?: string,
+    signature?: { password: string; meaning: string }
+  ) => {
+    if (!currentCase) return;
+
+    console.log(`[App] executeWorkflowTransition: case=${currentCase.id}, toStatus='${toStatus}', label='${label}'`);
+
+    try {
+      const result = await window.electronAPI.transitionWorkflow({
+        caseId: currentCase.id,
+        toStatus,
+        comment,
+        assignTo,
+        signature
+      });
+
+      console.log(`[App] transitionWorkflow IPC result:`, JSON.stringify(result));
+
+      if (result.success) {
+        messageApi.success(`${label} completed successfully`);
+        console.log(`[App] Refreshing case data after successful transition...`);
+        // Refresh case data
+        await useCaseStore.getState().fetchCase(currentCase.id);
+        console.log(`[App] Refreshing workflow actions...`);
+        // Refresh workflow actions
+        const actionsResult = await window.electronAPI.getAvailableActions(currentCase.id);
+        if (actionsResult.success && actionsResult.data) {
+          console.log(`[App] New available actions:`, actionsResult.data.actions?.map(a => a.label).join(', '));
+          setAvailableWorkflowActions(actionsResult.data.actions || []);
+        }
+        // Refresh dashboard stats to reflect status changes
+        fetchDashboardStats();
+        // Also refresh case list
+        await useCaseStore.getState().fetchCases();
+        console.log(`[App] All refreshes complete after workflow transition`);
+      } else {
+        console.log(`[App] Workflow transition failed:`, result.error);
+        messageApi.error(`Failed to ${label.toLowerCase()}: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('[App] Workflow transition exception:', error);
+      messageApi.error(`Failed to ${label.toLowerCase()}`);
+    }
+  };
+
+  // Handle workflow modal OK
+  const handleWorkflowModalOk = () => {
+    if (pendingWorkflowAction) {
+      if (pendingWorkflowAction.requiresComment && !workflowComment.trim()) {
+        messageApi.warning('Please provide a comment for this action');
+        return;
+      }
+      if (pendingWorkflowAction.requiresAssignment && !workflowAssignee) {
+        messageApi.warning('Please select a user to assign the case to');
+        return;
+      }
+      if (pendingWorkflowAction.requiresSignature && !signaturePassword.trim()) {
+        messageApi.warning('Please enter your password to sign this action');
+        return;
+      }
+
+      // Build signature object if required
+      const signature = pendingWorkflowAction.requiresSignature
+        ? {
+            password: signaturePassword,
+            meaning: `I approve this case for ${pendingWorkflowAction.label.toLowerCase()}`
+          }
+        : undefined;
+
+      executeWorkflowTransition(
+        pendingWorkflowAction.toStatus,
+        pendingWorkflowAction.label,
+        workflowComment || undefined,
+        workflowAssignee || undefined,
+        signature
+      );
+      setWorkflowActionModalVisible(false);
+      setPendingWorkflowAction(null);
+      setWorkflowComment('');
+      setWorkflowAssignee(null);
+      setSignaturePassword('');
+    }
   };
 
   // Phase 3: Show loading while checking auth
@@ -982,7 +1276,7 @@ const App: React.FC = () => {
       {contextHolder}
 
       {/* Test Mode Banner */}
-      {settingsStore.settings.submissionEnvironment === 'Test' && (
+      {settingsStore.settings.submissionEnvironment === 'Test' && esgApiEnvironment !== 'Demo' && (
         <div style={{
           background: '#fa8c16',
           color: '#fff',
@@ -999,6 +1293,12 @@ const App: React.FC = () => {
           TEST MODE - Exports will include _TEST in filename. Upload to FDA ESG NextGen USP and select &quot;Test Submission&quot;
         </div>
       )}
+
+      {/* Demo Mode Banner */}
+      <DemoModeBanner
+        environment={esgApiEnvironment}
+        onConfigureClick={settingsStore.openSettingsDialog}
+      />
 
       {/* Header with Toolbar */}
       <Header className="app-header">
@@ -1061,19 +1361,9 @@ const App: React.FC = () => {
               </Button>
             </Tooltip>
 
-            <Tooltip title="Export XML (Ctrl+E)">
-              <Button
-                icon={<ExportOutlined />}
-                onClick={handleExportXML}
-                disabled={!currentCase}
-              >
-                Export XML
-              </Button>
-            </Tooltip>
-
             {/* Phase 4: Actions Menu */}
             <Dropdown
-              menu={{ items: getActionsMenuItems() }}
+              menu={{ items: actionsMenuItems }}
               trigger={['click']}
               disabled={!currentCase}
             >
@@ -1208,6 +1498,10 @@ const App: React.FC = () => {
         onCancel={settingsStore.closeSettingsDialog}
       />
 
+      {/* Phase 2B: ESG API Submission Dialogs */}
+      <SubmitToFdaDialog />
+      <SubmissionProgressDialog />
+
       {/* Phase 3: Auth Dialogs */}
       <ChangePasswordDialog
         visible={showChangePasswordDialog}
@@ -1282,6 +1576,84 @@ const App: React.FC = () => {
           </Modal>
         </>
       )}
+
+      {/* Workflow Action Modal */}
+      <Modal
+        title={pendingWorkflowAction?.label || 'Workflow Action'}
+        open={workflowActionModalVisible}
+        onOk={handleWorkflowModalOk}
+        onCancel={() => {
+          setWorkflowActionModalVisible(false);
+          setPendingWorkflowAction(null);
+          setWorkflowComment('');
+          setWorkflowAssignee(null);
+          setSignaturePassword('');
+        }}
+        okText={pendingWorkflowAction?.requiresSignature ? 'Sign & Confirm' : 'Confirm'}
+        cancelText="Cancel"
+      >
+        {pendingWorkflowAction?.requiresAssignment && (
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ display: 'block', marginBottom: 8, fontWeight: 500 }}>
+              Assign to (Required):
+            </label>
+            <Select
+              style={{ width: '100%' }}
+              placeholder="Select a user to assign"
+              value={workflowAssignee}
+              onChange={(value) => setWorkflowAssignee(value)}
+              showSearch
+              optionFilterProp="children"
+              filterOption={(input, option) =>
+                (option?.children as unknown as string)?.toLowerCase().includes(input.toLowerCase())
+              }
+            >
+              {assignableUsers.map(user => (
+                <Select.Option key={user.id} value={user.id}>
+                  {user.firstName && user.lastName
+                    ? `${user.firstName} ${user.lastName} (${user.username})`
+                    : user.username}
+                </Select.Option>
+              ))}
+            </Select>
+          </div>
+        )}
+        {pendingWorkflowAction?.requiresComment && (
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ display: 'block', marginBottom: 8, fontWeight: 500 }}>
+              {pendingWorkflowAction.toStatus === 'Rejected' ? 'Rejection Reason (Required):' : 'Comment (Required):'}
+            </label>
+            <Input.TextArea
+              rows={4}
+              value={workflowComment}
+              onChange={(e) => setWorkflowComment(e.target.value)}
+              placeholder={pendingWorkflowAction.toStatus === 'Rejected'
+                ? 'Please provide a reason for rejection...'
+                : 'Please provide a comment for this action...'
+              }
+            />
+          </div>
+        )}
+        {pendingWorkflowAction?.requiresSignature && (
+          <div style={{ marginTop: 16 }}>
+            <div style={{ padding: 12, background: '#fff7e6', border: '1px solid #ffd591', borderRadius: 4, marginBottom: 16 }}>
+              <p style={{ margin: 0, fontSize: 13, color: '#d46b08' }}>
+                <strong>Electronic Signature Required</strong><br />
+                By signing, you certify: "I approve this case for {pendingWorkflowAction.label.toLowerCase()}"
+              </p>
+            </div>
+            <label style={{ display: 'block', marginBottom: 8, fontWeight: 500 }}>
+              Enter your password to sign:
+            </label>
+            <Input.Password
+              value={signaturePassword}
+              onChange={(e) => setSignaturePassword(e.target.value)}
+              placeholder="Enter your password"
+              autoComplete="current-password"
+            />
+          </div>
+        )}
+      </Modal>
     </Layout>
   );
 };

@@ -39,12 +39,15 @@ export class StatusTransitionService {
   }
 
   // Valid status transitions
+  // Note: Draft can now go directly to Submitting (validation happens during submission)
   private readonly validTransitions: Record<CaseStatus, CaseStatus[]> = {
-    Draft: ['Ready for Export'],
-    'Ready for Export': ['Exported', 'Draft'],
-    Exported: ['Submitted', 'Draft'],
+    Draft: ['Ready for Export', 'Submitting'],
+    'Ready for Export': ['Exported', 'Draft', 'Submitting'],
+    Exported: ['Submitted', 'Draft', 'Submitting'],
+    Submitting: ['Submitted', 'Submission Failed'],
     Submitted: ['Acknowledged', 'Rejected'],
     Acknowledged: [], // Terminal state
+    'Submission Failed': ['Submitting', 'Draft'],
     Rejected: ['Draft']
   };
 
@@ -70,15 +73,20 @@ export class StatusTransitionService {
     toStatus: CaseStatus,
     options?: TransitionOptions
   ): TransitionResult {
+    console.log(`[StatusTransition] Attempting transition for case ${caseId} to '${toStatus}'`);
+
     const caseData = this.caseRepo.findById(caseId);
     if (!caseData) {
+      console.log(`[StatusTransition] Case not found: ${caseId}`);
       return { success: false, error: `Case not found: ${caseId}` };
     }
 
     const fromStatus = caseData.status;
+    console.log(`[StatusTransition] Current status: '${fromStatus}', target: '${toStatus}'`);
 
     // Check if transition is valid
     if (!this.isValidTransition(fromStatus, toStatus)) {
+      console.log(`[StatusTransition] Invalid transition from '${fromStatus}' to '${toStatus}'`);
       return {
         success: false,
         error: `Invalid transition from '${fromStatus}' to '${toStatus}'`
@@ -98,7 +106,9 @@ export class StatusTransitionService {
     }
 
     // Update status
+    console.log(`[StatusTransition] Calling caseRepo.update with status='${toStatus}'`);
     const updatedCase = this.caseRepo.update(caseId, { status: toStatus });
+    console.log(`[StatusTransition] After update, case status: '${updatedCase?.status}'`);
 
     // Log history event
     const eventType = this.getEventType(fromStatus, toStatus);
@@ -109,6 +119,7 @@ export class StatusTransitionService {
       notes: options?.notes
     });
 
+    console.log(`[StatusTransition] Transition successful: '${fromStatus}' -> '${toStatus}'`);
     return { success: true, case: updatedCase! };
   }
 
@@ -127,8 +138,10 @@ export class StatusTransitionService {
       Draft: 'created',
       'Ready for Export': 'marked_ready',
       Exported: 'exported',
+      Submitting: 'api_submitting',
       Submitted: 'submitted',
       Acknowledged: 'acknowledged',
+      'Submission Failed': 'api_submit_failed',
       Rejected: 'rejected'
     };
 
@@ -235,6 +248,31 @@ export class StatusTransitionService {
   }
 
   /**
+   * Mark case as submitting via ESG API
+   */
+  markSubmitting(
+    caseId: string,
+    details?: { environment?: string; method?: string }
+  ): TransitionResult {
+    return this.transition(caseId, 'Submitting', {
+      details: details ? { ...details } : undefined
+    });
+  }
+
+  /**
+   * Mark case as submission failed via ESG API
+   */
+  markSubmissionFailed(
+    caseId: string,
+    error: string,
+    errorCategory?: string
+  ): TransitionResult {
+    return this.transition(caseId, 'Submission Failed', {
+      details: { error, errorCategory }
+    });
+  }
+
+  /**
    * Revert case to draft status
    */
   revertToDraft(caseId: string, reason?: string): TransitionResult {
@@ -247,7 +285,8 @@ export class StatusTransitionService {
     const allowedForRevert: CaseStatus[] = [
       'Ready for Export',
       'Exported',
-      'Rejected'
+      'Rejected',
+      'Submission Failed'
     ];
     if (!allowedForRevert.includes(caseData.status)) {
       return {

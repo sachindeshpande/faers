@@ -342,10 +342,13 @@ export function registerSubmissionHandlers(): void {
   ipcMain.handle(
     IPC_CHANNELS.CASE_MARK_READY,
     async (_, caseId: string): Promise<IPCResponse<MarkReadyResponse>> => {
+      console.log('[IPC] CASE_MARK_READY called for caseId:', caseId);
       try {
         const result = statusService.markReady(caseId);
+        console.log('[IPC] statusService.markReady result:', JSON.stringify(result, null, 2));
 
         if (!result.success) {
+          console.log('[IPC] CASE_MARK_READY returning failure:', result.error);
           return {
             success: false,
             error: result.error,
@@ -353,12 +356,13 @@ export function registerSubmissionHandlers(): void {
           };
         }
 
+        console.log('[IPC] CASE_MARK_READY returning success, case status:', result.case?.status);
         return {
           success: true,
           data: { case: result.case }
         };
       } catch (error) {
-        console.error('Error marking case ready:', error);
+        console.error('[IPC] Error marking case ready:', error);
         return {
           success: false,
           error: error instanceof Error ? error.message : 'Unknown error'

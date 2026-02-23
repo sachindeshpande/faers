@@ -71,11 +71,16 @@ function getCurrentAuthContext(): {
 async function transitionWorkflow(
   request: WorkflowTransitionRequest
 ): Promise<IPCResponse<WorkflowTransitionResult>> {
+  console.log(`[Workflow Handler] transitionWorkflow called:`, JSON.stringify(request));
+
   try {
     const { user, permissions, sessionId } = getCurrentAuthContext();
     if (!user) {
+      console.log(`[Workflow Handler] Not authenticated`);
       return { success: false, error: 'Not authenticated' };
     }
+
+    console.log(`[Workflow Handler] User: ${user.username}, permissions count: ${permissions.length}`);
 
     const db = getDatabase();
     const workflowService = new WorkflowService(db);
@@ -98,13 +103,15 @@ async function transitionWorkflow(
       sessionId || undefined
     );
 
+    console.log(`[Workflow Handler] workflowService.transition result:`, JSON.stringify(result));
+
     if (result.success) {
       return { success: true, data: result };
     } else {
       return { success: false, error: result.error };
     }
   } catch (error) {
-    console.error('Error transitioning workflow:', error);
+    console.error('[Workflow Handler] Error transitioning workflow:', error);
     return { success: false, error: 'Failed to transition workflow status' };
   }
 }
@@ -115,11 +122,15 @@ async function transitionWorkflow(
 async function getAvailableActions(
   caseId: string
 ): Promise<IPCResponse<AvailableActionsResponse>> {
+  console.log(`[Workflow Handler] getAvailableActions called for case: ${caseId}`);
   try {
     const { user, permissions } = getCurrentAuthContext();
     if (!user) {
+      console.log(`[Workflow Handler] No user authenticated`);
       return { success: true, data: { actions: [] } };
     }
+
+    console.log(`[Workflow Handler] User: ${user.username}, permissions: ${permissions.join(', ')}`);
 
     const db = getDatabase();
     const workflowService = new WorkflowService(db);
@@ -127,8 +138,11 @@ async function getAvailableActions(
     // Get case details
     const caseDetails = workflowService.getCaseWorkflowDetails(caseId);
     if (!caseDetails) {
+      console.log(`[Workflow Handler] Case not found: ${caseId}`);
       return { success: false, error: 'Case not found' };
     }
+
+    console.log(`[Workflow Handler] Case details: workflowStatus='${caseDetails.workflowStatus}'`);
 
     // Check if user is assignee or owner
     const assignment = workflowService.getCurrentAssignment(caseId);
@@ -136,12 +150,18 @@ async function getAvailableActions(
     const isOwner = caseDetails.currentOwner === user.id;
 
     // Get available transitions
+    // Treat undefined/null workflowStatus as 'Draft' for workflow actions
+    const effectiveWorkflowStatus = caseDetails.workflowStatus || 'Draft';
+    console.log(`[Workflow Handler] Effective workflowStatus: '${effectiveWorkflowStatus}', isAssignee: ${isAssignee}, isOwner: ${isOwner}`);
+
     const transitions = workflowService.getAvailableActions(
-      caseDetails.workflowStatus,
+      effectiveWorkflowStatus,
       permissions,
       isAssignee,
       isOwner
     );
+
+    console.log(`[Workflow Handler] Found ${transitions.length} available actions: ${transitions.map(t => t.label).join(', ')}`);
 
     return {
       success: true,
@@ -157,7 +177,7 @@ async function getAvailableActions(
       }
     };
   } catch (error) {
-    console.error('Error getting available actions:', error);
+    console.error('[Workflow Handler] Error getting available actions:', error);
     return { success: true, data: { actions: [] } };
   }
 }

@@ -8,7 +8,7 @@
  * - Duration
  */
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Form,
   Input,
@@ -25,13 +25,18 @@ import {
   Divider,
   Popconfirm,
   Checkbox,
-  Tag
+  Tag,
+  Typography
 } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, WarningOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DeleteOutlined, WarningOutlined, SearchOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import type { CaseReaction } from '../../../shared/types/case.types';
+import type { MedDRACoding } from '../../../shared/types/meddra.types';
+import { MedDRAAutocomplete } from '../meddra/MedDRAAutocomplete';
+import { MedDRABrowser } from '../meddra/MedDRABrowser';
 
 const { Option } = Select;
+const { Text } = Typography;
 
 interface ReactionsSectionProps {
   reactions: CaseReaction[];
@@ -65,6 +70,48 @@ const ReactionsSection: React.FC<ReactionsSectionProps> = ({
   const [modalVisible, setModalVisible] = useState(false);
   const [editingReaction, setEditingReaction] = useState<Partial<CaseReaction> | null>(null);
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [browserModalVisible, setBrowserModalVisible] = useState(false);
+
+  // Convert reaction to MedDRACoding for autocomplete
+  const currentCoding: MedDRACoding | undefined = useMemo(() => {
+    if (!editingReaction?.meddraCode || !editingReaction?.reactionTerm) {
+      return undefined;
+    }
+    return {
+      verbatimText: editingReaction.nativeTerm || '',
+      ptCode: parseInt(editingReaction.meddraCode, 10) || 0,
+      ptName: editingReaction.reactionTerm,
+      socCode: 0,
+      socName: '',
+      meddraVersion: editingReaction.meddraVersion || ''
+    };
+  }, [editingReaction?.meddraCode, editingReaction?.reactionTerm, editingReaction?.nativeTerm, editingReaction?.meddraVersion]);
+
+  // Handle MedDRA coding selection
+  const handleMedDRACodingChange = (coding: MedDRACoding | null) => {
+    if (coding) {
+      setEditingReaction(prev => ({
+        ...prev,
+        reactionTerm: coding.ptName,
+        meddraCode: coding.lltCode?.toString() || coding.ptCode.toString(),
+        meddraVersion: coding.meddraVersion,
+        nativeTerm: coding.verbatimText || prev?.nativeTerm
+      }));
+    } else {
+      setEditingReaction(prev => ({
+        ...prev,
+        reactionTerm: '',
+        meddraCode: '',
+        meddraVersion: ''
+      }));
+    }
+  };
+
+  // Handle MedDRA browser selection
+  const handleBrowserSelect = (coding: MedDRACoding) => {
+    handleMedDRACodingChange(coding);
+    setBrowserModalVisible(false);
+  };
 
   const handleAdd = () => {
     setEditingReaction({ ...emptyReaction });
@@ -241,27 +288,6 @@ const ReactionsSection: React.FC<ReactionsSectionProps> = ({
         {editingReaction && (
           <Form layout="vertical">
             <Row gutter={24}>
-              <Col span={16}>
-                <Form.Item label="Reaction Term (MedDRA Preferred Term)" required>
-                  <Input
-                    value={editingReaction.reactionTerm || ''}
-                    onChange={(e) => updateField('reactionTerm', e.target.value)}
-                    placeholder="Enter the reaction/adverse event term"
-                  />
-                </Form.Item>
-              </Col>
-              <Col span={8}>
-                <Form.Item label="MedDRA Code (LLT)">
-                  <Input
-                    value={editingReaction.meddraCode || ''}
-                    onChange={(e) => updateField('meddraCode', e.target.value)}
-                    placeholder="e.g., 10019211"
-                  />
-                </Form.Item>
-              </Col>
-            </Row>
-
-            <Row gutter={24}>
               <Col span={24}>
                 <Form.Item label="Native/Verbatim Term (as reported)">
                   <Input
@@ -272,6 +298,48 @@ const ReactionsSection: React.FC<ReactionsSectionProps> = ({
                 </Form.Item>
               </Col>
             </Row>
+
+            <Row gutter={24}>
+              <Col span={20}>
+                <Form.Item
+                  label="MedDRA Coded Term"
+                  required
+                  tooltip="Search for MedDRA terms or use the Browse button to navigate the hierarchy"
+                >
+                  <MedDRAAutocomplete
+                    value={currentCoding}
+                    onChange={handleMedDRACodingChange}
+                    verbatimText={editingReaction.nativeTerm || ''}
+                    placeholder="Type to search MedDRA terms..."
+                    disabled={disabled}
+                  />
+                </Form.Item>
+              </Col>
+              <Col span={4}>
+                <Form.Item label=" " colon={false}>
+                  <Button
+                    icon={<SearchOutlined />}
+                    onClick={() => setBrowserModalVisible(true)}
+                    disabled={disabled}
+                    style={{ width: '100%' }}
+                  >
+                    Browse
+                  </Button>
+                </Form.Item>
+              </Col>
+            </Row>
+
+            {editingReaction.meddraCode && (
+              <Row style={{ marginBottom: 16 }}>
+                <Col span={24}>
+                  <Text type="secondary" style={{ fontSize: 12 }}>
+                    Coded: <Text strong>{editingReaction.reactionTerm}</Text>
+                    {' '}(Code: {editingReaction.meddraCode})
+                    {editingReaction.meddraVersion && ` | MedDRA v${editingReaction.meddraVersion}`}
+                  </Text>
+                </Col>
+              </Row>
+            )}
 
             <Divider orientation="left">Dates & Duration</Divider>
 
@@ -412,6 +480,23 @@ const ReactionsSection: React.FC<ReactionsSectionProps> = ({
             </Row>
           </Form>
         )}
+      </Modal>
+
+      {/* MedDRA Browser Modal */}
+      <Modal
+        title="MedDRA Hierarchy Browser"
+        open={browserModalVisible}
+        onCancel={() => setBrowserModalVisible(false)}
+        width={900}
+        footer={null}
+        destroyOnClose
+      >
+        <MedDRABrowser
+          onSelect={handleBrowserSelect}
+          verbatimText={editingReaction?.nativeTerm || ''}
+          selectable
+          height={450}
+        />
       </Modal>
     </div>
   );

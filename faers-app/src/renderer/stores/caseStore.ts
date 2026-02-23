@@ -64,24 +64,33 @@ export const useCaseStore = create<CaseState>((set, get) => ({
   // Actions
   fetchCases: async (filters?: CaseFilterOptions) => {
     const mergedFilters = { ...get().filters, ...filters };
+    console.log('[CaseStore] fetchCases called with filters:', JSON.stringify(mergedFilters));
     set({ isLoadingList: true, listError: null, filters: mergedFilters });
 
     try {
       const response = await window.electronAPI.getCases(mergedFilters);
+      console.log('[CaseStore] getCases response success:', response.success);
 
       if (response.success && response.data) {
+        console.log('[CaseStore] Received', response.data.cases.length, 'cases');
+        // Log first few cases with their statuses
+        response.data.cases.slice(0, 3).forEach(c => {
+          console.log(`[CaseStore] Case ${c.id}: status='${c.status}'`);
+        });
         set({
           cases: response.data.cases,
           totalCases: response.data.total,
           isLoadingList: false
         });
       } else {
+        console.log('[CaseStore] fetchCases failed:', response.error);
         set({
           listError: response.error || 'Failed to fetch cases',
           isLoadingList: false
         });
       }
     } catch (error) {
+      console.error('[CaseStore] fetchCases exception:', error);
       set({
         listError: error instanceof Error ? error.message : 'Unknown error',
         isLoadingList: false
@@ -90,12 +99,15 @@ export const useCaseStore = create<CaseState>((set, get) => ({
   },
 
   fetchCase: async (id: string) => {
+    console.log('[CaseStore] fetchCase called for id:', id);
     set({ isLoadingCase: true, caseError: null });
 
     try {
       const response = await window.electronAPI.getCase(id, true);
+      console.log('[CaseStore] getCase response success:', response.success);
 
       if (response.success && response.data) {
+        console.log('[CaseStore] Loaded case status:', response.data.status, 'workflowStatus:', response.data.workflowStatus);
         set({
           currentCase: response.data,
           isLoadingCase: false,

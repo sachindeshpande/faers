@@ -81,7 +81,7 @@ const WORKFLOW_TRANSITIONS_MAP: WorkflowTransition[] = [
   {
     from: 'Draft',
     to: 'Data Entry Complete',
-    requiredPermission: 'workflow.submit_review',
+    requiredPermission: 'case.edit.own',  // Any user who can edit cases can submit for review
     label: 'Submit for Review'
   },
   {
@@ -245,30 +245,43 @@ export class WorkflowService {
     isAssignee: boolean = false,
     isOwner: boolean = false
   ): WorkflowTransition[] {
+    console.log(`[WorkflowService] getAvailableActions: currentStatus='${currentStatus}', permissions=${userPermissions.length}`);
+
     const hasPermission = (perm: string) =>
       userPermissions.includes('*') || userPermissions.includes(perm);
 
-    return WORKFLOW_TRANSITIONS_MAP.filter(transition => {
+    const result = WORKFLOW_TRANSITIONS_MAP.filter(transition => {
       // Must match current status
-      if (transition.from !== currentStatus) return false;
+      if (transition.from !== currentStatus) {
+        return false;
+      }
 
       // Must have required permission
-      if (!hasPermission(transition.requiredPermission)) return false;
+      if (!hasPermission(transition.requiredPermission)) {
+        console.log(`[WorkflowService] Transition '${transition.label}' blocked: missing permission '${transition.requiredPermission}'`);
+        return false;
+      }
 
       // For review completion, user must be the assignee
       if (transition.from === 'In Medical Review' || transition.from === 'In QC Review') {
         if (transition.to !== 'Rejected' && !isAssignee && !hasPermission('case.view.all')) {
+          console.log(`[WorkflowService] Transition '${transition.label}' blocked: not assignee`);
           return false;
         }
       }
 
       // For rework from rejected, user must be owner or have edit permission
       if (transition.from === 'Rejected' && !isOwner && !hasPermission('case.edit.all')) {
+        console.log(`[WorkflowService] Transition '${transition.label}' blocked: not owner`);
         return false;
       }
 
+      console.log(`[WorkflowService] Transition '${transition.label}' allowed`);
       return true;
     });
+
+    console.log(`[WorkflowService] Returning ${result.length} available actions`);
+    return result;
   }
 
   /**
@@ -282,13 +295,17 @@ export class WorkflowService {
   ): Promise<WorkflowTransitionResult> {
     const { caseId, toStatus, comment, assignTo, signature } = request;
 
+    console.log(`[WorkflowService] transition: caseId=${caseId}, toStatus='${toStatus}'`);
+
     // Get current case details
     const caseDetails = this.getCaseWorkflowDetails(caseId);
     if (!caseDetails) {
+      console.log(`[WorkflowService] Case not found: ${caseId}`);
       return { success: false, error: 'Case not found' };
     }
 
     const fromStatus = caseDetails.workflowStatus;
+    console.log(`[WorkflowService] Current workflowStatus='${fromStatus}'`);
 
     // Find matching transition
     const transition = WORKFLOW_TRANSITIONS_MAP.find(
@@ -363,7 +380,7 @@ export class WorkflowService {
     // Perform the transition
     try {
       if (this.hasWorkflowColumns()) {
-        const updates: string[] = ['workflow_status = ?', 'updated_at = datetime("now")'];
+        const updates: string[] = ['workflow_status = ?', "updated_at = datetime('now')"];
         const values: (string | null)[] = [toStatus];
 
         // Handle assignment
@@ -387,9 +404,14 @@ export class WorkflowService {
 
         values.push(caseId);
 
-        this.db.prepare(`
-          UPDATE cases SET ${updates.join(', ')} WHERE id = ?
-        `).run(...values);
+        const sql = `UPDATE cases SET ${updates.join(', ')} WHERE id = ?`;
+        console.log(`[WorkflowService] Executing SQL: ${sql}`);
+        console.log(`[WorkflowService] Values: ${values.join(', ')}`);
+
+        const result = this.db.prepare(sql).run(...values);
+        console.log(`[WorkflowService] Update result: changes=${result.changes}`);
+      } else {
+        console.log(`[WorkflowService] Warning: workflow columns not found in cases table`);
       }
 
       // Add workflow comment if provided

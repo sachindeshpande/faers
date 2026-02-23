@@ -220,12 +220,14 @@ export class SubmissionRepository {
       GROUP BY status
     `).all() as Array<{ status: string; count: number }>;
 
-    // Initialize all statuses to 0
+    // Initialize all statuses to 0 (including Phase 2B statuses)
     const counts: Record<string, number> = {
       Draft: 0,
       'Ready for Export': 0,
       Exported: 0,
+      Submitting: 0,
       Submitted: 0,
+      'Submission Failed': 0,
       Acknowledged: 0,
       Rejected: 0
     };
@@ -384,7 +386,13 @@ export class SubmissionRepository {
       exported: 'Exported to XML',
       submitted: 'Submitted to FDA',
       acknowledged: 'FDA acknowledged submission',
-      rejected: 'FDA rejected submission'
+      rejected: 'FDA rejected submission',
+      api_submitting: 'API submission in progress',
+      api_submit_success: 'API submission successful',
+      api_submit_failed: 'API submission failed',
+      api_retry: 'API submission retry',
+      ack_received: 'Acknowledgment received from FDA',
+      nack_received: 'Negative acknowledgment (NACK) received from FDA'
     };
 
     let description = descriptions[eventType] || eventType;

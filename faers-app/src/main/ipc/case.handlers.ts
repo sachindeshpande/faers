@@ -62,10 +62,13 @@ export function registerIpcHandlers(): void {
   ipcMain.handle(
     IPC_CHANNELS.CASE_GET,
     wrapHandler(({ id, includeRelated }: { id: string; includeRelated?: boolean }) => {
+      console.log(`[Case Handler] CASE_GET: id=${id}, includeRelated=${includeRelated}`);
       const caseData = caseRepo.findById(id);
       if (!caseData) {
         throw new Error(`Case not found: ${id}`);
       }
+
+      console.log(`[Case Handler] Fetched case: status='${caseData.status}', workflowStatus='${caseData.workflowStatus}'`);
 
       if (includeRelated) {
         caseData.reporters = reporterRepo.findByCaseId(id);

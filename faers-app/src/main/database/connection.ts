@@ -921,6 +921,728 @@ function runMigrations(database: DatabaseInstance): void {
     ).run('012_psrs');
     console.log('Migration 012 applied successfully.');
   }
+
+  // Migration 013: Phase 5 - MedDRA Dictionary Tables
+  const migration013Exists = database.prepare(
+    'SELECT 1 FROM migrations WHERE name = ?'
+  ).get('013_meddra_dictionary');
+
+  if (!migration013Exists) {
+    console.log('Applying migration 013: Adding MedDRA dictionary tables...');
+
+    // MedDRA version tracking
+    database.exec(`
+      CREATE TABLE IF NOT EXISTS meddra_versions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        version TEXT NOT NULL UNIQUE,
+        release_date TEXT,
+        import_date TEXT NOT NULL,
+        is_active INTEGER DEFAULT 0,
+        llt_count INTEGER DEFAULT 0,
+        pt_count INTEGER DEFAULT 0,
+        imported_by TEXT
+      )
+    `);
+
+    // System Organ Class (SOC) - Level 1 (top)
+    database.exec(`
+      CREATE TABLE IF NOT EXISTS meddra_soc (
+        soc_code INTEGER NOT NULL,
+        soc_name TEXT NOT NULL,
+        soc_abbrev TEXT,
+        version_id INTEGER NOT NULL REFERENCES meddra_versions(id) ON DELETE CASCADE,
+        PRIMARY KEY (soc_code, version_id)
+      )
+    `);
+
+    // High Level Group Term (HLGT) - Level 2
+    database.exec(`
+      CREATE TABLE IF NOT EXISTS meddra_hlgt (
+        hlgt_code INTEGER NOT NULL,
+        hlgt_name TEXT NOT NULL,
+        version_id INTEGER NOT NULL REFERENCES meddra_versions(id) ON DELETE CASCADE,
+        PRIMARY KEY (hlgt_code, version_id)
+      )
+    `);
+
+    // HLGT to SOC relationship
+    database.exec(`
+      CREATE TABLE IF NOT EXISTS meddra_hlgt_soc (
+        hlgt_code INTEGER NOT NULL,
+        soc_code INTEGER NOT NULL,
+        version_id INTEGER NOT NULL REFERENCES meddra_versions(id) ON DELETE CASCADE,
+        PRIMARY KEY (hlgt_code, soc_code, version_id)
+      )
+    `);
+
+    // High Level Term (HLT) - Level 3
+    database.exec(`
+      CREATE TABLE IF NOT EXISTS meddra_hlt (
+        hlt_code INTEGER NOT NULL,
+        hlt_name TEXT NOT NULL,
+        version_id INTEGER NOT NULL REFERENCES meddra_versions(id) ON DELETE CASCADE,
+        PRIMARY KEY (hlt_code, version_id)
+      )
+    `);
+
+    // HLT to HLGT relationship
+    database.exec(`
+      CREATE TABLE IF NOT EXISTS meddra_hlt_hlgt (
+        hlt_code INTEGER NOT NULL,
+        hlgt_code INTEGER NOT NULL,
+        version_id INTEGER NOT NULL REFERENCES meddra_versions(id) ON DELETE CASCADE,
+        PRIMARY KEY (hlt_code, hlgt_code, version_id)
+      )
+    `);
+
+    // Preferred Term (PT) - Level 4
+    database.exec(`
+      CREATE TABLE IF NOT EXISTS meddra_pt (
+        pt_code INTEGER NOT NULL,
+        pt_name TEXT NOT NULL,
+        primary_soc_code INTEGER,
+        version_id INTEGER NOT NULL REFERENCES meddra_versions(id) ON DELETE CASCADE,
+        PRIMARY KEY (pt_code, version_id)
+      )
+    `);
+
+    // PT to HLT relationship
+    database.exec(`
+      CREATE TABLE IF NOT EXISTS meddra_pt_hlt (
+        pt_code INTEGER NOT NULL,
+        hlt_code INTEGER NOT NULL,
+        version_id INTEGER NOT NULL REFERENCES meddra_versions(id) ON DELETE CASCADE,
+        PRIMARY KEY (pt_code, hlt_code, version_id)
+      )
+    `);
+
+    // Lowest Level Term (LLT) - Level 5 (bottom)
+    database.exec(`
+      CREATE TABLE IF NOT EXISTS meddra_llt (
+        llt_code INTEGER NOT NULL,
+        llt_name TEXT NOT NULL,
+        pt_code INTEGER NOT NULL,
+        is_current INTEGER DEFAULT 1,
+        version_id INTEGER NOT NULL REFERENCES meddra_versions(id) ON DELETE CASCADE,
+        PRIMARY KEY (llt_code, version_id)
+      )
+    `);
+
+    // Create indexes for search performance
+    database.exec(`
+      CREATE INDEX IF NOT EXISTS idx_meddra_llt_name ON meddra_llt(llt_name);
+      CREATE INDEX IF NOT EXISTS idx_meddra_pt_name ON meddra_pt(pt_name);
+      CREATE INDEX IF NOT EXISTS idx_meddra_llt_pt ON meddra_llt(pt_code, version_id);
+      CREATE INDEX IF NOT EXISTS idx_meddra_llt_version ON meddra_llt(version_id);
+      CREATE INDEX IF NOT EXISTS idx_meddra_pt_version ON meddra_pt(version_id);
+      CREATE INDEX IF NOT EXISTS idx_meddra_version_active ON meddra_versions(is_active);
+    `);
+
+    database.prepare(
+      'INSERT INTO migrations (name) VALUES (?)'
+    ).run('013_meddra_dictionary');
+    console.log('Migration 013 applied successfully.');
+  }
+
+  // Migration 014: Phase 5 - WHO Drug Dictionary Tables
+  const migration014Exists = database.prepare(
+    'SELECT 1 FROM migrations WHERE name = ?'
+  ).get('014_whodrug_dictionary');
+
+  if (!migration014Exists) {
+    console.log('Applying migration 014: Adding WHO Drug dictionary tables...');
+
+    // WHO Drug version tracking
+    database.exec(`
+      CREATE TABLE IF NOT EXISTS whodrug_versions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        version TEXT NOT NULL UNIQUE,
+        release_date TEXT,
+        import_date TEXT NOT NULL,
+        is_active INTEGER DEFAULT 0,
+        drug_count INTEGER DEFAULT 0,
+        imported_by TEXT
+      )
+    `);
+
+    // ATC Classification
+    database.exec(`
+      CREATE TABLE IF NOT EXISTS whodrug_atc (
+        atc_code TEXT NOT NULL,
+        atc_level INTEGER NOT NULL,
+        atc_name TEXT NOT NULL,
+        parent_atc_code TEXT,
+        version_id INTEGER NOT NULL REFERENCES whodrug_versions(id) ON DELETE CASCADE,
+        PRIMARY KEY (atc_code, version_id)
+      )
+    `);
+
+    // Active Ingredients
+    database.exec(`
+      CREATE TABLE IF NOT EXISTS whodrug_ingredients (
+        ingredient_id INTEGER NOT NULL,
+        ingredient_name TEXT NOT NULL,
+        cas_number TEXT,
+        version_id INTEGER NOT NULL REFERENCES whodrug_versions(id) ON DELETE CASCADE,
+        PRIMARY KEY (ingredient_id, version_id)
+      )
+    `);
+
+    // Drug Products (Trade Names)
+    database.exec(`
+      CREATE TABLE IF NOT EXISTS whodrug_products (
+        drug_code TEXT NOT NULL,
+        drug_record_number TEXT NOT NULL,
+        seq1 TEXT NOT NULL,
+        seq2 TEXT NOT NULL,
+        drug_name TEXT NOT NULL,
+        country_code TEXT,
+        pharmaceutical_form TEXT,
+        strength TEXT,
+        manufacturer TEXT,
+        version_id INTEGER NOT NULL REFERENCES whodrug_versions(id) ON DELETE CASCADE,
+        PRIMARY KEY (drug_code, version_id)
+      )
+    `);
+
+    // Drug to Ingredient relationship
+    database.exec(`
+      CREATE TABLE IF NOT EXISTS whodrug_product_ingredients (
+        drug_code TEXT NOT NULL,
+        ingredient_id INTEGER NOT NULL,
+        version_id INTEGER NOT NULL REFERENCES whodrug_versions(id) ON DELETE CASCADE,
+        PRIMARY KEY (drug_code, ingredient_id, version_id)
+      )
+    `);
+
+    // Drug to ATC relationship
+    database.exec(`
+      CREATE TABLE IF NOT EXISTS whodrug_product_atc (
+        drug_code TEXT NOT NULL,
+        atc_code TEXT NOT NULL,
+        is_official INTEGER DEFAULT 1,
+        version_id INTEGER NOT NULL REFERENCES whodrug_versions(id) ON DELETE CASCADE,
+        PRIMARY KEY (drug_code, atc_code, version_id)
+      )
+    `);
+
+    // Create indexes for search
+    database.exec(`
+      CREATE INDEX IF NOT EXISTS idx_whodrug_name ON whodrug_products(drug_name);
+      CREATE INDEX IF NOT EXISTS idx_whodrug_ingredient ON whodrug_ingredients(ingredient_name);
+      CREATE INDEX IF NOT EXISTS idx_whodrug_atc ON whodrug_atc(atc_code, version_id);
+      CREATE INDEX IF NOT EXISTS idx_whodrug_version ON whodrug_products(version_id);
+      CREATE INDEX IF NOT EXISTS idx_whodrug_country ON whodrug_products(country_code);
+      CREATE INDEX IF NOT EXISTS idx_whodrug_version_active ON whodrug_versions(is_active);
+    `);
+
+    database.prepare(
+      'INSERT INTO migrations (name) VALUES (?)'
+    ).run('014_whodrug_dictionary');
+    console.log('Migration 014 applied successfully.');
+  }
+
+  // Migration 015: Phase 5 - Case Coding Fields
+  const migration015Exists = database.prepare(
+    'SELECT 1 FROM migrations WHERE name = ?'
+  ).get('015_case_coding_fields');
+
+  if (!migration015Exists) {
+    console.log('Applying migration 015: Adding case coding fields...');
+
+    // Add coding fields to case_reactions
+    const reactionColumns = database.prepare("PRAGMA table_info(case_reactions)").all() as Array<{ name: string }>;
+    const reactionColumnNames = reactionColumns.map(c => c.name);
+
+    if (!reactionColumnNames.includes('verbatim_text')) {
+      database.exec('ALTER TABLE case_reactions ADD COLUMN verbatim_text TEXT');
+    }
+    if (!reactionColumnNames.includes('llt_code')) {
+      database.exec('ALTER TABLE case_reactions ADD COLUMN llt_code INTEGER');
+    }
+    if (!reactionColumnNames.includes('llt_name')) {
+      database.exec('ALTER TABLE case_reactions ADD COLUMN llt_name TEXT');
+    }
+    if (!reactionColumnNames.includes('pt_code')) {
+      database.exec('ALTER TABLE case_reactions ADD COLUMN pt_code INTEGER');
+    }
+    if (!reactionColumnNames.includes('pt_name')) {
+      database.exec('ALTER TABLE case_reactions ADD COLUMN pt_name TEXT');
+    }
+    if (!reactionColumnNames.includes('hlt_code')) {
+      database.exec('ALTER TABLE case_reactions ADD COLUMN hlt_code INTEGER');
+    }
+    if (!reactionColumnNames.includes('hlt_name')) {
+      database.exec('ALTER TABLE case_reactions ADD COLUMN hlt_name TEXT');
+    }
+    if (!reactionColumnNames.includes('hlgt_code')) {
+      database.exec('ALTER TABLE case_reactions ADD COLUMN hlgt_code INTEGER');
+    }
+    if (!reactionColumnNames.includes('hlgt_name')) {
+      database.exec('ALTER TABLE case_reactions ADD COLUMN hlgt_name TEXT');
+    }
+    if (!reactionColumnNames.includes('soc_code')) {
+      database.exec('ALTER TABLE case_reactions ADD COLUMN soc_code INTEGER');
+    }
+    if (!reactionColumnNames.includes('soc_name')) {
+      database.exec('ALTER TABLE case_reactions ADD COLUMN soc_name TEXT');
+    }
+    if (!reactionColumnNames.includes('coding_meddra_version')) {
+      database.exec('ALTER TABLE case_reactions ADD COLUMN coding_meddra_version TEXT');
+    }
+    if (!reactionColumnNames.includes('coded_by')) {
+      database.exec('ALTER TABLE case_reactions ADD COLUMN coded_by TEXT');
+    }
+    if (!reactionColumnNames.includes('coded_at')) {
+      database.exec('ALTER TABLE case_reactions ADD COLUMN coded_at TEXT');
+    }
+
+    // Add coding fields to case_drugs
+    const drugColumns = database.prepare("PRAGMA table_info(case_drugs)").all() as Array<{ name: string }>;
+    const drugColumnNames = drugColumns.map(c => c.name);
+
+    if (!drugColumnNames.includes('verbatim_name')) {
+      database.exec('ALTER TABLE case_drugs ADD COLUMN verbatim_name TEXT');
+    }
+    if (!drugColumnNames.includes('whodrug_code')) {
+      database.exec('ALTER TABLE case_drugs ADD COLUMN whodrug_code TEXT');
+    }
+    if (!drugColumnNames.includes('coded_drug_name')) {
+      database.exec('ALTER TABLE case_drugs ADD COLUMN coded_drug_name TEXT');
+    }
+    if (!drugColumnNames.includes('ingredient_names')) {
+      database.exec('ALTER TABLE case_drugs ADD COLUMN ingredient_names TEXT');
+    }
+    if (!drugColumnNames.includes('atc_code')) {
+      database.exec('ALTER TABLE case_drugs ADD COLUMN atc_code TEXT');
+    }
+    if (!drugColumnNames.includes('atc_name')) {
+      database.exec('ALTER TABLE case_drugs ADD COLUMN atc_name TEXT');
+    }
+    if (!drugColumnNames.includes('coding_whodrug_version')) {
+      database.exec('ALTER TABLE case_drugs ADD COLUMN coding_whodrug_version TEXT');
+    }
+    if (!drugColumnNames.includes('drug_coded_by')) {
+      database.exec('ALTER TABLE case_drugs ADD COLUMN drug_coded_by TEXT');
+    }
+    if (!drugColumnNames.includes('drug_coded_at')) {
+      database.exec('ALTER TABLE case_drugs ADD COLUMN drug_coded_at TEXT');
+    }
+
+    // Create indexes for coded terms
+    database.exec(`
+      CREATE INDEX IF NOT EXISTS idx_reactions_pt_code ON case_reactions(pt_code);
+      CREATE INDEX IF NOT EXISTS idx_reactions_soc_code ON case_reactions(soc_code);
+      CREATE INDEX IF NOT EXISTS idx_drugs_whodrug ON case_drugs(whodrug_code);
+      CREATE INDEX IF NOT EXISTS idx_drugs_atc ON case_drugs(atc_code);
+    `);
+
+    database.prepare(
+      'INSERT INTO migrations (name) VALUES (?)'
+    ).run('015_case_coding_fields');
+    console.log('Migration 015 applied successfully.');
+  }
+
+  // Migration 016: Phase 5 - Saved Searches
+  const migration016Exists = database.prepare(
+    'SELECT 1 FROM migrations WHERE name = ?'
+  ).get('016_saved_searches');
+
+  if (!migration016Exists) {
+    console.log('Applying migration 016: Adding saved searches table...');
+
+    database.exec(`
+      CREATE TABLE IF NOT EXISTS saved_searches (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        description TEXT,
+        query_definition TEXT NOT NULL,
+        created_by TEXT,
+        is_shared INTEGER DEFAULT 0,
+        usage_count INTEGER DEFAULT 0,
+        last_used_at TEXT,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      )
+    `);
+
+    database.exec(`
+      CREATE INDEX IF NOT EXISTS idx_saved_searches_user ON saved_searches(created_by);
+      CREATE INDEX IF NOT EXISTS idx_saved_searches_shared ON saved_searches(is_shared);
+    `);
+
+    database.prepare(
+      'INSERT INTO migrations (name) VALUES (?)'
+    ).run('016_saved_searches');
+    console.log('Migration 016 applied successfully.');
+  }
+
+  // Migration 017: Phase 5 - Case Templates
+  const migration017Exists = database.prepare(
+    'SELECT 1 FROM migrations WHERE name = ?'
+  ).get('017_case_templates');
+
+  if (!migration017Exists) {
+    console.log('Applying migration 017: Adding case templates tables...');
+
+    database.exec(`
+      CREATE TABLE IF NOT EXISTS case_templates (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        description TEXT,
+        category TEXT,
+        template_data TEXT NOT NULL,
+        locked_fields TEXT,
+        required_fields TEXT,
+        created_by TEXT,
+        is_global INTEGER DEFAULT 0,
+        is_approved INTEGER DEFAULT 0,
+        approved_by TEXT,
+        approved_at TEXT,
+        usage_count INTEGER DEFAULT 0,
+        version INTEGER DEFAULT 1,
+        is_active INTEGER DEFAULT 1,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      )
+    `);
+
+    database.exec(`
+      CREATE TABLE IF NOT EXISTS template_usage (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        template_id INTEGER NOT NULL REFERENCES case_templates(id) ON DELETE CASCADE,
+        case_id TEXT NOT NULL,
+        used_by TEXT,
+        used_at TEXT NOT NULL
+      )
+    `);
+
+    database.exec(`
+      CREATE INDEX IF NOT EXISTS idx_templates_category ON case_templates(category);
+      CREATE INDEX IF NOT EXISTS idx_templates_user ON case_templates(created_by);
+      CREATE INDEX IF NOT EXISTS idx_templates_global ON case_templates(is_global);
+      CREATE INDEX IF NOT EXISTS idx_templates_active ON case_templates(is_active);
+      CREATE INDEX IF NOT EXISTS idx_template_usage_template ON template_usage(template_id);
+    `);
+
+    database.prepare(
+      'INSERT INTO migrations (name) VALUES (?)'
+    ).run('017_case_templates');
+    console.log('Migration 017 applied successfully.');
+  }
+
+  // Migration 018: Phase 5 - Duplicate Detection
+  const migration018Exists = database.prepare(
+    'SELECT 1 FROM migrations WHERE name = ?'
+  ).get('018_duplicate_detection');
+
+  if (!migration018Exists) {
+    console.log('Applying migration 018: Adding duplicate detection tables...');
+
+    database.exec(`
+      CREATE TABLE IF NOT EXISTS duplicate_candidates (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        case_id_1 TEXT NOT NULL,
+        case_id_2 TEXT NOT NULL,
+        similarity_score REAL NOT NULL,
+        matching_criteria TEXT,
+        status TEXT DEFAULT 'pending',
+        resolution TEXT,
+        resolved_by TEXT,
+        resolved_at TEXT,
+        resolution_notes TEXT,
+        detected_at TEXT NOT NULL,
+        UNIQUE(case_id_1, case_id_2)
+      )
+    `);
+
+    database.exec(`
+      CREATE TABLE IF NOT EXISTS merged_cases (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        master_case_id TEXT NOT NULL,
+        merged_case_id TEXT NOT NULL,
+        merged_by TEXT,
+        merged_at TEXT NOT NULL,
+        field_sources TEXT
+      )
+    `);
+
+    database.exec(`
+      CREATE INDEX IF NOT EXISTS idx_duplicates_status ON duplicate_candidates(status);
+      CREATE INDEX IF NOT EXISTS idx_duplicates_case1 ON duplicate_candidates(case_id_1);
+      CREATE INDEX IF NOT EXISTS idx_duplicates_case2 ON duplicate_candidates(case_id_2);
+      CREATE INDEX IF NOT EXISTS idx_duplicates_score ON duplicate_candidates(similarity_score);
+      CREATE INDEX IF NOT EXISTS idx_merged_master ON merged_cases(master_case_id);
+      CREATE INDEX IF NOT EXISTS idx_merged_source ON merged_cases(merged_case_id);
+    `);
+
+    database.prepare(
+      'INSERT INTO migrations (name) VALUES (?)'
+    ).run('018_duplicate_detection');
+    console.log('Migration 018 applied successfully.');
+  }
+
+  // Migration 019: Phase 5 - Validation Rules & Import
+  const migration019Exists = database.prepare(
+    'SELECT 1 FROM migrations WHERE name = ?'
+  ).get('019_validation_import');
+
+  if (!migration019Exists) {
+    console.log('Applying migration 019: Adding validation rules and import tables...');
+
+    // Validation rules
+    database.exec(`
+      CREATE TABLE IF NOT EXISTS validation_rules (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        rule_code TEXT UNIQUE NOT NULL,
+        rule_name TEXT NOT NULL,
+        description TEXT,
+        rule_type TEXT NOT NULL,
+        severity TEXT NOT NULL DEFAULT 'error',
+        condition_expression TEXT,
+        validation_expression TEXT NOT NULL,
+        error_message TEXT NOT NULL,
+        field_path TEXT,
+        related_fields TEXT,
+        is_system INTEGER DEFAULT 0,
+        is_active INTEGER DEFAULT 1,
+        created_by TEXT,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      )
+    `);
+
+    // Validation results per case
+    database.exec(`
+      CREATE TABLE IF NOT EXISTS validation_results (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        case_id TEXT NOT NULL,
+        rule_id INTEGER REFERENCES validation_rules(id),
+        severity TEXT NOT NULL,
+        message TEXT NOT NULL,
+        field_path TEXT,
+        field_value TEXT,
+        is_acknowledged INTEGER DEFAULT 0,
+        acknowledged_by TEXT,
+        acknowledged_at TEXT,
+        validated_at TEXT NOT NULL
+      )
+    `);
+
+    // Import jobs
+    database.exec(`
+      CREATE TABLE IF NOT EXISTS import_jobs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        filename TEXT NOT NULL,
+        file_path TEXT NOT NULL,
+        file_size INTEGER,
+        row_count INTEGER,
+        column_count INTEGER,
+        status TEXT DEFAULT 'pending',
+        column_mapping TEXT,
+        transformation_rules TEXT,
+        validation_summary TEXT,
+        imported_count INTEGER DEFAULT 0,
+        error_count INTEGER DEFAULT 0,
+        warning_count INTEGER DEFAULT 0,
+        skipped_count INTEGER DEFAULT 0,
+        created_by TEXT,
+        started_at TEXT,
+        completed_at TEXT,
+        created_at TEXT NOT NULL
+      )
+    `);
+
+    // Import job rows
+    database.exec(`
+      CREATE TABLE IF NOT EXISTS import_job_rows (
+        import_job_id INTEGER NOT NULL REFERENCES import_jobs(id) ON DELETE CASCADE,
+        row_number INTEGER NOT NULL,
+        case_id TEXT,
+        status TEXT NOT NULL,
+        errors TEXT,
+        warnings TEXT,
+        PRIMARY KEY (import_job_id, row_number)
+      )
+    `);
+
+    // Saved column mappings
+    database.exec(`
+      CREATE TABLE IF NOT EXISTS saved_column_mappings (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        description TEXT,
+        mapping TEXT NOT NULL,
+        created_by TEXT,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      )
+    `);
+
+    // Create indexes
+    database.exec(`
+      CREATE INDEX IF NOT EXISTS idx_validation_rules_type ON validation_rules(rule_type);
+      CREATE INDEX IF NOT EXISTS idx_validation_rules_active ON validation_rules(is_active);
+      CREATE INDEX IF NOT EXISTS idx_validation_rules_system ON validation_rules(is_system);
+      CREATE INDEX IF NOT EXISTS idx_validation_results_case ON validation_results(case_id);
+      CREATE INDEX IF NOT EXISTS idx_validation_results_ack ON validation_results(is_acknowledged);
+      CREATE INDEX IF NOT EXISTS idx_import_jobs_status ON import_jobs(status);
+      CREATE INDEX IF NOT EXISTS idx_import_jobs_user ON import_jobs(created_by);
+      CREATE INDEX IF NOT EXISTS idx_import_rows_status ON import_job_rows(status);
+    `);
+
+    // Seed default validation rules
+    const now = new Date().toISOString();
+    const systemRules = [
+      {
+        code: 'SYS-DATE-001',
+        name: 'Date Sequence',
+        description: 'Start dates must be before or equal to end dates',
+        type: 'date_logic',
+        severity: 'error',
+        condition: 'true',
+        validation: '(!reaction_start_date || !reaction_end_date) || new Date(reaction_start_date) <= new Date(reaction_end_date)',
+        message: 'Reaction end date cannot be before start date',
+        field: 'reaction_end_date'
+      },
+      {
+        code: 'SYS-SERIOUS-001',
+        name: 'Serious Requires Criterion',
+        description: 'If case is marked serious, at least one seriousness criterion must be selected',
+        type: 'cross_field',
+        severity: 'error',
+        condition: 'is_serious === 1',
+        validation: 'serious_death || serious_life_threat || serious_hospitalization || serious_disability || serious_congenital || serious_other',
+        message: 'At least one seriousness criterion must be selected for a serious case',
+        field: 'is_serious'
+      },
+      {
+        code: 'SYS-AGE-002',
+        name: 'Age Limit',
+        description: 'Patient age should not exceed 150 years',
+        type: 'range',
+        severity: 'warning',
+        condition: "patient_age && patient_age_unit === '801'",
+        validation: 'patient_age <= 150',
+        message: 'Patient age exceeds 150 years - please verify',
+        field: 'patient_age'
+      },
+      {
+        code: 'SYS-DATE-002',
+        name: 'No Future Dates',
+        description: 'Event dates should not be in the future',
+        type: 'date_logic',
+        severity: 'error',
+        condition: 'reaction_start_date',
+        validation: 'new Date(reaction_start_date) <= new Date()',
+        message: 'Reaction date cannot be in the future',
+        field: 'reaction_start_date'
+      },
+      {
+        code: 'SYS-CODING-001',
+        name: 'MedDRA Coding Required',
+        description: 'Reaction should be coded with MedDRA PT for submission',
+        type: 'required',
+        severity: 'error',
+        condition: "workflow_status === 'Ready for Export' || workflow_status === 'Approved'",
+        validation: '!!reaction_pt_code',
+        message: 'MedDRA coding (PT) is required for submission',
+        field: 'reaction_pt_code'
+      }
+    ];
+
+    const insertRule = database.prepare(`
+      INSERT INTO validation_rules
+      (rule_code, rule_name, description, rule_type, severity, condition_expression, validation_expression, error_message, field_path, is_system, is_active, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 1, ?, ?)
+    `);
+
+    for (const rule of systemRules) {
+      insertRule.run(
+        rule.code, rule.name, rule.description, rule.type, rule.severity,
+        rule.condition, rule.validation, rule.message, rule.field, now, now
+      );
+    }
+
+    database.prepare(
+      'INSERT INTO migrations (name) VALUES (?)'
+    ).run('019_validation_import');
+    console.log('Migration 019 applied successfully.');
+  }
+
+  // Migration 020: Phase 2B - ESG API Submission Tracking
+  const migration020Exists = database.prepare(
+    'SELECT 1 FROM migrations WHERE name = ?'
+  ).get('020_esg_api_submission');
+
+  if (!migration020Exists) {
+    console.log('Applying migration 020: Adding ESG API submission tracking...');
+
+    // API submission attempts table
+    database.exec(`
+      CREATE TABLE IF NOT EXISTS api_submission_attempts (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        case_id TEXT NOT NULL REFERENCES cases(id) ON DELETE CASCADE,
+        attempt_number INTEGER NOT NULL DEFAULT 1,
+        esg_submission_id TEXT,
+        esg_core_id TEXT,
+        environment TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'in_progress',
+        started_at DATETIME NOT NULL,
+        completed_at DATETIME,
+        error TEXT,
+        error_category TEXT,
+        http_status_code INTEGER,
+        ack_type TEXT,
+        ack_timestamp DATETIME,
+        ack_fda_core_id TEXT,
+        ack_errors TEXT,
+        created_at DATETIME NOT NULL,
+        updated_at DATETIME NOT NULL
+      )
+    `);
+
+    // Indexes for api_submission_attempts
+    database.exec(`
+      CREATE INDEX IF NOT EXISTS idx_api_attempts_case ON api_submission_attempts(case_id);
+      CREATE INDEX IF NOT EXISTS idx_api_attempts_status ON api_submission_attempts(status);
+      CREATE INDEX IF NOT EXISTS idx_api_attempts_esg_id ON api_submission_attempts(esg_submission_id);
+      CREATE INDEX IF NOT EXISTS idx_api_attempts_esg_core ON api_submission_attempts(esg_core_id);
+      CREATE INDEX IF NOT EXISTS idx_api_attempts_env ON api_submission_attempts(environment);
+      CREATE INDEX IF NOT EXISTS idx_api_attempts_ack ON api_submission_attempts(ack_type);
+    `);
+
+    // Add ESG fields to cases table
+    const caseColumns = database.prepare("PRAGMA table_info(cases)").all() as Array<{ name: string }>;
+    const caseColumnNames = caseColumns.map(c => c.name);
+
+    if (!caseColumnNames.includes('esg_submission_id')) {
+      database.exec('ALTER TABLE cases ADD COLUMN esg_submission_id TEXT');
+    }
+    if (!caseColumnNames.includes('esg_core_id')) {
+      database.exec('ALTER TABLE cases ADD COLUMN esg_core_id TEXT');
+    }
+    if (!caseColumnNames.includes('api_submission_started_at')) {
+      database.exec('ALTER TABLE cases ADD COLUMN api_submission_started_at DATETIME');
+    }
+    if (!caseColumnNames.includes('api_last_error')) {
+      database.exec('ALTER TABLE cases ADD COLUMN api_last_error TEXT');
+    }
+    if (!caseColumnNames.includes('api_attempt_count')) {
+      database.exec('ALTER TABLE cases ADD COLUMN api_attempt_count INTEGER DEFAULT 0');
+    }
+
+    // Create indexes for ESG-related case queries
+    database.exec(`
+      CREATE INDEX IF NOT EXISTS idx_cases_esg_submission ON cases(esg_submission_id);
+      CREATE INDEX IF NOT EXISTS idx_cases_esg_core ON cases(esg_core_id);
+    `);
+
+    database.prepare(
+      'INSERT INTO migrations (name) VALUES (?)'
+    ).run('020_esg_api_submission');
+    console.log('Migration 020 applied successfully.');
+  }
 }
 
 /**
