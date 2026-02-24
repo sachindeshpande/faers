@@ -1643,6 +1643,312 @@ function runMigrations(database: DatabaseInstance): void {
     ).run('020_esg_api_submission');
     console.log('Migration 020 applied successfully.');
   }
+
+  // ============================================================
+  // Migration 021: Phase 6 - Premarketing (IND) Safety Reports
+  // ============================================================
+  const migration021Exists = database.prepare(
+    'SELECT 1 FROM migrations WHERE name = ?'
+  ).get('021_phase6_ind_safety');
+
+  if (!migration021Exists) {
+    console.log('Applying migration 021: Phase 6 - IND Safety Reports...');
+
+    // Clinical studies table
+    database.exec(`
+      CREATE TABLE IF NOT EXISTS studies (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        study_id TEXT UNIQUE NOT NULL,
+        protocol_number TEXT NOT NULL,
+        study_title TEXT NOT NULL,
+        sponsor_name TEXT,
+        phase TEXT,
+        study_design TEXT,
+        therapeutic_area TEXT,
+        indication TEXT,
+        target_enrollment INTEGER,
+        status TEXT NOT NULL DEFAULT 'planned',
+        fpfv_date TEXT,
+        lplv_date TEXT,
+        is_blinded INTEGER DEFAULT 0,
+        created_by INTEGER,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Study IND numbers (many-to-many)
+    database.exec(`
+      CREATE TABLE IF NOT EXISTS study_inds (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        study_id INTEGER NOT NULL REFERENCES studies(id) ON DELETE CASCADE,
+        ind_number TEXT NOT NULL,
+        center TEXT NOT NULL,
+        is_primary INTEGER DEFAULT 0,
+        UNIQUE(study_id, ind_number)
+      )
+    `);
+
+    // Study sites
+    database.exec(`
+      CREATE TABLE IF NOT EXISTS study_sites (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        study_id INTEGER NOT NULL REFERENCES studies(id) ON DELETE CASCADE,
+        site_number TEXT NOT NULL,
+        site_name TEXT NOT NULL,
+        institution_name TEXT,
+        address_line1 TEXT,
+        address_line2 TEXT,
+        city TEXT,
+        state TEXT,
+        postal_code TEXT,
+        country TEXT NOT NULL,
+        phone TEXT,
+        fax TEXT,
+        email TEXT,
+        status TEXT NOT NULL DEFAULT 'active',
+        first_enrollment_date TEXT,
+        irb_name TEXT,
+        irb_approval_date TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(study_id, site_number)
+      )
+    `);
+
+    // Site investigators
+    database.exec(`
+      CREATE TABLE IF NOT EXISTS site_investigators (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        site_id INTEGER NOT NULL REFERENCES study_sites(id) ON DELETE CASCADE,
+        investigator_name TEXT NOT NULL,
+        role TEXT NOT NULL,
+        email TEXT,
+        phone TEXT,
+        is_primary INTEGER DEFAULT 0,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Investigational products
+    database.exec(`
+      CREATE TABLE IF NOT EXISTS study_products (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        study_id INTEGER NOT NULL REFERENCES studies(id) ON DELETE CASCADE,
+        product_name TEXT NOT NULL,
+        active_ingredient TEXT,
+        dosage_form TEXT,
+        strength TEXT,
+        route TEXT,
+        is_investigational INTEGER DEFAULT 1,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Investigator Brochure versions
+    database.exec(`
+      CREATE TABLE IF NOT EXISTS investigator_brochures (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        study_id INTEGER NOT NULL REFERENCES studies(id) ON DELETE CASCADE,
+        version_number TEXT NOT NULL,
+        effective_date TEXT NOT NULL,
+        document_path TEXT,
+        change_summary TEXT,
+        is_current INTEGER DEFAULT 0,
+        created_by INTEGER,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(study_id, version_number)
+      )
+    `);
+
+    // IB known adverse reactions (for expectedness lookup)
+    database.exec(`
+      CREATE TABLE IF NOT EXISTS ib_known_reactions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        ib_id INTEGER NOT NULL REFERENCES investigator_brochures(id) ON DELETE CASCADE,
+        meddra_pt_code INTEGER NOT NULL,
+        meddra_pt_name TEXT NOT NULL,
+        documented_severity TEXT,
+        documented_frequency TEXT,
+        ib_section TEXT,
+        ib_page TEXT,
+        notes TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Causality assessments
+    database.exec(`
+      CREATE TABLE IF NOT EXISTS case_causality (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        case_id TEXT NOT NULL REFERENCES cases(id) ON DELETE CASCADE,
+        assessor_type TEXT NOT NULL,
+        assessor_name TEXT,
+        assessment_date TEXT NOT NULL,
+        relationship TEXT NOT NULL,
+        justification TEXT,
+        created_by INTEGER,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Unblinding records
+    database.exec(`
+      CREATE TABLE IF NOT EXISTS case_unblinding (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        case_id TEXT NOT NULL REFERENCES cases(id) ON DELETE CASCADE,
+        request_date DATETIME NOT NULL,
+        request_reason TEXT NOT NULL,
+        request_justification TEXT,
+        requested_by INTEGER,
+        approval_required INTEGER DEFAULT 1,
+        approved_by INTEGER,
+        approved_at DATETIME,
+        unblinding_date DATETIME,
+        treatment_arm_revealed TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // BA/BE studies
+    database.exec(`
+      CREATE TABLE IF NOT EXISTS babe_studies (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        protocol_number TEXT NOT NULL,
+        study_design TEXT,
+        test_product_name TEXT NOT NULL,
+        test_product_manufacturer TEXT,
+        reference_product_name TEXT NOT NULL,
+        reference_product_manufacturer TEXT,
+        active_ingredient TEXT,
+        dosage_form TEXT,
+        strength TEXT,
+        population TEXT,
+        sponsor_name TEXT,
+        pre_anda_number TEXT,
+        status TEXT NOT NULL DEFAULT 'active',
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Protocol deviations
+    database.exec(`
+      CREATE TABLE IF NOT EXISTS protocol_deviations (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        deviation_id TEXT UNIQUE NOT NULL,
+        study_id INTEGER NOT NULL REFERENCES studies(id) ON DELETE CASCADE,
+        site_id INTEGER REFERENCES study_sites(id),
+        subject_number TEXT,
+        deviation_date TEXT NOT NULL,
+        category TEXT NOT NULL,
+        description TEXT NOT NULL,
+        impact_on_safety TEXT,
+        impact_on_data TEXT,
+        corrective_action TEXT,
+        reported_to_irb INTEGER DEFAULT 0,
+        irb_report_date TEXT,
+        reported_to_sponsor INTEGER DEFAULT 0,
+        sponsor_report_date TEXT,
+        created_by INTEGER,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Deviation-case linking
+    database.exec(`
+      CREATE TABLE IF NOT EXISTS deviation_cases (
+        deviation_id INTEGER NOT NULL REFERENCES protocol_deviations(id) ON DELETE CASCADE,
+        case_id TEXT NOT NULL REFERENCES cases(id) ON DELETE CASCADE,
+        PRIMARY KEY (deviation_id, case_id)
+      )
+    `);
+
+    // Investigator notifications
+    database.exec(`
+      CREATE TABLE IF NOT EXISTS investigator_notifications (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        notification_type TEXT NOT NULL,
+        study_id INTEGER NOT NULL REFERENCES studies(id) ON DELETE CASCADE,
+        case_id TEXT REFERENCES cases(id),
+        notification_date TEXT NOT NULL,
+        subject_line TEXT,
+        content TEXT,
+        attachment_path TEXT,
+        created_by INTEGER,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Notification distribution
+    database.exec(`
+      CREATE TABLE IF NOT EXISTS notification_distribution (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        notification_id INTEGER NOT NULL REFERENCES investigator_notifications(id) ON DELETE CASCADE,
+        site_id INTEGER NOT NULL REFERENCES study_sites(id),
+        recipient_name TEXT,
+        recipient_email TEXT,
+        sent_date DATETIME,
+        acknowledged_date DATETIME,
+        acknowledged_by TEXT
+      )
+    `);
+
+    // Add IND-specific columns to cases table
+    const caseColumns021 = database.prepare("PRAGMA table_info(cases)").all() as Array<{ name: string }>;
+    const caseColNames021 = caseColumns021.map(c => c.name);
+
+    const indColumns: Array<[string, string]> = [
+      ['case_type', "TEXT DEFAULT 'postmarket'"],
+      ['study_id', 'INTEGER'],
+      ['site_id', 'INTEGER'],
+      ['subject_number', 'TEXT'],
+      ['is_blinded', 'INTEGER DEFAULT 0'],
+      ['treatment_arm', 'TEXT'],
+      ['study_day_onset', 'INTEGER'],
+      ['first_dose_date', 'TEXT'],
+      ['last_dose_date', 'TEXT'],
+      ['date_informed', 'TEXT'],
+      ['is_expected', 'INTEGER'],
+      ['expectedness_ib_version', 'TEXT'],
+      ['expectedness_ib_section', 'TEXT'],
+      ['expectedness_justification', 'TEXT'],
+      ['ind_report_type', 'TEXT']
+    ];
+
+    for (const [colName, colDef] of indColumns) {
+      if (!caseColNames021.includes(colName)) {
+        database.exec(`ALTER TABLE cases ADD COLUMN ${colName} ${colDef}`);
+      }
+    }
+
+    // Create indexes for Phase 6
+    database.exec(`
+      CREATE INDEX IF NOT EXISTS idx_studies_status ON studies(status);
+      CREATE INDEX IF NOT EXISTS idx_studies_study_id ON studies(study_id);
+      CREATE INDEX IF NOT EXISTS idx_study_inds_study ON study_inds(study_id);
+      CREATE INDEX IF NOT EXISTS idx_study_sites_study ON study_sites(study_id);
+      CREATE INDEX IF NOT EXISTS idx_site_investigators_site ON site_investigators(site_id);
+      CREATE INDEX IF NOT EXISTS idx_study_products_study ON study_products(study_id);
+      CREATE INDEX IF NOT EXISTS idx_ib_study ON investigator_brochures(study_id);
+      CREATE INDEX IF NOT EXISTS idx_ib_reactions_ib ON ib_known_reactions(ib_id);
+      CREATE INDEX IF NOT EXISTS idx_ib_reactions_pt ON ib_known_reactions(meddra_pt_code);
+      CREATE INDEX IF NOT EXISTS idx_causality_case ON case_causality(case_id);
+      CREATE INDEX IF NOT EXISTS idx_unblinding_case ON case_unblinding(case_id);
+      CREATE INDEX IF NOT EXISTS idx_cases_case_type ON cases(case_type);
+      CREATE INDEX IF NOT EXISTS idx_cases_study_id ON cases(study_id);
+      CREATE INDEX IF NOT EXISTS idx_cases_date_informed ON cases(date_informed);
+      CREATE INDEX IF NOT EXISTS idx_babe_studies_status ON babe_studies(status);
+      CREATE INDEX IF NOT EXISTS idx_deviations_study ON protocol_deviations(study_id);
+      CREATE INDEX IF NOT EXISTS idx_deviations_site ON protocol_deviations(site_id);
+      CREATE INDEX IF NOT EXISTS idx_deviation_cases_case ON deviation_cases(case_id);
+      CREATE INDEX IF NOT EXISTS idx_inv_notifications_study ON investigator_notifications(study_id);
+      CREATE INDEX IF NOT EXISTS idx_notification_dist ON notification_distribution(notification_id);
+    `);
+
+    database.prepare(
+      'INSERT INTO migrations (name) VALUES (?)'
+    ).run('021_phase6_ind_safety');
+    console.log('Migration 021 applied successfully.');
+  }
 }
 
 /**

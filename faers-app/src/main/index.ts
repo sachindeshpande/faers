@@ -55,6 +55,15 @@ import { EsgPollingService } from './services/esgPollingService';
 import { StatusTransitionService } from './services/statusTransitionService';
 import { XMLGeneratorService } from './services/xmlGeneratorService';
 import { MockEsgApiService } from './services/mockEsgApiService';
+// Phase 6 - IND Safety Reports
+import { registerStudyHandlers } from './ipc/study.handlers';
+import { registerIBHandlers } from './ipc/ib.handlers';
+import { registerINDCaseHandlers } from './ipc/indCase.handlers';
+import { registerBABEHandlers } from './ipc/babe.handlers';
+import { registerDeviationHandlers } from './ipc/deviation.handlers';
+import { registerInvestigatorNotificationHandlers } from './ipc/investigatorNotification.handlers';
+import { registerForm3500AHandlers } from './ipc/form3500a.handlers';
+import { registerAnnualReportHandlers } from './ipc/annualReport.handlers';
 
 let mainWindow: BrowserWindow | null = null;
 let esgPollingService: EsgPollingService | null = null;
@@ -340,6 +349,17 @@ app.whenReady().then(() => {
   const mockApiService = new MockEsgApiService();
   const esgSubmissionService = new EsgSubmissionService(db, esgApiService, xmlGeneratorService, statusTransitionService);
   esgPollingService = new EsgPollingService(db, esgApiService, statusTransitionService);
+  // Phase 6 - IND Safety Reports
+  console.log('Registering Phase 6 IPC handlers...');
+  registerStudyHandlers();
+  registerIBHandlers();
+  registerINDCaseHandlers();
+  registerBABEHandlers();
+  registerDeviationHandlers();
+  registerInvestigatorNotificationHandlers();
+  registerForm3500AHandlers();
+  registerAnnualReportHandlers();
+
   registerEsgApiHandlers({
     credentialStorage,
     authService: esgAuthService,

@@ -211,6 +211,68 @@ import type {
   SetDemoConfigRequest
 } from './esgApi.types';
 
+// Phase 6 imports
+import type {
+  Study,
+  StudyListItem,
+  StudySite,
+  SiteInvestigator,
+  StudyProduct,
+  StudyInd,
+  StudyFilter,
+  CreateStudyDTO,
+  UpdateStudyDTO
+} from './study.types';
+import type {
+  InvestigatorBrochure,
+  IBKnownReaction,
+  IBListItem,
+  CreateIBDTO,
+  CreateIBReactionDTO,
+  ExpectednessLookupResult
+} from './ib.types';
+import type {
+  CausalityAssessment,
+  UnblindingRecord,
+  SUSARDetermination,
+  DualCausalityCheck,
+  ExpectednessAssessmentData,
+  CreateCausalityDTO,
+  UnblindingRequest,
+  UnblindingApproval
+} from './indCase.types';
+import type {
+  BABEStudy,
+  BABEStudyListItem,
+  BABEStudyFilter,
+  CreateBABEStudyDTO,
+  UpdateBABEStudyDTO
+} from './babe.types';
+import type {
+  ProtocolDeviation,
+  DeviationListItem,
+  DeviationFilter,
+  CreateDeviationDTO,
+  UpdateDeviationDTO
+} from './deviation.types';
+import type {
+  InvestigatorNotification,
+  InvestigatorNotificationListItem,
+  InvestigatorNotificationFilter,
+  CreateInvestigatorNotificationDTO,
+  NotificationDistribution,
+  CreateDistributionDTO
+} from './investigatorNotification.types';
+import type {
+  AnnualReportRequest,
+  AnnualReportData
+} from './annualReport.types';
+import type {
+  Form3500AGenerateRequest,
+  Form3500AGenerateResponse,
+  Form3500APreviewData
+} from './form3500a.types';
+
 // IPC Channel names
 export const IPC_CHANNELS = {
   // Case operations
@@ -552,7 +614,95 @@ export const IPC_CHANNELS = {
   DEMO_CREATE_SAMPLE_CASES: 'demo:createSampleCases',
   DEMO_RESET_DATA: 'demo:resetData',
   // Event channel (main -> renderer push)
-  DEMO_MODE_CHANGED: 'demo:mode-changed'
+  DEMO_MODE_CHANGED: 'demo:mode-changed',
+
+  // ============================================================
+  // Phase 6: Study Management
+  // ============================================================
+  STUDY_LIST: 'study:list',
+  STUDY_GET: 'study:get',
+  STUDY_CREATE: 'study:create',
+  STUDY_UPDATE: 'study:update',
+  STUDY_DELETE: 'study:delete',
+  STUDY_SITE_LIST: 'study:siteList',
+  STUDY_SITE_CREATE: 'study:siteCreate',
+  STUDY_SITE_UPDATE: 'study:siteUpdate',
+  STUDY_SITE_DELETE: 'study:siteDelete',
+  STUDY_INVESTIGATOR_ADD: 'study:investigatorAdd',
+  STUDY_INVESTIGATOR_REMOVE: 'study:investigatorRemove',
+  STUDY_PRODUCT_ADD: 'study:productAdd',
+  STUDY_PRODUCT_REMOVE: 'study:productRemove',
+  STUDY_IND_ADD: 'study:indAdd',
+  STUDY_IND_REMOVE: 'study:indRemove',
+
+  // ============================================================
+  // Phase 6: Investigator Brochure
+  // ============================================================
+  IB_LIST: 'ib:list',
+  IB_GET: 'ib:get',
+  IB_CREATE: 'ib:create',
+  IB_UPDATE: 'ib:update',
+  IB_SET_CURRENT: 'ib:setCurrent',
+  IB_ADD_REACTION: 'ib:addReaction',
+  IB_REMOVE_REACTION: 'ib:removeReaction',
+  IB_GET_REACTIONS: 'ib:getReactions',
+  IB_LOOKUP_EXPECTEDNESS: 'ib:lookupExpectedness',
+
+  // ============================================================
+  // Phase 6: IND Case Management
+  // ============================================================
+  IND_CASE_GET_CAUSALITY: 'indCase:getCausality',
+  IND_CASE_SAVE_CAUSALITY: 'indCase:saveCausality',
+  IND_CASE_DELETE_CAUSALITY: 'indCase:deleteCausality',
+  IND_CASE_GET_DUAL_CAUSALITY: 'indCase:getDualCausality',
+  IND_CASE_ASSESS_EXPECTEDNESS: 'indCase:assessExpectedness',
+  IND_CASE_GET_SUSAR: 'indCase:getSusar',
+  IND_CASE_REQUEST_UNBLINDING: 'indCase:requestUnblinding',
+  IND_CASE_APPROVE_UNBLINDING: 'indCase:approveUnblinding',
+  IND_CASE_GET_UNBLINDING: 'indCase:getUnblinding',
+
+  // ============================================================
+  // Phase 6: BA/BE Studies
+  // ============================================================
+  BABE_LIST: 'babe:list',
+  BABE_GET: 'babe:get',
+  BABE_CREATE: 'babe:create',
+  BABE_UPDATE: 'babe:update',
+  BABE_DELETE: 'babe:delete',
+
+  // ============================================================
+  // Phase 6: Protocol Deviations
+  // ============================================================
+  DEVIATION_LIST: 'deviation:list',
+  DEVIATION_GET: 'deviation:get',
+  DEVIATION_CREATE: 'deviation:create',
+  DEVIATION_UPDATE: 'deviation:update',
+  DEVIATION_DELETE: 'deviation:delete',
+  DEVIATION_LINK_CASE: 'deviation:linkCase',
+  DEVIATION_UNLINK_CASE: 'deviation:unlinkCase',
+  DEVIATION_GET_BY_CASE: 'deviation:getByCase',
+
+  // ============================================================
+  // Phase 6: Investigator Notifications
+  // ============================================================
+  INV_NOTIFICATION_LIST: 'invNotification:list',
+  INV_NOTIFICATION_GET: 'invNotification:get',
+  INV_NOTIFICATION_CREATE: 'invNotification:create',
+  INV_NOTIFICATION_ADD_DISTRIBUTION: 'invNotification:addDistribution',
+  INV_NOTIFICATION_MARK_SENT: 'invNotification:markSent',
+  INV_NOTIFICATION_MARK_ACKNOWLEDGED: 'invNotification:markAcknowledged',
+
+  // ============================================================
+  // Phase 6: Form FDA 3500A
+  // ============================================================
+  FORM_3500A_GENERATE: 'form3500a:generate',
+  FORM_3500A_PREVIEW: 'form3500a:preview',
+
+  // ============================================================
+  // Phase 6: Annual Report
+  // ============================================================
+  ANNUAL_REPORT_GENERATE: 'annualReport:generate',
+  ANNUAL_REPORT_EXPORT: 'annualReport:export'
 } as const;
 
 // Type for channel names
@@ -1065,6 +1215,106 @@ export type {
   SetDemoConfigRequest
 } from './esgApi.types';
 
+// ============================================================
+// Phase 6: Study Types (re-export for convenience)
+// ============================================================
+
+export type {
+  Study,
+  StudyListItem,
+  StudySite,
+  SiteInvestigator,
+  StudyProduct,
+  StudyInd,
+  StudyFilter,
+  CreateStudyDTO,
+  UpdateStudyDTO
+};
+
+// ============================================================
+// Phase 6: IB Types (re-export for convenience)
+// ============================================================
+
+export type {
+  InvestigatorBrochure,
+  IBKnownReaction,
+  IBListItem,
+  CreateIBDTO,
+  CreateIBReactionDTO,
+  ExpectednessLookupResult
+};
+
+// ============================================================
+// Phase 6: IND Case Types (re-export for convenience)
+// ============================================================
+
+export type {
+  CausalityAssessment,
+  UnblindingRecord,
+  SUSARDetermination,
+  DualCausalityCheck,
+  ExpectednessAssessmentData,
+  CreateCausalityDTO,
+  UnblindingRequest,
+  UnblindingApproval
+};
+
+// ============================================================
+// Phase 6: BA/BE Types (re-export for convenience)
+// ============================================================
+
+export type {
+  BABEStudy,
+  BABEStudyListItem,
+  BABEStudyFilter,
+  CreateBABEStudyDTO,
+  UpdateBABEStudyDTO
+};
+
+// ============================================================
+// Phase 6: Deviation Types (re-export for convenience)
+// ============================================================
+
+export type {
+  ProtocolDeviation,
+  DeviationListItem,
+  DeviationFilter,
+  CreateDeviationDTO,
+  UpdateDeviationDTO
+};
+
+// ============================================================
+// Phase 6: Investigator Notification Types (re-export)
+// ============================================================
+
+export type {
+  InvestigatorNotification,
+  InvestigatorNotificationListItem,
+  InvestigatorNotificationFilter,
+  CreateInvestigatorNotificationDTO,
+  NotificationDistribution,
+  CreateDistributionDTO
+};
+
+// ============================================================
+// Phase 6: Annual Report Types (re-export)
+// ============================================================
+
+export type {
+  AnnualReportRequest,
+  AnnualReportData
+};
+
+// ============================================================
+// Phase 6: Form 3500A Types (re-export)
+// ============================================================
+
+export type {
+  Form3500AGenerateRequest,
+  Form3500AGenerateResponse,
+  Form3500APreviewData
+};
+
 // Demo mode status response
 export interface DemoModeStatus {
   isActive: boolean;
@@ -1414,6 +1664,94 @@ export interface ElectronAPI {
   demoCreateSampleCases: () => Promise<IPCResponse<{ created: number; errors: string[] }>>;
   demoResetData: () => Promise<IPCResponse<ResetDemoDataResult>>;
   onDemoModeChanged: (callback: (data: { isActive: boolean; config: DemoModeConfig }) => void) => () => void;
+
+  // ============================================================
+  // Phase 6: Study Management
+  // ============================================================
+  getStudies: (filter?: StudyFilter) => Promise<IPCResponse<StudyListItem[]>>;
+  getStudy: (id: number) => Promise<IPCResponse<Study>>;
+  createStudy: (data: CreateStudyDTO) => Promise<IPCResponse<Study>>;
+  updateStudy: (id: number, data: UpdateStudyDTO) => Promise<IPCResponse<Study>>;
+  deleteStudy: (id: number) => Promise<IPCResponse<void>>;
+  getStudySites: (studyId: number) => Promise<IPCResponse<StudySite[]>>;
+  createStudySite: (site: Omit<StudySite, 'id' | 'createdAt'>) => Promise<IPCResponse<StudySite>>;
+  updateStudySite: (id: number, data: Partial<StudySite>) => Promise<IPCResponse<StudySite>>;
+  deleteStudySite: (id: number) => Promise<IPCResponse<void>>;
+  addInvestigator: (inv: Omit<SiteInvestigator, 'id' | 'createdAt'>) => Promise<IPCResponse<SiteInvestigator>>;
+  removeInvestigator: (id: number) => Promise<IPCResponse<void>>;
+  addStudyProduct: (prod: Omit<StudyProduct, 'id' | 'createdAt'>) => Promise<IPCResponse<StudyProduct>>;
+  removeStudyProduct: (id: number) => Promise<IPCResponse<void>>;
+  addStudyInd: (ind: Omit<StudyInd, 'id'>) => Promise<IPCResponse<StudyInd>>;
+  removeStudyInd: (id: number) => Promise<IPCResponse<void>>;
+
+  // ============================================================
+  // Phase 6: Investigator Brochure
+  // ============================================================
+  getIBList: (studyId: number) => Promise<IPCResponse<IBListItem[]>>;
+  getIB: (id: number) => Promise<IPCResponse<InvestigatorBrochure>>;
+  createIB: (data: CreateIBDTO) => Promise<IPCResponse<InvestigatorBrochure>>;
+  updateIB: (id: number, data: Partial<InvestigatorBrochure>) => Promise<IPCResponse<InvestigatorBrochure>>;
+  setCurrentIB: (id: number) => Promise<IPCResponse<void>>;
+  addIBReaction: (data: CreateIBReactionDTO) => Promise<IPCResponse<IBKnownReaction>>;
+  removeIBReaction: (id: number) => Promise<IPCResponse<void>>;
+  getIBReactions: (ibId: number) => Promise<IPCResponse<IBKnownReaction[]>>;
+  lookupExpectedness: (studyId: number, meddraPtCode: number) => Promise<IPCResponse<ExpectednessLookupResult>>;
+
+  // ============================================================
+  // Phase 6: IND Case Management
+  // ============================================================
+  getCausalityAssessments: (caseId: string) => Promise<IPCResponse<CausalityAssessment[]>>;
+  saveCausalityAssessment: (data: CreateCausalityDTO) => Promise<IPCResponse<CausalityAssessment>>;
+  deleteCausalityAssessment: (id: number) => Promise<IPCResponse<void>>;
+  getDualCausality: (caseId: string) => Promise<IPCResponse<DualCausalityCheck>>;
+  assessExpectedness: (caseId: string, meddraPtCode: number, reportedSeverity?: string) => Promise<IPCResponse<ExpectednessAssessmentData>>;
+  getSUSARDetermination: (caseId: string) => Promise<IPCResponse<SUSARDetermination>>;
+  requestUnblinding: (data: UnblindingRequest) => Promise<IPCResponse<UnblindingRecord>>;
+  approveUnblinding: (data: UnblindingApproval) => Promise<IPCResponse<UnblindingRecord>>;
+  getUnblindingRecords: (caseId: string) => Promise<IPCResponse<UnblindingRecord[]>>;
+
+  // ============================================================
+  // Phase 6: BA/BE Studies
+  // ============================================================
+  getBABEStudies: (filter?: BABEStudyFilter) => Promise<IPCResponse<BABEStudyListItem[]>>;
+  getBABEStudy: (id: number) => Promise<IPCResponse<BABEStudy>>;
+  createBABEStudy: (data: CreateBABEStudyDTO) => Promise<IPCResponse<BABEStudy>>;
+  updateBABEStudy: (id: number, data: UpdateBABEStudyDTO) => Promise<IPCResponse<BABEStudy>>;
+  deleteBABEStudy: (id: number) => Promise<IPCResponse<void>>;
+
+  // ============================================================
+  // Phase 6: Protocol Deviations
+  // ============================================================
+  getDeviations: (filter?: DeviationFilter) => Promise<IPCResponse<DeviationListItem[]>>;
+  getDeviation: (id: number) => Promise<IPCResponse<ProtocolDeviation>>;
+  createDeviation: (data: CreateDeviationDTO) => Promise<IPCResponse<ProtocolDeviation>>;
+  updateDeviation: (id: number, data: UpdateDeviationDTO) => Promise<IPCResponse<ProtocolDeviation>>;
+  deleteDeviation: (id: number) => Promise<IPCResponse<void>>;
+  linkDeviationToCase: (deviationId: number, caseId: string) => Promise<IPCResponse<void>>;
+  unlinkDeviationFromCase: (deviationId: number, caseId: string) => Promise<IPCResponse<void>>;
+  getDeviationsByCase: (caseId: string) => Promise<IPCResponse<DeviationListItem[]>>;
+
+  // ============================================================
+  // Phase 6: Investigator Notifications
+  // ============================================================
+  getInvNotifications: (filter?: InvestigatorNotificationFilter) => Promise<IPCResponse<InvestigatorNotificationListItem[]>>;
+  getInvNotification: (id: number) => Promise<IPCResponse<InvestigatorNotification>>;
+  createInvNotification: (data: CreateInvestigatorNotificationDTO) => Promise<IPCResponse<InvestigatorNotification>>;
+  addNotificationDistribution: (data: CreateDistributionDTO) => Promise<IPCResponse<NotificationDistribution>>;
+  markNotificationSent: (distributionId: number) => Promise<IPCResponse<void>>;
+  markNotificationAcknowledged: (distributionId: number, acknowledgedBy: string) => Promise<IPCResponse<void>>;
+
+  // ============================================================
+  // Phase 6: Form FDA 3500A
+  // ============================================================
+  generateForm3500A: (data: Form3500AGenerateRequest) => Promise<IPCResponse<Form3500AGenerateResponse>>;
+  previewForm3500A: (caseId: string) => Promise<IPCResponse<Form3500APreviewData>>;
+
+  // ============================================================
+  // Phase 6: Annual Report
+  // ============================================================
+  generateAnnualReport: (data: AnnualReportRequest) => Promise<IPCResponse<AnnualReportData>>;
+  exportAnnualReport: (data: AnnualReportRequest, exportPath: string) => Promise<IPCResponse<string>>;
 }
 
 // Declare the electronAPI on the window object

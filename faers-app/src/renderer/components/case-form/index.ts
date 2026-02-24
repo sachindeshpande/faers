@@ -9,3 +9,11 @@ export { default as CommentsSection } from './CommentsSection';
 export { default as NotesSection } from './NotesSection';
 // Phase 4
 export { default as ReportClassificationSection } from './ReportClassificationSection';
+// Phase 6 - IND Case Components
+export {
+  INDCaseHeader,
+  CausalityAssessmentPanel,
+  ExpectednessAssessment,
+  SUSARClassification,
+  UnblindingDialog
+} from '../ind-case';

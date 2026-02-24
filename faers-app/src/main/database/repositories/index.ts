@@ -11,3 +11,10 @@ export { ProductRepository } from './product.repository';
 export { SeriousnessRepository } from './seriousness.repository';
 // Phase 2B - ESG API Submission
 export { EsgSubmissionRepository } from './esgSubmission.repository';
+// Phase 6 - IND Safety Reports
+export { StudyRepository } from './study.repository';
+export { IBRepository } from './ib.repository';
+export { INDCaseRepository } from './indCase.repository';
+export { BABERepository } from './babe.repository';
+export { DeviationRepository } from './deviation.repository';
+export { InvestigatorNotificationRepository } from './investigatorNotification.repository';

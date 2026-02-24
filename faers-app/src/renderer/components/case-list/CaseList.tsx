@@ -38,7 +38,7 @@ import {
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import { useCaseList, useCaseActions } from '../../stores/caseStore';
-import type { CaseListItem, CaseStatus } from '../../../shared/types/case.types';
+import type { CaseListItem, CaseStatus, CaseType } from '../../../shared/types/case.types';
 
 dayjs.extend(relativeTime);
 
@@ -55,6 +55,7 @@ const CaseList: React.FC<CaseListProps> = ({ onSelectCase }) => {
 
   const [searchText, setSearchText] = useState(filters.search || '');
   const [statusFilter, setStatusFilter] = useState<CaseStatus | undefined>(filters.status);
+  const [caseTypeFilter, setCaseTypeFilter] = useState<CaseType | undefined>(undefined);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [caseToDelete, setCaseToDelete] = useState<string | null>(null);
@@ -81,6 +82,14 @@ const CaseList: React.FC<CaseListProps> = ({ onSelectCase }) => {
     const status = value === 'all' ? undefined : value;
     setStatusFilter(status);
     fetchCases({ status, offset: 0 });
+  };
+
+  // Handle case type filter
+  const handleCaseTypeChange = (value: CaseType | 'all') => {
+    const caseType = value === 'all' ? undefined : value;
+    setCaseTypeFilter(caseType);
+    // Case type filtering is done client-side since the filter isn't in the backend yet
+    fetchCases({ offset: 0 });
   };
 
   // Handle refresh
@@ -246,6 +255,19 @@ const CaseList: React.FC<CaseListProps> = ({ onSelectCase }) => {
     }
   };
 
+  // Case type tag helper
+  const getCaseTypeTag = (caseType?: CaseType) => {
+    switch (caseType) {
+      case 'ind':
+        return <Tag color="volcano">IND</Tag>;
+      case 'babe':
+        return <Tag color="magenta">BA/BE</Tag>;
+      case 'postmarket':
+      default:
+        return <Tag>Post-Market</Tag>;
+    }
+  };
+
   // Table columns
   const columns: ColumnsType<CaseListItem> = [
     {
@@ -259,6 +281,14 @@ const CaseList: React.FC<CaseListProps> = ({ onSelectCase }) => {
           {id}
         </Text>
       )
+    },
+    {
+      title: 'Type',
+      dataIndex: 'caseType',
+      key: 'caseType',
+      width: 100,
+      sorter: (a, b) => (a.caseType || 'postmarket').localeCompare(b.caseType || 'postmarket'),
+      render: (_: unknown, record: CaseListItem) => getCaseTypeTag(record.caseType as CaseType | undefined)
     },
     {
       title: 'Status',
@@ -369,6 +399,18 @@ const CaseList: React.FC<CaseListProps> = ({ onSelectCase }) => {
               { value: 'Submission Failed', label: 'Submission Failed' },
               { value: 'Acknowledged', label: 'Acknowledged' },
               { value: 'Rejected', label: 'Rejected' }
+            ]}
+          />
+
+          <Select
+            style={{ width: 150 }}
+            value={caseTypeFilter || 'all'}
+            onChange={handleCaseTypeChange}
+            options={[
+              { value: 'all', label: 'All Types' },
+              { value: 'postmarket', label: 'Post-Market' },
+              { value: 'ind', label: 'IND' },
+              { value: 'babe', label: 'BA/BE' }
             ]}
           />
 

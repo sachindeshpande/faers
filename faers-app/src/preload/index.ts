@@ -196,6 +196,29 @@ import type {
   SetDemoConfigRequest
 } from '../shared/types/esgApi.types';
 import type { DemoModeStatus } from '../shared/types/ipc.types';
+// Phase 6 imports
+import type {
+  Study, StudyListItem, StudySite, SiteInvestigator, StudyProduct, StudyInd,
+  StudyFilter, CreateStudyDTO, UpdateStudyDTO
+} from '../shared/types/study.types';
+import type {
+  InvestigatorBrochure, IBKnownReaction, IBListItem,
+  CreateIBDTO, CreateIBReactionDTO, ExpectednessLookupResult
+} from '../shared/types/ib.types';
+import type {
+  CausalityAssessment, UnblindingRecord, SUSARDetermination,
+  DualCausalityCheck, ExpectednessAssessmentData,
+  CreateCausalityDTO, UnblindingRequest, UnblindingApproval
+} from '../shared/types/indCase.types';
+import type { BABEStudy, BABEStudyListItem, BABEStudyFilter, CreateBABEStudyDTO, UpdateBABEStudyDTO } from '../shared/types/babe.types';
+import type { ProtocolDeviation, DeviationListItem, DeviationFilter, CreateDeviationDTO, UpdateDeviationDTO } from '../shared/types/deviation.types';
+import type {
+  InvestigatorNotification, InvestigatorNotificationListItem,
+  InvestigatorNotificationFilter, CreateInvestigatorNotificationDTO,
+  NotificationDistribution, CreateDistributionDTO
+} from '../shared/types/investigatorNotification.types';
+import type { AnnualReportRequest, AnnualReportData } from '../shared/types/annualReport.types';
+import type { Form3500AGenerateRequest, Form3500AGenerateResponse, Form3500APreviewData } from '../shared/types/form3500a.types';
 
 // Create the API object
 const electronAPI: ElectronAPI = {
@@ -954,7 +977,151 @@ const electronAPI: ElectronAPI = {
     const handler = (_event: Electron.IpcRendererEvent, data: { isActive: boolean; config: DemoModeConfig }) => callback(data);
     ipcRenderer.on(IPC_CHANNELS.DEMO_MODE_CHANGED, handler);
     return () => ipcRenderer.removeListener(IPC_CHANNELS.DEMO_MODE_CHANGED, handler);
-  }
+  },
+
+  // ============================================================
+  // Phase 6: Study Management
+  // ============================================================
+  getStudies: (filter?: StudyFilter) =>
+    ipcRenderer.invoke(IPC_CHANNELS.STUDY_LIST, filter),
+  getStudy: (id: number) =>
+    ipcRenderer.invoke(IPC_CHANNELS.STUDY_GET, id),
+  createStudy: (data: CreateStudyDTO) =>
+    ipcRenderer.invoke(IPC_CHANNELS.STUDY_CREATE, data),
+  updateStudy: (id: number, data: UpdateStudyDTO) =>
+    ipcRenderer.invoke(IPC_CHANNELS.STUDY_UPDATE, id, data),
+  deleteStudy: (id: number) =>
+    ipcRenderer.invoke(IPC_CHANNELS.STUDY_DELETE, id),
+  getStudySites: (studyId: number) =>
+    ipcRenderer.invoke(IPC_CHANNELS.STUDY_SITE_LIST, studyId),
+  createStudySite: (site: any) =>
+    ipcRenderer.invoke(IPC_CHANNELS.STUDY_SITE_CREATE, site),
+  updateStudySite: (id: number, data: any) =>
+    ipcRenderer.invoke(IPC_CHANNELS.STUDY_SITE_UPDATE, id, data),
+  deleteStudySite: (id: number) =>
+    ipcRenderer.invoke(IPC_CHANNELS.STUDY_SITE_DELETE, id),
+  addInvestigator: (inv: any) =>
+    ipcRenderer.invoke(IPC_CHANNELS.STUDY_INVESTIGATOR_ADD, inv),
+  removeInvestigator: (id: number) =>
+    ipcRenderer.invoke(IPC_CHANNELS.STUDY_INVESTIGATOR_REMOVE, id),
+  addStudyProduct: (prod: any) =>
+    ipcRenderer.invoke(IPC_CHANNELS.STUDY_PRODUCT_ADD, prod),
+  removeStudyProduct: (id: number) =>
+    ipcRenderer.invoke(IPC_CHANNELS.STUDY_PRODUCT_REMOVE, id),
+  addStudyInd: (ind: any) =>
+    ipcRenderer.invoke(IPC_CHANNELS.STUDY_IND_ADD, ind),
+  removeStudyInd: (id: number) =>
+    ipcRenderer.invoke(IPC_CHANNELS.STUDY_IND_REMOVE, id),
+
+  // ============================================================
+  // Phase 6: Investigator Brochure
+  // ============================================================
+  getIBList: (studyId: number) =>
+    ipcRenderer.invoke(IPC_CHANNELS.IB_LIST, studyId),
+  getIB: (id: number) =>
+    ipcRenderer.invoke(IPC_CHANNELS.IB_GET, id),
+  createIB: (data: CreateIBDTO) =>
+    ipcRenderer.invoke(IPC_CHANNELS.IB_CREATE, data),
+  updateIB: (id: number, data: any) =>
+    ipcRenderer.invoke(IPC_CHANNELS.IB_UPDATE, id, data),
+  setCurrentIB: (id: number) =>
+    ipcRenderer.invoke(IPC_CHANNELS.IB_SET_CURRENT, id),
+  addIBReaction: (data: CreateIBReactionDTO) =>
+    ipcRenderer.invoke(IPC_CHANNELS.IB_ADD_REACTION, data),
+  removeIBReaction: (id: number) =>
+    ipcRenderer.invoke(IPC_CHANNELS.IB_REMOVE_REACTION, id),
+  getIBReactions: (ibId: number) =>
+    ipcRenderer.invoke(IPC_CHANNELS.IB_GET_REACTIONS, ibId),
+  lookupExpectedness: (studyId: number, meddraPtCode: number) =>
+    ipcRenderer.invoke(IPC_CHANNELS.IB_LOOKUP_EXPECTEDNESS, studyId, meddraPtCode),
+
+  // ============================================================
+  // Phase 6: IND Case Management
+  // ============================================================
+  getCausalityAssessments: (caseId: string) =>
+    ipcRenderer.invoke(IPC_CHANNELS.IND_CASE_GET_CAUSALITY, caseId),
+  saveCausalityAssessment: (data: CreateCausalityDTO) =>
+    ipcRenderer.invoke(IPC_CHANNELS.IND_CASE_SAVE_CAUSALITY, data),
+  deleteCausalityAssessment: (id: number) =>
+    ipcRenderer.invoke(IPC_CHANNELS.IND_CASE_DELETE_CAUSALITY, id),
+  getDualCausality: (caseId: string) =>
+    ipcRenderer.invoke(IPC_CHANNELS.IND_CASE_GET_DUAL_CAUSALITY, caseId),
+  assessExpectedness: (caseId: string, meddraPtCode: number, reportedSeverity?: string) =>
+    ipcRenderer.invoke(IPC_CHANNELS.IND_CASE_ASSESS_EXPECTEDNESS, caseId, meddraPtCode, reportedSeverity),
+  getSUSARDetermination: (caseId: string) =>
+    ipcRenderer.invoke(IPC_CHANNELS.IND_CASE_GET_SUSAR, caseId),
+  requestUnblinding: (data: UnblindingRequest) =>
+    ipcRenderer.invoke(IPC_CHANNELS.IND_CASE_REQUEST_UNBLINDING, data),
+  approveUnblinding: (data: UnblindingApproval) =>
+    ipcRenderer.invoke(IPC_CHANNELS.IND_CASE_APPROVE_UNBLINDING, data),
+  getUnblindingRecords: (caseId: string) =>
+    ipcRenderer.invoke(IPC_CHANNELS.IND_CASE_GET_UNBLINDING, caseId),
+
+  // ============================================================
+  // Phase 6: BA/BE Studies
+  // ============================================================
+  getBABEStudies: (filter?: BABEStudyFilter) =>
+    ipcRenderer.invoke(IPC_CHANNELS.BABE_LIST, filter),
+  getBABEStudy: (id: number) =>
+    ipcRenderer.invoke(IPC_CHANNELS.BABE_GET, id),
+  createBABEStudy: (data: CreateBABEStudyDTO) =>
+    ipcRenderer.invoke(IPC_CHANNELS.BABE_CREATE, data),
+  updateBABEStudy: (id: number, data: UpdateBABEStudyDTO) =>
+    ipcRenderer.invoke(IPC_CHANNELS.BABE_UPDATE, id, data),
+  deleteBABEStudy: (id: number) =>
+    ipcRenderer.invoke(IPC_CHANNELS.BABE_DELETE, id),
+
+  // ============================================================
+  // Phase 6: Protocol Deviations
+  // ============================================================
+  getDeviations: (filter?: DeviationFilter) =>
+    ipcRenderer.invoke(IPC_CHANNELS.DEVIATION_LIST, filter),
+  getDeviation: (id: number) =>
+    ipcRenderer.invoke(IPC_CHANNELS.DEVIATION_GET, id),
+  createDeviation: (data: CreateDeviationDTO) =>
+    ipcRenderer.invoke(IPC_CHANNELS.DEVIATION_CREATE, data),
+  updateDeviation: (id: number, data: UpdateDeviationDTO) =>
+    ipcRenderer.invoke(IPC_CHANNELS.DEVIATION_UPDATE, id, data),
+  deleteDeviation: (id: number) =>
+    ipcRenderer.invoke(IPC_CHANNELS.DEVIATION_DELETE, id),
+  linkDeviationToCase: (deviationId: number, caseId: string) =>
+    ipcRenderer.invoke(IPC_CHANNELS.DEVIATION_LINK_CASE, deviationId, caseId),
+  unlinkDeviationFromCase: (deviationId: number, caseId: string) =>
+    ipcRenderer.invoke(IPC_CHANNELS.DEVIATION_UNLINK_CASE, deviationId, caseId),
+  getDeviationsByCase: (caseId: string) =>
+    ipcRenderer.invoke(IPC_CHANNELS.DEVIATION_GET_BY_CASE, caseId),
+
+  // ============================================================
+  // Phase 6: Investigator Notifications
+  // ============================================================
+  getInvNotifications: (filter?: InvestigatorNotificationFilter) =>
+    ipcRenderer.invoke(IPC_CHANNELS.INV_NOTIFICATION_LIST, filter),
+  getInvNotification: (id: number) =>
+    ipcRenderer.invoke(IPC_CHANNELS.INV_NOTIFICATION_GET, id),
+  createInvNotification: (data: CreateInvestigatorNotificationDTO) =>
+    ipcRenderer.invoke(IPC_CHANNELS.INV_NOTIFICATION_CREATE, data),
+  addNotificationDistribution: (data: CreateDistributionDTO) =>
+    ipcRenderer.invoke(IPC_CHANNELS.INV_NOTIFICATION_ADD_DISTRIBUTION, data),
+  markNotificationSent: (distributionId: number) =>
+    ipcRenderer.invoke(IPC_CHANNELS.INV_NOTIFICATION_MARK_SENT, distributionId),
+  markNotificationAcknowledged: (distributionId: number, acknowledgedBy: string) =>
+    ipcRenderer.invoke(IPC_CHANNELS.INV_NOTIFICATION_MARK_ACKNOWLEDGED, distributionId, acknowledgedBy),
+
+  // ============================================================
+  // Phase 6: Form FDA 3500A
+  // ============================================================
+  generateForm3500A: (data: Form3500AGenerateRequest) =>
+    ipcRenderer.invoke(IPC_CHANNELS.FORM_3500A_GENERATE, data),
+  previewForm3500A: (caseId: string) =>
+    ipcRenderer.invoke(IPC_CHANNELS.FORM_3500A_PREVIEW, caseId),
+
+  // ============================================================
+  // Phase 6: Annual Report
+  // ============================================================
+  generateAnnualReport: (data: AnnualReportRequest) =>
+    ipcRenderer.invoke(IPC_CHANNELS.ANNUAL_REPORT_GENERATE, data),
+  exportAnnualReport: (data: AnnualReportRequest, exportPath: string) =>
+    ipcRenderer.invoke(IPC_CHANNELS.ANNUAL_REPORT_EXPORT, data, exportPath)
 };
 
 // Expose the API to the renderer process

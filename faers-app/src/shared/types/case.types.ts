@@ -359,6 +359,12 @@ export type WorkflowStatus =
 // Phase 3: Due date type
 export type DueDateType = 'expedited' | 'non_expedited' | 'custom';
 
+// Phase 6: Case Type
+export type CaseType = 'postmarket' | 'ind' | 'babe';
+
+// Phase 6: IND Report Type
+export type INDReportType = '7_day' | '15_day' | 'followup_7day' | 'followup_15day' | 'annual_only';
+
 // Main Case structure
 export interface Case {
   id: string;
@@ -470,6 +476,23 @@ export interface Case {
   // Phase 4: Product link
   productId?: number;
 
+  // Phase 6: IND Safety Report fields
+  caseType?: CaseType;
+  studyId?: number;
+  siteId?: number;
+  subjectNumber?: string;
+  isBlinded?: boolean;
+  treatmentArm?: string;
+  studyDayOnset?: number;
+  firstDoseDate?: string;
+  lastDoseDate?: string;
+  dateInformed?: string;
+  isExpected?: boolean;
+  expectednessIbVersion?: string;
+  expectednessIbSection?: string;
+  expectednessJustification?: string;
+  indReportType?: INDReportType;
+
   // Related data (loaded separately)
   reporters?: CaseReporter[];
   identifiers?: CaseIdentifier[];
@@ -509,6 +532,11 @@ export interface CaseListItem {
   isSerious?: boolean;
   parentCaseId?: string;
   caseVersion?: number;
+  // Phase 6: IND fields
+  caseType?: CaseType;
+  indReportType?: INDReportType;
+  studyProtocol?: string;
+  dateInformed?: string;
 }
 
 // Create case DTO

@@ -44,7 +44,14 @@ import {
   StopOutlined,
   HistoryOutlined,
   InboxOutlined,
-  ScheduleOutlined
+  ScheduleOutlined,
+  // Phase 6
+  AuditOutlined,
+  AlertOutlined,
+  BankOutlined,
+  CalendarOutlined,
+  ExceptionOutlined,
+  NotificationOutlined
 } from '@ant-design/icons';
 import type { MenuProps } from 'antd';
 import { useCaseStore, useCurrentCase, useCaseActions } from './stores/caseStore';
@@ -83,6 +90,12 @@ import {
 import { useSubmissionStore, useDashboard } from './stores/submissionStore';
 import { useSettingsStore } from './stores/settingsStore';
 import { useEsgApiStore } from './stores/esgApiStore';
+// Phase 6 - IND Safety Reports
+import { StudyList } from './components/study';
+import { INDCaseHeader, CausalityAssessmentPanel, ExpectednessAssessment, SUSARClassification, UnblindingDialog } from './components/ind-case';
+import { BABEStudyList } from './components/babe';
+import { DeviationList } from './components/deviation';
+import { AnnualReportGenerator } from './components/annual-report';
 
 const { Header, Sider, Content, Footer } = Layout;
 
@@ -660,6 +673,31 @@ const App: React.FC = () => {
       label: <span data-testid="nav-psr">PSR</span>
     });
 
+    // Phase 6 - IND Safety Reports
+    items.push({
+      key: 'studies',
+      icon: <BankOutlined />,
+      label: <span data-testid="nav-studies">Studies</span>
+    });
+
+    items.push({
+      key: 'babe',
+      icon: <ExperimentOutlined />,
+      label: <span data-testid="nav-babe">BA/BE Studies</span>
+    });
+
+    items.push({
+      key: 'deviations',
+      icon: <ExceptionOutlined />,
+      label: <span data-testid="nav-deviations">Deviations</span>
+    });
+
+    items.push({
+      key: 'annual-report',
+      icon: <CalendarOutlined />,
+      label: <span data-testid="nav-annual-report">Annual Report</span>
+    });
+
     items.push({ type: 'divider' });
 
     return [
@@ -703,7 +741,26 @@ const App: React.FC = () => {
         key: 'narrative',
         icon: <EditOutlined />,
         label: <span data-testid="nav-narrative">{createNavLabel('Narrative', getSectionHasData('narrative'), getSectionErrors('narrative'))}</span>
-      }
+      },
+      // Phase 6: IND-specific sections (only shown for IND/BA/BE cases)
+      ...(currentCase?.caseType === 'ind' || currentCase?.caseType === 'babe' ? [
+        { type: 'divider' as const },
+        {
+          key: 'causality',
+          icon: <AuditOutlined />,
+          label: <span data-testid="nav-causality">Causality</span>
+        },
+        {
+          key: 'expectedness',
+          icon: <AlertOutlined />,
+          label: <span data-testid="nav-expectedness">Expectedness</span>
+        },
+        {
+          key: 'susar',
+          icon: <WarningOutlined />,
+          label: <span data-testid="nav-susar">SUSAR</span>
+        }
+      ] : [])
     ];
   };
 
@@ -1138,6 +1195,26 @@ const App: React.FC = () => {
       );
     }
 
+    // Phase 6: Studies Management
+    if (activeSection === 'studies') {
+      return <StudyList />;
+    }
+
+    // Phase 6: BA/BE Studies
+    if (activeSection === 'babe') {
+      return <BABEStudyList />;
+    }
+
+    // Phase 6: Protocol Deviations
+    if (activeSection === 'deviations') {
+      return <DeviationList />;
+    }
+
+    // Phase 6: Annual Report
+    if (activeSection === 'annual-report') {
+      return <AnnualReportGenerator />;
+    }
+
     // Phase 4: PSR Management
     if (activeSection === 'psr') {
       // Show detail view if a PSR is selected
@@ -1252,6 +1329,27 @@ const App: React.FC = () => {
               onChange={handleFieldChange}
             />
           );
+        // Phase 6: IND-specific form sections
+        case 'causality':
+          return (
+            <CausalityAssessmentPanel
+              caseId={currentCase.id}
+              disabled={currentCase.status !== 'Draft'}
+            />
+          );
+        case 'expectedness':
+          return (
+            <ExpectednessAssessment
+              caseId={currentCase.id}
+              disabled={currentCase.status !== 'Draft'}
+            />
+          );
+        case 'susar':
+          return (
+            <SUSARClassification
+              caseId={currentCase.id}
+            />
+          );
         default:
           return (
             <div className="empty-state">
@@ -1266,6 +1364,15 @@ const App: React.FC = () => {
     return (
       <Form layout="vertical" className="case-form" data-testid="case-form">
         <span data-testid="case-id" data-value={currentCase?.id} style={{ display: 'none' }} />
+        {/* Phase 6: Show IND case header for IND/BA/BE cases */}
+        {(currentCase.caseType === 'ind' || currentCase.caseType === 'babe') && (
+          <INDCaseHeader
+            caseId={currentCase.id}
+            caseType={currentCase.caseType}
+            studyId={currentCase.studyId}
+            indReportType={currentCase.indReportType}
+          />
+        )}
         {renderFormSection()}
       </Form>
     );
@@ -1449,9 +1556,24 @@ const App: React.FC = () => {
             )}
           </span>
           {currentCase && (
-            <span className={getStatusBadgeClass(currentCase.status)}>
-              {currentCase.status}
-            </span>
+            <>
+              <span className={getStatusBadgeClass(currentCase.status)}>
+                {currentCase.status}
+              </span>
+              {currentCase.caseType && currentCase.caseType !== 'postmarket' && (
+                <span style={{
+                  background: currentCase.caseType === 'ind' ? '#ff7a45' : '#eb2f96',
+                  color: '#fff',
+                  padding: '2px 8px',
+                  borderRadius: 4,
+                  fontSize: 11,
+                  fontWeight: 600,
+                  marginLeft: 8
+                }}>
+                  {currentCase.caseType === 'ind' ? 'IND' : 'BA/BE'}
+                </span>
+              )}
+            </>
           )}
           {isDirty && (
             <span style={{ color: '#faad14' }}>● Unsaved changes</span>
