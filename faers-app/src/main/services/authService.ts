@@ -483,7 +483,7 @@ export async function ensureDefaultAdmin(db: DatabaseInstance): Promise<void> {
   const existingAdmin = userRepo.findByUsername(defaultUsername);
 
   if (existingAdmin) {
-    console.log('Admin user already exists, verifying role assignment...');
+    console.log('Admin user already exists, verifying role assignment and password...');
 
     // Ensure admin has the admin role
     const hasAdminRole = roleRepo.isUserAdmin(existingAdmin.id);
@@ -491,6 +491,25 @@ export async function ensureDefaultAdmin(db: DatabaseInstance): Promise<void> {
       console.log('Admin user missing admin role, assigning...');
       userRepo.assignRoles(existingAdmin.id, ['admin']);
       console.log('Admin role assigned successfully');
+    }
+
+    // Verify the default password still works; reset if not
+    const currentHash = userRepo.getPasswordHash(existingAdmin.id);
+    if (currentHash) {
+      const isValid = await passwordService.verify(defaultPassword, currentHash);
+      if (!isValid) {
+        console.log('Admin password hash is invalid or stale, resetting to default...');
+        const newHash = await passwordService.hash(defaultPassword);
+        userRepo.updatePassword(existingAdmin.id, newHash);
+        // Also unlock the account and reset failed attempts in case it was locked
+        userRepo.updateFailedAttempts(existingAdmin.id, 0, undefined);
+        console.log('Admin password reset successfully');
+      }
+    } else {
+      console.log('Admin has no password hash, setting default password...');
+      const newHash = await passwordService.hash(defaultPassword);
+      userRepo.updatePassword(existingAdmin.id, newHash);
+      console.log('Admin password set successfully');
     }
 
     return;

@@ -21,6 +21,8 @@ interface SettingsState {
 const defaultSettings: AppSettings = {
   senderId: '',
   senderOrganization: '',
+  senderIdentifierType: 'senderId',
+  dunsNumber: '',
   defaultExportPath: '',
   autoValidateOnExport: true,
   warnOnExportWithWarnings: true,
@@ -44,6 +46,8 @@ export const useSettingsStore = create<SettingsState>((set) => ({
       const [
         senderIdRes,
         senderOrgRes,
+        senderIdentifierTypeRes,
+        dunsNumberRes,
         exportPathRes,
         autoValidateRes,
         warnRes,
@@ -54,6 +58,8 @@ export const useSettingsStore = create<SettingsState>((set) => ({
       ] = await Promise.all([
         window.electronAPI.getSetting('senderId'),
         window.electronAPI.getSetting('senderOrganization'),
+        window.electronAPI.getSetting('senderIdentifierType'),
+        window.electronAPI.getSetting('dunsNumber'),
         window.electronAPI.getSetting('defaultExportPath'),
         window.electronAPI.getSetting('autoValidateOnExport'),
         window.electronAPI.getSetting('warnOnExportWithWarnings'),
@@ -67,6 +73,8 @@ export const useSettingsStore = create<SettingsState>((set) => ({
         settings: {
           senderId: senderIdRes.data || '',
           senderOrganization: senderOrgRes.data || '',
+          senderIdentifierType: (senderIdentifierTypeRes.data as 'senderId' | 'duns') || 'senderId',
+          dunsNumber: dunsNumberRes.data || '',
           defaultExportPath: exportPathRes.data || '',
           autoValidateOnExport: autoValidateRes.data !== 'false',
           warnOnExportWithWarnings: warnRes.data !== 'false',

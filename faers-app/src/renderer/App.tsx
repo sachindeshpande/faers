@@ -12,7 +12,7 @@
  */
 
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
-import { Layout, Menu, Button, Space, Tooltip, message, Form, Spin, Dropdown, Modal, Input, Select } from 'antd';
+import { Layout, Menu, Button, Space, Tooltip, message, Form, Spin, Dropdown, Modal, Input, Select, Alert } from 'antd';
 import {
   PlusOutlined,
   FolderOpenOutlined,
@@ -400,6 +400,109 @@ const App: React.FC = () => {
     } else {
       messageApi.error('Failed to create new case');
     }
+  };
+
+  // Fill case with sample test data and save to database
+  const handleFillSampleData = async () => {
+    if (!currentCase) return;
+
+    // Save case-level fields directly to database via IPC
+    const sampleCaseData = {
+      reportType: '1',                  // Spontaneous
+      initialOrFollowup: '1',          // Initial
+      receiptDate: '2026-03-15',
+      receiveDate: '2026-03-16',
+      senderType: '1',                 // Pharmaceutical Company
+      senderOrganization: 'TestPharma Inc.',
+      senderDepartment: 'Drug Safety',
+      senderGivenName: 'John',
+      senderFamilyName: 'Smith',
+      senderAddress: '500 Pharma Boulevard',
+      senderCity: 'Silver Spring',
+      senderState: 'MD',
+      senderPostcode: '20993',
+      senderCountry: 'US',
+      senderPhone: '301-555-0200',
+      senderEmail: 'drugsafety@testpharma.example.com',
+      patientInitials: 'T.P.',
+      patientBirthdate: '1975-06-15',
+      patientAge: 50,
+      patientAgeUnit: 'Year',
+      patientSex: 1,                   // Male
+      patientWeight: 82,
+      caseNarrative: 'A 50-year-old male patient (initials T.P.) with a history of hypertension was started on Testdrugimab 200 mg orally once daily on 15-Jan-2026 for rheumatoid arthritis. Concomitant medication included Lisinopril 10 mg daily for hypertension.\n\nOn 01-Mar-2026, the patient developed nausea. On 05-Mar-2026, routine blood work revealed elevated hepatic enzymes (ALT 3x ULN, AST 2.5x ULN). The patient was hospitalized on 06-Mar-2026 for monitoring and evaluation. Testdrugimab was discontinued on 10-Mar-2026. The nausea resolved on 10-Mar-2026. As of the date of this report, hepatic enzymes remain elevated and the patient is still hospitalized.\n\nThe reporter (Dr. Jane Doe) assessed the hepatic enzyme elevation as possibly related to Testdrugimab and unlikely related to Lisinopril. No other cause has been identified.\n\nThis is an initial report. Follow-up information is expected.'
+    };
+
+    // Persist case fields to database
+    const caseResponse = await window.electronAPI.updateCase(currentCase.id, sampleCaseData);
+    if (caseResponse.success && caseResponse.data) {
+      // Update the in-memory store with the saved case
+      useCaseStore.getState().fetchCase(currentCase.id);
+    }
+
+    // Add sample reporter (uses CaseReporter field names)
+    await handleAddReporter({
+      isPrimary: true,
+      qualification: 1,            // Physician
+      givenName: 'Jane',
+      familyName: 'Doe',
+      organization: 'City General Hospital',
+      address: '100 Medical Center Drive',
+      city: 'Rockville',
+      state: 'MD',
+      postcode: '20850',
+      country: 'US',
+      phone: '301-555-0100',
+      email: 'jane.doe@testcgh.example.com'
+    } as Partial<CaseReporter>);
+
+    // Add suspect drug
+    await handleAddDrug({
+      characterization: 1,         // Suspect
+      productName: 'Testdrugimab',
+      indication: 'Rheumatoid arthritis',
+      startDate: '2026-01-15',
+      endDate: '2026-03-10',
+      actionTaken: 1               // Drug withdrawn
+    } as Partial<CaseDrug>);
+
+    // Add concomitant drug
+    await handleAddDrug({
+      characterization: 2,         // Concomitant
+      productName: 'Lisinopril',
+      indication: 'Hypertension',
+      startDate: '2024-06-01',
+      actionTaken: 4               // Dose not changed
+    } as Partial<CaseDrug>);
+
+    // Add reaction 1 - Nausea (not serious → mark as seriousOther to satisfy validation)
+    await handleAddReaction({
+      reactionTerm: 'Nausea',
+      startDate: '2026-03-01',
+      endDate: '2026-03-10',
+      outcome: 1,                  // Recovered
+      seriousOther: true,
+      seriousDeath: false,
+      seriousLifeThreat: false,
+      seriousHospitalization: false,
+      seriousDisability: false,
+      seriousCongenital: false
+    } as Partial<CaseReaction>);
+
+    // Add reaction 2 - Hepatic enzyme increased (serious: hospitalization)
+    await handleAddReaction({
+      reactionTerm: 'Hepatic enzyme increased',
+      startDate: '2026-03-05',
+      outcome: 6,                  // Not Recovered
+      seriousHospitalization: true,
+      seriousDeath: false,
+      seriousLifeThreat: false,
+      seriousDisability: false,
+      seriousCongenital: false,
+      seriousOther: false
+    } as Partial<CaseReaction>);
+
+    messageApi.success('Sample test data filled and saved. Review the sections, then Validate and Export.');
   };
 
   // Handle save
@@ -1371,6 +1474,32 @@ const App: React.FC = () => {
             caseType={currentCase.caseType}
             studyId={currentCase.studyId}
             indReportType={currentCase.indReportType}
+          />
+        )}
+        {/* Show "Fill Sample Data" button in Test Mode for new Draft cases */}
+        {settingsStore.settings.submissionEnvironment === 'Test'
+          && currentCase.status === 'Draft'
+          && !currentCase.patientInitials
+          && reporters.length === 0
+          && drugs.length === 0
+          && reactions.length === 0 && (
+          <Alert
+            type="info"
+            showIcon
+            icon={<ExperimentOutlined />}
+            message="Test Mode — Sample Data Available"
+            description="You can auto-fill this case with sample test data for FDA test submissions."
+            action={
+              <Button
+                size="small"
+                type="primary"
+                onClick={handleFillSampleData}
+              >
+                Fill Sample Data
+              </Button>
+            }
+            closable
+            style={{ marginBottom: 16 }}
           />
         )}
         {renderFormSection()}

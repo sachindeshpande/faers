@@ -239,11 +239,11 @@ export function registerSubmissionHandlers(): void {
       }
     ): Promise<IPCResponse<ExportFdaResponse>> => {
       try {
-        // Check if sender ID is configured
+        // Check if sender identification is configured (Sender ID or DUNS)
         if (!filenameService.isSenderIdConfigured()) {
           return {
             success: false,
-            error: 'Sender ID not configured. Please configure in Settings.'
+            error: 'Sender identification not configured. Please configure a Sender ID or DUNS number in Settings.'
           };
         }
 
@@ -254,10 +254,18 @@ export function registerSubmissionHandlers(): void {
         // Note: Batch receiver is the same for Test and Production when using USP
         const batchReceiver = BATCH_RECEIVERS[repType];
 
-        // Generate XML with environment-specific batch receiver
+        // Resolve sender identifier for XML generation
+        const senderIdentifierType = filenameService.getSenderIdentifierType();
+        const senderIdentifierValue = senderIdentifierType === 'duns'
+          ? (filenameService.getDunsNumber() || '')
+          : (filenameService.getSenderOrganization() || filenameService.getSenderId());
+
+        // Generate XML with environment-specific batch receiver and sender identifier
         const xmlResult = xmlService.generate(caseId, {
           submissionEnvironment: environment,
-          submissionReportType: repType
+          submissionReportType: repType,
+          senderIdentifierType,
+          senderIdentifierValue
         });
         if (!xmlResult.success || !xmlResult.xml) {
           return {

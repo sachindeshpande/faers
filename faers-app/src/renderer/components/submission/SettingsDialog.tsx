@@ -22,7 +22,7 @@ import {
 } from 'antd';
 import { FolderOpenOutlined, ExclamationCircleOutlined, SettingOutlined, DatabaseOutlined, ApiOutlined } from '@ant-design/icons';
 import type { RadioChangeEvent } from 'antd';
-import type { AppSettings, SubmissionEnvironment } from '../../../shared/types/case.types';
+import type { AppSettings, SubmissionEnvironment, SenderIdentifierType } from '../../../shared/types/case.types';
 import { MedDRAVersionManager } from '../meddra/MedDRAVersionManager';
 import { WHODrugVersionManager } from '../whodrug/WHODrugVersionManager';
 import EsgApiSettingsTab from './EsgApiSettingsTab';
@@ -53,6 +53,8 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({
       form.setFieldsValue({
         senderId: settings.senderId || '',
         senderOrganization: settings.senderOrganization || '',
+        senderIdentifierType: settings.senderIdentifierType || 'senderId',
+        dunsNumber: settings.dunsNumber || '',
         defaultExportPath: settings.defaultExportPath || '',
         autoValidateOnExport: settings.autoValidateOnExport ?? true,
         warnOnExportWithWarnings: settings.warnOnExportWithWarnings ?? true,
@@ -106,6 +108,8 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({
       await onSave({
         senderId: values.senderId,
         senderOrganization: values.senderOrganization,
+        senderIdentifierType: values.senderIdentifierType,
+        dunsNumber: values.dunsNumber,
         defaultExportPath: values.defaultExportPath,
         autoValidateOnExport: values.autoValidateOnExport,
         warnOnExportWithWarnings: values.warnOnExportWithWarnings,
@@ -234,14 +238,54 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({
           <Divider orientation="left">FDA Submission Settings</Divider>
 
           <Form.Item
-            name="senderId"
-            label="Sender ID"
-            rules={[
-              { required: true, message: 'Sender ID is required for FDA export' }
-            ]}
-            extra="Your organization's FDA sender identifier (used in XML filenames)"
+            name="senderIdentifierType"
+            label="Sender Identifier Type"
           >
-            <Input placeholder="e.g., COMPANY123" style={{ textTransform: 'uppercase' }} />
+            <Radio.Group>
+              <Radio.Button value="senderId">Sender ID</Radio.Button>
+              <Radio.Button value="duns">DUNS Number</Radio.Button>
+            </Radio.Group>
+          </Form.Item>
+
+          <Form.Item noStyle shouldUpdate={(prev, cur) => prev.senderIdentifierType !== cur.senderIdentifierType}>
+            {() => {
+              const idType = form.getFieldValue('senderIdentifierType') as SenderIdentifierType;
+              return idType === 'duns' ? (
+                <>
+                  <Alert
+                    type="info"
+                    showIcon
+                    message="DUNS Number Identification"
+                    description="Your 9-digit Dun & Bradstreet DUNS number will be used as the sender identifier in E2B(R3) XML submissions (OID: 1.3.6.1.4.1.519.1)."
+                    style={{ marginBottom: 16 }}
+                  />
+                  <Form.Item
+                    name="dunsNumber"
+                    label="DUNS Number"
+                    rules={[
+                      { required: true, message: 'DUNS number is required' },
+                      { pattern: /^\d{9}$/, message: 'DUNS number must be exactly 9 digits' }
+                    ]}
+                    extra="Your organization's 9-digit DUNS number (e.g., 012345678)"
+                  >
+                    <Input placeholder="e.g., 012345678" maxLength={9} />
+                  </Form.Item>
+                </>
+              ) : (
+                <>
+                  <Form.Item
+                    name="senderId"
+                    label="Sender ID"
+                    rules={[
+                      { required: true, message: 'Sender ID is required for FDA export' }
+                    ]}
+                    extra="Your organization's FDA sender identifier (used in XML filenames and sender identification)"
+                  >
+                    <Input placeholder="e.g., COMPANY123" style={{ textTransform: 'uppercase' }} />
+                  </Form.Item>
+                </>
+              );
+            }}
           </Form.Item>
 
           <Form.Item

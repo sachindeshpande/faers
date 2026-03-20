@@ -585,6 +585,15 @@ export type SubmissionReportType = 'Postmarket' | 'Premarket';
 // Target FDA center
 export type TargetCenter = 'CDER' | 'CBER';
 
+// Sender identifier type - determines which OID is used in the XML
+export type SenderIdentifierType = 'senderId' | 'duns';
+
+// OID for default sender identifier (FDA-assigned)
+export const SENDER_OID_DEFAULT = '2.16.840.1.113883.3.989.2.1.3.13';
+
+// OID for DUNS number (Dun & Bradstreet Data Universal Numbering System)
+export const SENDER_OID_DUNS = '1.3.6.1.4.1.519.1';
+
 // Batch receiver identifiers for FDA ESG NextGen USP
 // Note: These are the SAME for both Test and Production environments when using USP
 // The distinction between test/production is made in the FDA portal, not in the XML
@@ -649,6 +658,9 @@ export interface ExportSequence {
 export interface AppSettings {
   senderId: string;
   senderOrganization?: string;
+  // Sender identifier type: 'senderId' (FDA-assigned) or 'duns' (DUNS number)
+  senderIdentifierType: SenderIdentifierType;
+  dunsNumber?: string;
   defaultExportPath?: string;
   autoValidateOnExport: boolean;
   warnOnExportWithWarnings: boolean;

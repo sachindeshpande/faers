@@ -8,6 +8,8 @@ import { BatchRepository } from '../database/repositories/batch.repository';
 import { CaseRepository } from '../database/repositories/case.repository';
 import { ValidationService } from './validationService';
 import { AuditService } from './auditService';
+import { ExportFilenameService } from './exportFilenameService';
+import { SENDER_OID_DEFAULT, SENDER_OID_DUNS } from '../../shared/types/case.types';
 import type {
   SubmissionBatch,
   BatchCase,
@@ -304,6 +306,14 @@ export class BatchService {
     const messageId = `MSG-${batch.batchNumber}-${date.getTime()}`;
     const creationTime = date.toISOString().replace(/[-:T]/g, '').substring(0, 14);
 
+    // Resolve sender identifier from settings
+    const filenameService = new ExportFilenameService(this.db);
+    const idType = filenameService.getSenderIdentifierType();
+    const senderOid = idType === 'duns' ? SENDER_OID_DUNS : SENDER_OID_DEFAULT;
+    const senderExtension = idType === 'duns'
+      ? (filenameService.getDunsNumber() || 'UNKNOWN')
+      : (filenameService.getSenderOrganization() || filenameService.getSenderId() || 'FAERS-APP');
+
     // Build batch XML header
     let xml = `<?xml version="1.0" encoding="UTF-8"?>
 <MCCI_IN200100UV01 xmlns="urn:hl7-org:v3"
@@ -323,7 +333,7 @@ export class BatchService {
   </receiver>
   <sender typeCode="SND">
     <device classCode="DEV" determinerCode="INSTANCE">
-      <id root="2.16.840.1.113883.3.989.2.1.3.13" extension="FAERS-APP"/>
+      <id root="${senderOid}" extension="${senderExtension}"/>
     </device>
   </sender>`;
 

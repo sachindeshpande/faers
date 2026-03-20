@@ -21,11 +21,18 @@ import type {
   SubmissionEnvironment,
   SubmissionReportType
 } from '../../shared/types/case.types';
-import { BATCH_RECEIVERS } from '../../shared/types/case.types';
+import {
+  BATCH_RECEIVERS,
+  SENDER_OID_DEFAULT,
+  SENDER_OID_DUNS
+} from '../../shared/types/case.types';
+import type { SenderIdentifierType } from '../../shared/types/case.types';
 
 export interface XMLGenerationOptions {
   submissionEnvironment?: SubmissionEnvironment;
   submissionReportType?: SubmissionReportType;
+  senderIdentifierType?: SenderIdentifierType;
+  senderIdentifierValue?: string;
 }
 
 export interface XMLGenerationResult {
@@ -96,8 +103,16 @@ export class XMLGeneratorService {
       return { success: false, errors, warnings };
     }
 
+    // Resolve sender OID and extension
+    const senderOid = options.senderIdentifierType === 'duns'
+      ? SENDER_OID_DUNS
+      : SENDER_OID_DEFAULT;
+    const senderExtension = options.senderIdentifierValue
+      || caseData.senderOrganization
+      || 'Unknown';
+
     try {
-      const xml = this.buildXML(caseData, reporters, reactions, drugs, batchReceiver);
+      const xml = this.buildXML(caseData, reporters, reactions, drugs, batchReceiver, senderOid, senderExtension);
       return { success: true, xml, errors: [], warnings, batchReceiver };
     } catch (error) {
       return {
@@ -116,7 +131,9 @@ export class XMLGeneratorService {
     reporters: CaseReporter[],
     reactions: CaseReaction[],
     drugs: CaseDrug[],
-    batchReceiver: string
+    batchReceiver: string,
+    senderOid: string,
+    senderExtension: string
   ): string {
     const messageId = uuidv4();
     const creationTime = this.formatDateTime(new Date());
@@ -130,7 +147,7 @@ export class XMLGeneratorService {
     lines.push('<ichicsr lang="en" xmlns="urn:hl7-org:v3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">');
 
     // Message Header (includes Batch Receiver N.1.4)
-    lines.push(this.buildMessageHeader(messageId, creationTime, caseData, batchReceiver));
+    lines.push(this.buildMessageHeader(messageId, creationTime, caseData, batchReceiver, senderOid, senderExtension));
 
     // Control Act with Safety Report
     lines.push('  <controlActProcess classCode="CACT" moodCode="EVN">');
@@ -151,7 +168,14 @@ export class XMLGeneratorService {
    * Build message header section
    * @param batchReceiver - The batch receiver identifier (N.1.4): ZZFDA for postmarket, ZZFDA_PREMKT for premarket
    */
-  private buildMessageHeader(messageId: string, creationTime: string, caseData: Case, batchReceiver: string): string {
+  private buildMessageHeader(
+    messageId: string,
+    creationTime: string,
+    caseData: Case,
+    batchReceiver: string,
+    senderOid: string,
+    senderExtension: string
+  ): string {
     const lines: string[] = [];
 
     // Message ID
@@ -178,11 +202,12 @@ export class XMLGeneratorService {
     lines.push('    </device>');
     lines.push('  </receiver>');
 
-    // Sender
+    // Sender (N.1.3) - uses configured identifier type:
+    // - Sender ID: OID 2.16.840.1.113883.3.989.2.1.3.13 with FDA-assigned sender ID
+    // - DUNS Number: OID 1.3.6.1.4.1.519.1 with 9-digit DUNS number
     lines.push('  <sender typeCode="SND">');
     lines.push('    <device classCode="DEV" determinerCode="INSTANCE">');
-    const senderOrg = caseData.senderOrganization || 'Unknown';
-    lines.push(`      <id root="2.16.840.1.113883.3.989.2.1.3.13" extension="${this.escapeXml(senderOrg)}"/>`);
+    lines.push(`      <id root="${senderOid}" extension="${this.escapeXml(senderExtension)}"/>`);
     lines.push('    </device>');
     lines.push('  </sender>');
 

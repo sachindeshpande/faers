@@ -31,12 +31,13 @@ export class ExportFilenameService {
   /**
    * Generate FDA-compliant filename
    *
-   * Format: {SenderID}_{YYYYMMDD}_{SequenceNumber}.xml
-   * Test mode: {SenderID}_{YYYYMMDD}_{SequenceNumber}_TEST.xml
-   * Example: COMPANY123_20260115_0001.xml or COMPANY123_20260115_0001_TEST.xml
+   * Format: {Identifier}_{YYYYMMDD}_{SequenceNumber}.xml
+   * Test mode: {Identifier}_{YYYYMMDD}_{SequenceNumber}_TEST.xml
+   * Identifier is either Sender ID or DUNS number based on settings
+   * Example: COMPANY123_20260115_0001.xml or 012345678_20260115_0001_TEST.xml
    */
   generateFilename(options: FilenameOptions = {}): GeneratedFilename {
-    const id = options.senderId || this.getSenderId();
+    const id = options.senderId || this.getEffectiveSenderId();
     const date = this.getCurrentDateString();
     const sequenceNumber = this.submissionRepo.getNextSequenceNumber(date);
     const paddedSequence = String(sequenceNumber).padStart(4, '0');
@@ -68,9 +69,47 @@ export class ExportFilenameService {
   }
 
   /**
-   * Check if sender ID is configured
+   * Get sender identifier type from settings ('senderId' or 'duns')
+   */
+  getSenderIdentifierType(): 'senderId' | 'duns' {
+    const row = this.db.prepare(
+      'SELECT value FROM settings WHERE key = ?'
+    ).get('senderIdentifierType') as { value: string } | undefined;
+
+    return (row?.value as 'senderId' | 'duns') || 'senderId';
+  }
+
+  /**
+   * Get DUNS number from settings
+   */
+  getDunsNumber(): string | null {
+    const row = this.db.prepare(
+      'SELECT value FROM settings WHERE key = ?'
+    ).get('dunsNumber') as { value: string } | undefined;
+
+    return row?.value || null;
+  }
+
+  /**
+   * Get the effective sender identifier value based on configured type
+   */
+  getEffectiveSenderId(): string {
+    const idType = this.getSenderIdentifierType();
+    if (idType === 'duns') {
+      return this.getDunsNumber() || 'UNKNOWN';
+    }
+    return this.getSenderId();
+  }
+
+  /**
+   * Check if sender identification is configured (either Sender ID or DUNS)
    */
   isSenderIdConfigured(): boolean {
+    const idType = this.getSenderIdentifierType();
+    if (idType === 'duns') {
+      const duns = this.getDunsNumber();
+      return !!duns && /^\d{9}$/.test(duns);
+    }
     const senderId = this.getSenderId();
     return senderId !== 'UNKNOWN' && senderId.trim().length > 0;
   }
@@ -171,9 +210,11 @@ Next Steps:
 1. Validate XML (optional): https://faers2-validator.preprod.fda.gov/LSMV/Validator
 2. Log into FDA ESG NextGen: https://www.fda.gov/industry/electronic-submissions-gateway
 3. Click "Industry USP Log In"
-4. Click "New Submission" -> Select "Test Submission"
-5. Upload the XML file: ${filename}
-6. Record the ESG Core ID in your application
+4. Click "New Submission"
+5. Select Submission Type: FAERS
+6. Select "Test Submission"
+7. Upload the XML file: ${filename}
+8. Record the ESG Core ID in your application
 
 Files in this package:
 - ${filename} (E2B(R3) XML)
@@ -196,9 +237,11 @@ This will submit to the live FAERS database.
 Next Steps:
 1. Log into FDA ESG NextGen: https://www.fda.gov/industry/electronic-submissions-gateway
 2. Click "Industry USP Log In"
-3. Click "New Submission" -> Select "Production Submission"
-4. Upload the XML file: ${filename}
-5. Record the ESG Core ID in your application
+3. Click "New Submission"
+4. Select Submission Type: FAERS
+5. Select "Production Submission"
+6. Upload the XML file: ${filename}
+7. Record the ESG Core ID in your application
 
 Files in this package:
 - ${filename} (E2B(R3) XML)
