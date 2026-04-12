@@ -96,6 +96,26 @@ const ReportInfoSection: React.FC<ReportInfoSectionProps> = ({
           </Col>
         </Row>
 
+        <Row gutter={24}>
+          <Col span={8}>
+            <Form.Item
+              label="Local Report Type (C.1.7)"
+              tooltip="15-Day expedited or 7-Day alert report per FDA Regional IG §4.2.1"
+            >
+              <Select
+                value={caseData.localReportTypeCode}
+                onChange={(value) => onChange('localReportTypeCode', value ?? null)}
+                placeholder="15-Day (default)"
+                allowClear
+                disabled={disabled}
+              >
+                <Option value={1}>15-Day</Option>
+                <Option value={7}>7-Day</Option>
+              </Select>
+            </Form.Item>
+          </Col>
+        </Row>
+
         <Divider orientation="left">Dates</Divider>
 
         <Row gutter={24}>

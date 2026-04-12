@@ -258,7 +258,13 @@ export class ValidationEngineService {
   }
 
   /**
-   * Prepare case data for expression evaluation
+   * Prepare case data for expression evaluation.
+   *
+   * Backward compatibility: scalar fields (reaction_term, drug_name, etc.)
+   * still reference the first item so existing rules keep working.
+   * New array fields (reactions, drugs, reporters) expose all items and
+   * helper booleans (all_reactions_coded, all_drugs_have_dose_unit, etc.)
+   * allow rules to validate across all items.
    */
   private prepareCaseContext(caseData: Case): Record<string, unknown> {
     const context: Record<string, unknown> = {};
@@ -288,9 +294,23 @@ export class ValidationEngineService {
     context.patient_death = caseData.patientInfo?.death ? 1 : 0;
     context.death_date = caseData.patientInfo?.deathDate;
 
-    // Get first reaction data
-    if (caseData.reactions && caseData.reactions.length > 0) {
-      const firstReaction = caseData.reactions[0];
+    // --- Reactions: expose all items + backward-compat scalars from first ---
+    const reactions = caseData.reactions || [];
+    context.reaction_count = reactions.length;
+    context.reactions = reactions.map(r => ({
+      term: r.reactionMedDRATermNative,
+      pt_code: r.reactionMedDRAPT,
+      start_date: r.reactionStartDate,
+      end_date: r.reactionEndDate,
+      outcome: r.reactionOutcome
+    }));
+    // All-item aggregate checks for system rules
+    context.all_reactions_coded = reactions.length > 0 &&
+      reactions.every(r => !!r.reactionMedDRAPT);
+    context.any_reaction_uncoded = reactions.some(r => !r.reactionMedDRAPT);
+
+    if (reactions.length > 0) {
+      const firstReaction = reactions[0];
       context.reaction_term = firstReaction.reactionMedDRATermNative;
       context.reaction_pt_code = firstReaction.reactionMedDRAPT;
       context.reaction_start_date = firstReaction.reactionStartDate;
@@ -298,9 +318,24 @@ export class ValidationEngineService {
       context.reaction_outcome = firstReaction.reactionOutcome;
     }
 
-    // Get first drug data
-    if (caseData.drugs && caseData.drugs.length > 0) {
-      const firstDrug = caseData.drugs[0];
+    // --- Drugs: expose all items + backward-compat scalars from first ---
+    const drugs = caseData.drugs || [];
+    context.drug_count = drugs.length;
+    context.drugs = drugs.map(d => ({
+      name: d.medicinalProduct,
+      start_date: d.drugStartDate,
+      stop_date: d.drugStopDate,
+      dose: d.drugDose,
+      dose_unit: d.drugDoseUnit,
+      route: d.drugAdministrationRoute,
+      indication: d.drugIndication
+    }));
+    // All-item aggregate checks
+    context.all_drugs_have_dose_unit = drugs.every(d => !d.drugDose || !!d.drugDoseUnit);
+    context.any_drug_missing_dose_unit = drugs.some(d => d.drugDose && !d.drugDoseUnit);
+
+    if (drugs.length > 0) {
+      const firstDrug = drugs[0];
       context.drug_name = firstDrug.medicinalProduct;
       context.drug_start_date = firstDrug.drugStartDate;
       context.drug_stop_date = firstDrug.drugStopDate;
@@ -310,9 +345,19 @@ export class ValidationEngineService {
       context.drug_indication = firstDrug.drugIndication;
     }
 
-    // Get first reporter data
-    if (caseData.reporters && caseData.reporters.length > 0) {
-      const firstReporter = caseData.reporters[0];
+    // --- Reporters: expose all items + backward-compat scalars from first ---
+    const reporters = caseData.reporters || [];
+    context.reporter_count = reporters.length;
+    context.reporters = reporters.map(r => ({
+      name: `${r.reporterGivenName || ''} ${r.reporterFamilyName || ''}`.trim(),
+      phone: r.reporterPhone,
+      email: r.reporterEmailAddress,
+      qualification: r.qualification,
+      country: r.reporterCountry
+    }));
+
+    if (reporters.length > 0) {
+      const firstReporter = reporters[0];
       context.reporter_name = `${firstReporter.reporterGivenName || ''} ${firstReporter.reporterFamilyName || ''}`.trim();
       context.reporter_phone = firstReporter.reporterPhone;
       context.reporter_email = firstReporter.reporterEmailAddress;
@@ -361,10 +406,37 @@ export class ValidationEngineService {
   }
 
   /**
+   * Tokens that must not appear in user-authored rule expressions.
+   * Prevents arbitrary code execution in the Electron main process.
+   */
+  private static readonly EXPRESSION_DENYLIST = [
+    'require', 'import', 'process', 'child_process', 'exec', 'spawn',
+    'eval', 'Function', 'globalThis', 'global', '__dirname', '__filename',
+    'fs', 'net', 'http', 'https', 'crypto', 'Buffer', 'setTimeout',
+    'setInterval', 'setImmediate', 'XMLHttpRequest', 'fetch', 'WebSocket'
+  ];
+
+  /**
+   * Check expression for denied tokens before evaluation
+   */
+  private checkExpressionSafety(expression: string): void {
+    // Match whole words only to avoid false positives (e.g., "impression" matching "process")
+    for (const token of ValidationEngineService.EXPRESSION_DENYLIST) {
+      const pattern = new RegExp(`\\b${token}\\b`);
+      if (pattern.test(expression)) {
+        throw new Error(`Expression contains disallowed token "${token}". Rule expressions must only reference case data fields and helper functions.`);
+      }
+    }
+  }
+
+  /**
    * Evaluate a JavaScript expression with context
    */
   private evaluateExpression(expression: string, context: Record<string, unknown>): boolean {
     try {
+      // Safety check: block dangerous tokens
+      this.checkExpressionSafety(expression);
+
       // Create a function with the helper functions and context variables
       const helperFunctions = `
         function calculateAgeFromDOB(dob, referenceDate) {

@@ -12,6 +12,7 @@ import {
   DrugRepository,
   ReporterRepository
 } from '../database/repositories';
+import { ExportFilenameService } from './exportFilenameService';
 import type {
   Case,
   CaseReaction,
@@ -22,12 +23,14 @@ import type {
 } from '../../shared/types/case.types';
 
 export class ValidationService {
+  private db: DatabaseInstance;
   private caseRepo: CaseRepository;
   private reactionRepo: ReactionRepository;
   private drugRepo: DrugRepository;
   private reporterRepo: ReporterRepository;
 
   constructor(db: DatabaseInstance) {
+    this.db = db;
     this.caseRepo = new CaseRepository(db);
     this.reactionRepo = new ReactionRepository(db);
     this.drugRepo = new DrugRepository(db);
@@ -54,6 +57,7 @@ export class ValidationService {
     const drugs = this.drugRepo.findByCaseId(caseId);
 
     // Run all validation checks
+    this.validateSubmissionEnvelope(errors);
     this.validateReportInformation(caseData, errors);
     this.validateReporterInformation(reporters, errors);
     this.validateSenderInformation(caseData, errors);
@@ -62,6 +66,7 @@ export class ValidationService {
     this.validateDrugs(drugs, errors);
     this.validateNarrative(caseData, errors);
     this.validateCrossFieldRules(caseData, reactions, errors);
+    this.validatePremarketFields(caseData, errors);
 
     // Determine overall validity (no errors)
     const hasErrors = errors.some(e => e.severity === 'error');
@@ -73,9 +78,92 @@ export class ValidationService {
   }
 
   /**
+   * Validate Submission Envelope (N.1 Batch Header)
+   * Checks that the required sender identification and submission configuration
+   * are in place for generating a valid E2B(R3) XML envelope.
+   */
+  private validateSubmissionEnvelope(errors: ValidationError[]): void {
+    try {
+      const filenameService = new ExportFilenameService(this.db);
+
+      // N.1.3 - Batch Sender Identifier must be configured
+      if (!filenameService.isSenderIdConfigured()) {
+        const idType = filenameService.getSenderIdentifierType();
+        if (idType === 'duns') {
+          const duns = filenameService.getDunsNumber();
+          if (!duns) {
+            errors.push({
+              field: 'dunsNumber',
+              message: 'DUNS number is required for batch sender identification (N.1.3). Configure it in Settings.',
+              severity: 'error'
+            });
+          } else if (!/^\d{9}$/.test(duns)) {
+            errors.push({
+              field: 'dunsNumber',
+              message: `DUNS number must be exactly 9 digits (N.1.3). Current value "${duns}" is invalid.`,
+              severity: 'error'
+            });
+          }
+        } else {
+          errors.push({
+            field: 'senderId',
+            message: 'FDA Sender ID is required for batch sender identification (N.1.3). Configure it in Settings.',
+            severity: 'error'
+          });
+        }
+      }
+
+      // Verify submission report type is configured (affects N.1.4 batch receiver)
+      const reportType = filenameService.getReportType();
+      if (!reportType) {
+        errors.push({
+          field: 'submissionReportType',
+          message: 'Submission report type (Postmarket/Premarket) must be configured for batch receiver routing (N.1.4).',
+          severity: 'error'
+        });
+      }
+    } catch {
+      // If settings table doesn't exist yet, warn but don't block
+      errors.push({
+        field: 'submissionSettings',
+        message: 'Submission settings not configured. Configure Sender ID/DUNS and report type in Settings before export.',
+        severity: 'warning'
+      });
+    }
+  }
+
+  /**
    * Validate Report Information (A.1)
    */
   private validateReportInformation(caseData: Case, errors: ValidationError[]): void {
+    // A.1.0.1 - Safety Report Unique Identifier (required)
+    if (!caseData.safetyReportId) {
+      errors.push({
+        field: 'safetyReportId',
+        message: 'Safety Report Unique Identifier is required (A.1.0.1). The internal case ID will be used as fallback but may cause FDA rejection.',
+        severity: 'warning'
+      });
+    } else {
+      // Warn if it looks like a bare UUID (internal DB id, not FDA-formatted)
+      const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (uuidPattern.test(caseData.safetyReportId)) {
+        errors.push({
+          field: 'safetyReportId',
+          message: 'Safety Report ID appears to be a system UUID. FDA expects a formatted identifier (e.g., US-COMPANYNAME-YYYY-NNNNN) (A.1.0.1)',
+          severity: 'warning'
+        });
+      }
+    }
+
+    // A.1.8.1 - Worldwide Unique Case Identification Number (required for all reports)
+    if (!caseData.worldwideCaseId) {
+      errors.push({
+        field: 'worldwideCaseId',
+        message: 'Worldwide Unique Case Identification Number is required (A.1.8.1)',
+        severity: 'warning'
+      });
+    }
+
     // A.1.2 - Report Type (required)
     if (!caseData.reportType) {
       errors.push({
@@ -123,6 +211,12 @@ export class ValidationService {
       }
     }
 
+    // Date format validation
+    this.validateDateFormat(caseData.receiptDate, 'receiptDate', 'Initial Receipt Date', errors);
+    this.validateDateFormat(caseData.receiveDate, 'receiveDate', 'Most Recent Information Date', errors);
+    this.validateDateFormat(caseData.deathDate, 'deathDate', 'Death Date', errors);
+    this.validateDateFormat(caseData.patientBirthdate, 'patientBirthdate', 'Patient Birth Date', errors);
+
     // A.1.10 - Nullification reason required if nullification type is set
     if (caseData.nullificationType && !caseData.nullificationReason) {
       errors.push({
@@ -154,6 +248,15 @@ export class ValidationService {
         field: 'reporters',
         message: 'A primary reporter should be designated',
         severity: 'warning'
+      });
+    }
+
+    // A.2.1.3.6 - Reporter Country (required for primary reporter)
+    if (primaryReporter && !primaryReporter.country) {
+      errors.push({
+        field: 'reporters[primary].country',
+        message: 'Reporter Country is required for the primary reporter (A.2.1.3.6)',
+        severity: 'error'
       });
     }
 
@@ -232,12 +335,18 @@ export class ValidationService {
    * Validate Patient Information (B.1)
    */
   private validatePatientInformation(caseData: Case, errors: ValidationError[]): void {
-    // B.1.5 - Patient Sex (required)
+    // B.1.5 - Patient Sex (required, must be valid E2B code: 1=Male, 2=Female)
     if (caseData.patientSex === undefined || caseData.patientSex === null) {
       errors.push({
         field: 'patientSex',
         message: 'Patient Sex is required (B.1.5)',
         severity: 'error'
+      });
+    } else if (![1, 2].includes(caseData.patientSex)) {
+      errors.push({
+        field: 'patientSex',
+        message: `Patient Sex must be 1 (Male) or 2 (Female) (B.1.5). Current value: ${caseData.patientSex}`,
+        severity: 'warning'
       });
     }
 
@@ -343,6 +452,15 @@ export class ValidationService {
         }
       }
 
+      // E.i.7 - Outcome required for serious reactions
+      if (hasSeriousness && (reaction.outcome === undefined || reaction.outcome === null)) {
+        errors.push({
+          field: `reactions[${index}].outcome`,
+          message: `Reaction ${index + 1}: Outcome is required for serious reactions (E.i.7)`,
+          severity: 'error'
+        });
+      }
+
       // If death seriousness, outcome should be fatal
       if (reaction.seriousDeath && reaction.outcome !== 5) {
         errors.push({
@@ -379,11 +497,17 @@ export class ValidationService {
     }
 
     drugs.forEach((drug, index) => {
-      // B.4.k.1 - Drug Characterization (required)
-      if (!drug.characterization) {
+      // B.4.k.1 - Drug Characterization (required, must be 1=Suspect, 2=Concomitant, 3=Interacting)
+      if (drug.characterization === undefined || drug.characterization === null) {
         errors.push({
           field: `drugs[${index}].characterization`,
           message: `Drug ${index + 1}: Drug Characterization is required (B.4.k.1)`,
+          severity: 'error'
+        });
+      } else if (![1, 2, 3].includes(drug.characterization)) {
+        errors.push({
+          field: `drugs[${index}].characterization`,
+          message: `Drug ${index + 1}: Drug Characterization must be 1 (Suspect), 2 (Concomitant), or 3 (Interacting) (B.4.k.1). Got: ${drug.characterization}`,
           severity: 'error'
         });
       }
@@ -452,6 +576,47 @@ export class ValidationService {
   }
 
   /**
+   * Validate Premarket/IND-specific fields
+   * Only runs when caseType === 'ind'
+   */
+  private validatePremarketFields(caseData: Case, errors: ValidationError[]): void {
+    if (caseData.caseType !== 'ind') return;
+
+    if (!caseData.indReportType) {
+      errors.push({
+        field: 'indReportType',
+        message: 'IND Report Type is required for premarket/IND cases (7-day, 15-day, follow-up, annual)',
+        severity: 'error'
+      });
+    }
+
+    if (!caseData.studyId) {
+      errors.push({
+        field: 'studyId',
+        message: 'Study ID is required for IND cases',
+        severity: 'error'
+      });
+    }
+
+    if (!caseData.subjectNumber) {
+      errors.push({
+        field: 'subjectNumber',
+        message: 'Subject Number is required for IND cases',
+        severity: 'error'
+      });
+    }
+
+    // Date of awareness is critical for IND timelines
+    if (!caseData.dateInformed) {
+      errors.push({
+        field: 'dateInformed',
+        message: 'Date Sponsor Informed is required for IND reporting timeline compliance',
+        severity: 'error'
+      });
+    }
+  }
+
+  /**
    * Validate Cross-Field Rules
    */
   private validateCrossFieldRules(caseData: Case, reactions: CaseReaction[], errors: ValidationError[]): void {
@@ -503,5 +668,135 @@ export class ValidationService {
   private isValidEmail(email: string): boolean {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
+  }
+
+  /**
+   * Check if a date string is a valid ISO date (YYYY-MM-DD) that parses correctly
+   */
+  private isValidIsoDate(dateStr: string): boolean {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return false;
+    const d = new Date(dateStr);
+    return !isNaN(d.getTime());
+  }
+
+  /**
+   * Validate that a date field, if present, is in the expected ISO format.
+   * Returns true if the date is valid or absent; pushes an error if malformed.
+   */
+  private validateDateFormat(value: string | undefined | null, fieldName: string, label: string, errors: ValidationError[]): void {
+    if (!value) return;
+    if (!this.isValidIsoDate(value)) {
+      errors.push({
+        field: fieldName,
+        message: `${label} must be a valid date in YYYY-MM-DD format (got "${value}")`,
+        severity: 'error'
+      });
+    }
+  }
+
+  /**
+   * Validate generated XML structure against E2B(R3) envelope requirements.
+   * This catches structural issues that field-level validation cannot detect.
+   */
+  static validateXmlStructure(xml: string): ValidationResult {
+    const errors: ValidationError[] = [];
+
+    // Must use MCCI_IN200100UV01 batch wrapper (not <ichicsr>)
+    if (!xml.includes('<MCCI_IN200100UV01')) {
+      errors.push({
+        field: 'xmlStructure',
+        message: 'XML must use MCCI_IN200100UV01 batch wrapper element (not <ichicsr>)',
+        severity: 'error'
+      });
+    }
+
+    // N.1.1 - Type of Messages in Batch (must be <name> element with codeSystem)
+    if (!xml.includes('codeSystem="2.16.840.1.113883.3.989.2.1.1.1"')) {
+      errors.push({
+        field: 'N.1.1',
+        message: 'Missing N.1.1 Type of Messages in Batch. Required: <name code="1" codeSystem="2.16.840.1.113883.3.989.2.1.1.1"/>',
+        severity: 'error'
+      });
+    }
+
+    // Batch level must have <sender> and <receiver> blocks (before PORR_IN049016UV)
+    // FDA validator checks XPaths like sender/device/id[@root="...3.13"]
+    const batchSection = xml.includes('<PORR_IN049016UV>')
+      ? xml.substring(0, xml.indexOf('<PORR_IN049016UV>'))
+      : xml;
+
+    // N.1.3 - Batch Sender Identifier inside <sender>/<device>/<id>
+    if (!batchSection.includes('<sender typeCode="SND">')) {
+      errors.push({
+        field: 'N.1.3',
+        message: 'Batch wrapper missing <sender> block. N.1.3 sender identifier must be inside <sender>/<device>/<id>.',
+        severity: 'error'
+      });
+    } else {
+      const hasSenderOidDefault = batchSection.includes('root="2.16.840.1.113883.3.989.2.1.3.13"');
+      const hasSenderOidDuns = batchSection.includes('root="1.3.6.1.4.1.519.1"');
+      if (!hasSenderOidDefault && !hasSenderOidDuns) {
+        errors.push({
+          field: 'N.1.3',
+          message: 'Batch sender identifier (N.1.3) must include sender OID with FDA Sender ID or DUNS number.',
+          severity: 'error'
+        });
+      }
+    }
+
+    // N.1.4 - Batch Receiver Identifier inside <receiver>/<device>/<id>
+    if (!batchSection.includes('<receiver typeCode="RCV">')) {
+      errors.push({
+        field: 'N.1.4',
+        message: 'Batch wrapper missing <receiver> block. N.1.4 receiver identifier must be inside <receiver>/<device>/<id>.',
+        severity: 'error'
+      });
+    } else if (!batchSection.includes('root="2.16.840.1.113883.3.989.2.1.3.14"')) {
+      errors.push({
+        field: 'N.1.4',
+        message: 'Missing batch receiver identifier OID (N.1.4, OID 2.16.840.1.113883.3.989.2.1.3.14)',
+        severity: 'error'
+      });
+    }
+
+    // Must have PORR_IN049016UV message wrapper
+    if (!xml.includes('<PORR_IN049016UV>')) {
+      errors.push({
+        field: 'xmlStructure',
+        message: 'XML must contain PORR_IN049016UV message wrapper (Section N.2). The two-level batch/message structure is required.',
+        severity: 'error'
+      });
+    }
+
+    // Message wrapper must have receiver and sender
+    if (xml.includes('<PORR_IN049016UV>')) {
+      const messageSection = xml.substring(xml.indexOf('<PORR_IN049016UV>'));
+      if (!messageSection.includes('<receiver typeCode="RCV">')) {
+        errors.push({
+          field: 'N.2.r',
+          message: 'Message wrapper missing receiver element (N.2.r)',
+          severity: 'error'
+        });
+      }
+      if (!messageSection.includes('<sender typeCode="SND">')) {
+        errors.push({
+          field: 'N.2.r',
+          message: 'Message wrapper missing sender element (N.2.r)',
+          severity: 'error'
+        });
+      }
+    }
+
+    // Must contain at least one safety report
+    if (!xml.includes('<investigationEvent')) {
+      errors.push({
+        field: 'safetyReport',
+        message: 'XML must contain at least one safety report (investigationEvent)',
+        severity: 'error'
+      });
+    }
+
+    const hasErrors = errors.some(e => e.severity === 'error');
+    return { valid: !hasErrors, errors };
   }
 }

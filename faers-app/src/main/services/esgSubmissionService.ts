@@ -13,6 +13,7 @@ import { BrowserWindow } from 'electron';
 import { EsgApiService, EsgApiError } from './esgApiService';
 import { MockEsgApiService, MockApiError } from './mockEsgApiService';
 import { XMLGeneratorService } from './xmlGeneratorService';
+import { ExportFilenameService } from './exportFilenameService';
 import { StatusTransitionService } from './statusTransitionService';
 import {
   CaseRepository,
@@ -361,8 +362,18 @@ export class EsgSubmissionService {
           await this.mockApiService.authenticate();
         }
 
-        // Step 2: Generate E2B(R3) XML
-        const xmlResult = this.xmlService.generate(caseId);
+        // Step 2: Generate E2B(R3) XML with settings from database
+        const fnSvc = new ExportFilenameService(this.db);
+        const idType = fnSvc.getSenderIdentifierType();
+        const xmlResult = this.xmlService.generate(caseId, {
+          submissionEnvironment: fnSvc.getSubmissionEnvironment(),
+          submissionReportType: fnSvc.getReportType(),
+          senderIdentifierType: idType,
+          senderIdentifierValue: idType === 'duns'
+            ? (fnSvc.getDunsNumber() || '')
+            : (fnSvc.getSenderId() || ''),
+          targetCenter: fnSvc.getTargetCenter()
+        });
         if (!xmlResult.success || !xmlResult.xml) {
           throw new EsgApiError(
             xmlResult.errors?.join('; ') || 'Failed to generate XML',

@@ -53,6 +53,11 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({
       form.setFieldsValue({
         senderId: settings.senderId || '',
         senderOrganization: settings.senderOrganization || '',
+        senderAddress: settings.senderAddress || '',
+        senderCity: settings.senderCity || '',
+        senderState: settings.senderState || '',
+        senderPostcode: settings.senderPostcode || '',
+        senderCountry: settings.senderCountry || '',
         senderIdentifierType: settings.senderIdentifierType || 'senderId',
         dunsNumber: settings.dunsNumber || '',
         defaultExportPath: settings.defaultExportPath || '',
@@ -108,6 +113,11 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({
       await onSave({
         senderId: values.senderId,
         senderOrganization: values.senderOrganization,
+        senderAddress: values.senderAddress,
+        senderCity: values.senderCity,
+        senderState: values.senderState,
+        senderPostcode: values.senderPostcode,
+        senderCountry: values.senderCountry,
         senderIdentifierType: values.senderIdentifierType,
         dunsNumber: values.dunsNumber,
         defaultExportPath: values.defaultExportPath,
@@ -294,6 +304,44 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({
             extra="Organization name for report header"
           >
             <Input placeholder="e.g., Acme Pharmaceutical Inc." />
+          </Form.Item>
+
+          <Form.Item
+            name="senderAddress"
+            label="Address"
+          >
+            <Input placeholder="e.g., 123 Main Street" />
+          </Form.Item>
+
+          <Form.Item style={{ marginBottom: 0 }}>
+            <Form.Item
+              name="senderCity"
+              label="City"
+              style={{ display: 'inline-block', width: 'calc(40% - 8px)' }}
+            >
+              <Input placeholder="City" />
+            </Form.Item>
+            <Form.Item
+              name="senderState"
+              label="State"
+              style={{ display: 'inline-block', width: '20%', margin: '0 8px' }}
+            >
+              <Input placeholder="State" />
+            </Form.Item>
+            <Form.Item
+              name="senderPostcode"
+              label="Zip"
+              style={{ display: 'inline-block', width: 'calc(20% - 8px)' }}
+            >
+              <Input placeholder="Zip" />
+            </Form.Item>
+            <Form.Item
+              name="senderCountry"
+              label="Country"
+              style={{ display: 'inline-block', width: '20%', marginLeft: 8 }}
+            >
+              <Input placeholder="US" />
+            </Form.Item>
           </Form.Item>
 
           <Divider orientation="left">Export Settings</Divider>

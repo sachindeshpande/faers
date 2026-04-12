@@ -1949,6 +1949,112 @@ function runMigrations(database: DatabaseInstance): void {
     ).run('021_phase6_ind_safety');
     console.log('Migration 021 applied successfully.');
   }
+
+  // Migration 022: Seed default settings (DeepQuence company info + DUNS)
+  const migration022Exists = database.prepare(
+    'SELECT 1 FROM migrations WHERE name = ?'
+  ).get('022_seed_default_settings');
+
+  if (!migration022Exists) {
+    console.log('Applying migration 022: Seeding default settings...');
+
+    const seedSetting = database.prepare(`
+      INSERT INTO settings (key, value, updated_at)
+      VALUES (?, ?, datetime('now'))
+      ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at
+      WHERE value IS NULL OR value = ''
+    `);
+
+    // Always set these two regardless of current value — they are the core identifier config
+    database.prepare(`
+      INSERT INTO settings (key, value, updated_at)
+      VALUES (?, ?, datetime('now'))
+      ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at
+    `).run('senderIdentifierType', 'duns');
+    database.prepare(`
+      INSERT INTO settings (key, value, updated_at)
+      VALUES (?, ?, datetime('now'))
+      ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at
+    `).run('dunsNumber', '334818134');
+
+    // Fill in other defaults only if empty or missing
+    seedSetting.run('senderOrganization', 'DeepQuence');
+    seedSetting.run('senderAddress', '4456 Headen Way');
+    seedSetting.run('senderCity', 'Santa Clara');
+    seedSetting.run('senderState', 'CA');
+    seedSetting.run('senderPostcode', '95054');
+    seedSetting.run('senderCountry', 'US');
+    seedSetting.run('submissionEnvironment', 'Test');
+    seedSetting.run('submissionReportType', 'Postmarket');
+    seedSetting.run('targetCenter', 'CDER');
+
+    database.prepare(
+      'INSERT INTO migrations (name) VALUES (?)'
+    ).run('022_seed_default_settings');
+    console.log('Migration 022 applied successfully.');
+  }
+
+  // Migration 023: Force DUNS identifier for existing databases that had empty senderId
+  const migration023Exists = database.prepare(
+    'SELECT 1 FROM migrations WHERE name = ?'
+  ).get('023_force_duns_identifier');
+
+  if (!migration023Exists) {
+    console.log('Applying migration 023: Setting DUNS as sender identifier...');
+
+    database.prepare(`
+      INSERT INTO settings (key, value, updated_at)
+      VALUES ('senderIdentifierType', 'duns', datetime('now'))
+      ON CONFLICT(key) DO UPDATE SET value = 'duns', updated_at = datetime('now')
+    `).run();
+
+    database.prepare(`
+      INSERT INTO settings (key, value, updated_at)
+      VALUES ('dunsNumber', '334818134', datetime('now'))
+      ON CONFLICT(key) DO UPDATE SET value = '334818134', updated_at = datetime('now')
+    `).run();
+
+    database.prepare(
+      'INSERT INTO migrations (name) VALUES (?)'
+    ).run('023_force_duns_identifier');
+    console.log('Migration 023 applied successfully.');
+  }
+
+  // Migration 024: E2B C.1.7 / B.1.7 / D.7.2-3 fields required by the v37 lint.
+  // Adds real columns for patient race, ethnicity, medical history narrative,
+  // concomitant therapy flag, and the 15-day vs. 7-day local report type code,
+  // so the XML generator can emit real values instead of nullFlavor placeholders.
+  const migration024Exists = database.prepare(
+    'SELECT 1 FROM migrations WHERE name = ?'
+  ).get('024_patient_demographics_and_local_report_type');
+
+  if (!migration024Exists) {
+    console.log('Applying migration 024: Adding patient demographics and local report type fields...');
+
+    const caseColumns = database.prepare("PRAGMA table_info(cases)").all() as Array<{ name: string }>;
+    const caseColumnNames = caseColumns.map(c => c.name);
+
+    if (!caseColumnNames.includes('patient_race')) {
+      database.exec('ALTER TABLE cases ADD COLUMN patient_race TEXT');
+    }
+    if (!caseColumnNames.includes('patient_ethnicity')) {
+      database.exec('ALTER TABLE cases ADD COLUMN patient_ethnicity TEXT');
+    }
+    if (!caseColumnNames.includes('medical_history_text')) {
+      database.exec('ALTER TABLE cases ADD COLUMN medical_history_text TEXT');
+    }
+    if (!caseColumnNames.includes('has_concomitant_therapy')) {
+      database.exec('ALTER TABLE cases ADD COLUMN has_concomitant_therapy INTEGER');
+    }
+    if (!caseColumnNames.includes('local_report_type_code')) {
+      database.exec('ALTER TABLE cases ADD COLUMN local_report_type_code INTEGER');
+    }
+
+    database.prepare(
+      'INSERT INTO migrations (name) VALUES (?)'
+    ).run('024_patient_demographics_and_local_report_type');
+    console.log('Migration 024 applied successfully.');
+  }
 }
 
 /**
@@ -2260,6 +2366,20 @@ function applyInitialSchema(database: DatabaseInstance): void {
         value           TEXT,
         updated_at      DATETIME
     );
+
+    -- Seed default settings (only inserts if key doesn't already exist)
+    INSERT OR IGNORE INTO settings (key, value, updated_at) VALUES
+        ('senderOrganization', 'DeepQuence', datetime('now')),
+        ('senderAddress', '4456 Headen Way', datetime('now')),
+        ('senderCity', 'Santa Clara', datetime('now')),
+        ('senderState', 'CA', datetime('now')),
+        ('senderPostcode', '95054', datetime('now')),
+        ('senderCountry', 'US', datetime('now')),
+        ('senderIdentifierType', 'duns', datetime('now')),
+        ('dunsNumber', '334818134', datetime('now')),
+        ('submissionEnvironment', 'Test', datetime('now')),
+        ('submissionReportType', 'Postmarket', datetime('now')),
+        ('targetCenter', 'CDER', datetime('now'));
 
     -- Lookup Tables for Dropdowns
     CREATE TABLE IF NOT EXISTS lookup_countries (

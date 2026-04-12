@@ -9,7 +9,7 @@ import { CaseRepository } from '../database/repositories/case.repository';
 import { ValidationService } from './validationService';
 import { AuditService } from './auditService';
 import { ExportFilenameService } from './exportFilenameService';
-import { SENDER_OID_DEFAULT, SENDER_OID_DUNS } from '../../shared/types/case.types';
+import { SENDER_OID_DEFAULT, SENDER_OID_DUNS, BATCH_RECEIVERS, MESSAGE_RECEIVERS } from '../../shared/types/case.types';
 import type {
   SubmissionBatch,
   BatchCase,
@@ -250,6 +250,15 @@ export class BatchService {
       // Generate batch XML
       const xml = this.generateBatchXml(batch, validCases);
 
+      // Validate XML envelope structure before writing
+      const structuralValidation = ValidationService.validateXmlStructure(xml);
+      if (!structuralValidation.valid) {
+        const structErrors = structuralValidation.errors
+          .filter(e => e.severity === 'error')
+          .map(e => e.message);
+        throw new Error(`XML structural validation failed: ${structErrors.join('; ')}`);
+      }
+
       // Generate filename
       const date = new Date();
       const timestamp = date.toISOString().replace(/[:.]/g, '-').substring(0, 19);
@@ -295,58 +304,82 @@ export class BatchService {
   }
 
   /**
-   * Generate batch XML for multiple ICSRs
+   * Generate batch XML for multiple ICSRs using proper E2B(R3) two-level structure:
+   * Level 1: MCCI_IN200100UV01 (Batch Wrapper, Section N.1) with <id> elements
+   * Level 2: PORR_IN049016UV (Message Wrapper, Section N.2) per case with <receiver>/<sender>
    */
   private generateBatchXml(batch: SubmissionBatch, cases: BatchCase[]): string {
     // Import XML generator service dynamically to avoid circular dependencies
     const { XMLGeneratorService } = require('./xmlGeneratorService');
     const xmlService = new XMLGeneratorService(this.db);
 
-    const date = new Date();
-    const messageId = `MSG-${batch.batchNumber}-${date.getTime()}`;
-    const creationTime = date.toISOString().replace(/[-:T]/g, '').substring(0, 14);
+    const now = new Date();
+    const creationTime = this.formatDateTimeWithTz(now);
 
     // Resolve sender identifier from settings
     const filenameService = new ExportFilenameService(this.db);
     const idType = filenameService.getSenderIdentifierType();
     const senderOid = idType === 'duns' ? SENDER_OID_DUNS : SENDER_OID_DEFAULT;
+    // N.1.3 must be the actual identifier (DUNS or FDA Sender ID), NOT the company name
     const senderExtension = idType === 'duns'
-      ? (filenameService.getDunsNumber() || 'UNKNOWN')
-      : (filenameService.getSenderOrganization() || filenameService.getSenderId() || 'FAERS-APP');
+      ? (filenameService.getDunsNumber() || '')
+      : (filenameService.getSenderId() || '');
 
-    // Build batch XML header
+    // Resolve batch receiver and message receiver
+    const reportType = filenameService.getReportType();
+    const targetCenter = filenameService.getTargetCenter();
+    const submissionEnvironment = filenameService.getSubmissionEnvironment();
+    const batchReceiver = BATCH_RECEIVERS[submissionEnvironment][reportType];
+    const messageReceiver = MESSAGE_RECEIVERS[reportType][targetCenter];
+
+    // ============================================
+    // BATCH WRAPPER (Section N.1)
+    // ============================================
     let xml = `<?xml version="1.0" encoding="UTF-8"?>
 <MCCI_IN200100UV01 xmlns="urn:hl7-org:v3"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    ITSVersion="XML_1.0">
-  <id root="2.16.840.1.113883.3.989.2.1.3.22" extension="${messageId}"/>
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   ITSVersion="XML_1.0">
+
+  <!-- N.1.1 Type of Messages in Batch (id representation) -->
+  <id root="2.16.840.1.113883.3.989.2.1.3.22" extension="1"/>
+  <!-- N.1.2 Batch Number -->
+  <id root="2.16.840.1.113883.3.989.2.1.3.1" extension="${this.escapeXml(batch.batchNumber)}"/>
+  <!-- N.1.5 Date of Batch Transmission -->
   <creationTime value="${creationTime}"/>
+
   <responseModeCode code="D"/>
   <interactionId root="2.16.840.1.113883.1.6" extension="MCCI_IN200100UV01"/>
+  <!-- N.1.1 Type of Messages in Batch (name representation - required by ACK3 validator) -->
+  <name code="1" codeSystem="2.16.840.1.113883.3.989.2.1.1.1"/>
   <processingCode code="P"/>
   <processingModeCode code="T"/>
   <acceptAckCode code="AL"/>
+
+  <!-- N.1.4 Batch Receiver Identifier -->
   <receiver typeCode="RCV">
     <device classCode="DEV" determinerCode="INSTANCE">
-      <id root="2.16.840.1.113883.3.989.2.1.3.14" extension="FDA-FAERS"/>
+      <id root="2.16.840.1.113883.3.989.2.1.3.14" extension="${this.escapeXml(batchReceiver)}"/>
     </device>
   </receiver>
+
+  <!-- N.1.3 Batch Sender Identifier -->
   <sender typeCode="SND">
     <device classCode="DEV" determinerCode="INSTANCE">
-      <id root="${senderOid}" extension="${senderExtension}"/>
+      <id root="${SENDER_OID_DEFAULT}" extension="${this.escapeXml(senderExtension)}"/>${senderOid === SENDER_OID_DUNS ? `
+      <id root="${SENDER_OID_DUNS}" extension="${this.escapeXml(senderExtension)}"/>` : ''}
     </device>
   </sender>`;
 
-    // Add each case as a separate subject (controlActProcess)
+    // Add each case as a separate PORR_IN049016UV message wrapper
     for (const batchCase of cases) {
-      const caseData = this.caseRepo.findById(batchCase.caseId);
-      if (caseData) {
-        const caseXml = xmlService.generateCaseXmlBody(caseData);
-        xml += `
-  <controlActProcess classCode="ACTN" moodCode="EVN">
-    <code code="ICSR"/>
-    ${caseXml}
-  </controlActProcess>`;
+      const caseMessageXml = xmlService.generateCaseMessageWrapper(
+        batchCase.caseId,
+        senderOid,
+        senderExtension,
+        messageReceiver
+      );
+      if (caseMessageXml) {
+        xml += '\n' + caseMessageXml;
       }
     }
 
@@ -354,6 +387,31 @@ export class BatchService {
 </MCCI_IN200100UV01>`;
 
     return xml;
+  }
+
+  /**
+   * Format date time with timezone offset for E2B
+   */
+  private formatDateTimeWithTz(date: Date): string {
+    const base = date.toISOString().replace(/[-:T]/g, '').substring(0, 14);
+    const offset = date.getTimezoneOffset();
+    const sign = offset <= 0 ? '+' : '-';
+    const absOffset = Math.abs(offset);
+    const hours = String(Math.floor(absOffset / 60)).padStart(2, '0');
+    const minutes = String(absOffset % 60).padStart(2, '0');
+    return `${base}${sign}${hours}${minutes}`;
+  }
+
+  /**
+   * Escape XML special characters
+   */
+  private escapeXml(str: string): string {
+    return str
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&apos;');
   }
 
   /**

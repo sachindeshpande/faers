@@ -73,8 +73,11 @@ export async function waitForAppReady(page: Page): Promise<void> {
 }
 
 // Test credentials - can be overridden via environment variables
+// Must match the seeded default in authService.ts (ensureDefaultAdmin).
+// Previously defaulted to 'DeepQuence@1234', which silently locked the admin
+// account after 5 failed attempts on every fresh test DB.
 export const TEST_ADMIN_USERNAME = process.env.TEST_ADMIN_USERNAME || 'admin';
-export const TEST_ADMIN_PASSWORD = process.env.TEST_ADMIN_PASSWORD || 'DeepQuence@1234';
+export const TEST_ADMIN_PASSWORD = process.env.TEST_ADMIN_PASSWORD || 'Admin@123456';
 
 /**
  * Helper to login to the app

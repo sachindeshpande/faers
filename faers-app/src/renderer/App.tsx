@@ -413,17 +413,17 @@ const App: React.FC = () => {
       receiptDate: '2026-03-15',
       receiveDate: '2026-03-16',
       senderType: '1',                 // Pharmaceutical Company
-      senderOrganization: 'TestPharma Inc.',
+      senderOrganization: 'DeepQuence',
       senderDepartment: 'Drug Safety',
-      senderGivenName: 'John',
-      senderFamilyName: 'Smith',
-      senderAddress: '500 Pharma Boulevard',
-      senderCity: 'Silver Spring',
-      senderState: 'MD',
-      senderPostcode: '20993',
+      senderGivenName: 'Sachin',
+      senderFamilyName: 'Deshpande',
+      senderAddress: '4456 Headen Way',
+      senderCity: 'Santa Clara',
+      senderState: 'CA',
+      senderPostcode: '95054',
       senderCountry: 'US',
-      senderPhone: '301-555-0200',
-      senderEmail: 'drugsafety@testpharma.example.com',
+      senderPhone: '',
+      senderEmail: '',
       patientInitials: 'T.P.',
       patientBirthdate: '1975-06-15',
       patientAge: 50,
@@ -509,18 +509,13 @@ const App: React.FC = () => {
   const handleSave = async () => {
     if (!currentCase || !isDirty) return;
 
-    await updateCase({
-      status: currentCase.status,
-      safetyReportId: currentCase.safetyReportId,
-      reportType: currentCase.reportType,
-      initialOrFollowup: currentCase.initialOrFollowup,
-      receiptDate: currentCase.receiptDate,
-      receiveDate: currentCase.receiveDate,
-      patientInitials: currentCase.patientInitials,
-      patientSex: currentCase.patientSex,
-      caseNarrative: currentCase.caseNarrative
-      // Add more fields as needed
-    });
+    // Pass the full case through to the repository. CaseRepository.update()
+    // iterates its own `fieldMappings` allowlist and silently drops any key
+    // not in that set, so there's no need to duplicate the whitelist in the
+    // renderer. Previously this was a hand-coded subset that dropped most
+    // fields on save (patientAge, patientWeight, expeditedReport, death info,
+    // sender block, etc.) — every new Case field became a landmine.
+    await updateCase(currentCase);
 
     messageApi.success('Case saved successfully');
   };

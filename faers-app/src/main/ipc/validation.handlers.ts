@@ -6,6 +6,7 @@
 import { ipcMain } from 'electron';
 import { IPC_CHANNELS } from '../../shared/types/ipc.types';
 import { ValidationEngineService } from '../services/validationEngineService';
+import { ValidationService } from '../services/validationService';
 import { CaseRepository } from '../database/repositories/case.repository';
 import type Database from 'better-sqlite3';
 import type {
@@ -23,6 +24,8 @@ export function registerValidationHandlers(
   const caseRepo = new CaseRepository(db);
 
   // Run validation on a case
+  // Runs BOTH the configurable rule engine AND the field-level/envelope checks
+  // so the user sees a complete picture from a single "Run Validation" action.
   ipcMain.handle(IPC_CHANNELS.VALIDATION_RUN, async (_event, caseId: string) => {
     try {
       // Load case data
@@ -31,8 +34,56 @@ export function registerValidationHandlers(
         return { success: false, error: `Case not found: ${caseId}` };
       }
 
-      const result = validationService.runValidation(caseData);
-      return { success: true, data: result };
+      // 1. Run configurable rule engine (system + custom rules)
+      const engineResult = validationService.runValidation(caseData);
+
+      // 2. Run field-level E2B + envelope validation
+      const fieldValidator = new ValidationService(db);
+      const fieldResult = fieldValidator.validate(caseId);
+
+      // 3. Merge field-level results into the engine summary
+      //    (avoid duplicates by checking message uniqueness)
+      const existingMessages = new Set([
+        ...engineResult.errors.map(e => e.message),
+        ...engineResult.warnings.map(w => w.message),
+        ...engineResult.info.map(i => i.message)
+      ]);
+
+      let nextId = engineResult.errorCount + engineResult.warningCount + engineResult.infoCount + 1;
+      for (const fieldError of fieldResult.errors) {
+        if (existingMessages.has(fieldError.message)) continue;
+        existingMessages.add(fieldError.message);
+
+        const mapped = {
+          id: nextId++,
+          caseId,
+          ruleCode: `E2B-${fieldError.field}`,
+          ruleName: `E2B Field: ${fieldError.field}`,
+          severity: fieldError.severity,
+          message: fieldError.message,
+          fieldPath: fieldError.field,
+          isAcknowledged: false,
+          validatedAt: engineResult.validatedAt
+        };
+
+        if (fieldError.severity === 'error') {
+          engineResult.errors.push(mapped);
+          engineResult.errorCount++;
+        } else if (fieldError.severity === 'warning') {
+          engineResult.warnings.push(mapped);
+          engineResult.warningCount++;
+        } else {
+          engineResult.info.push(mapped);
+          engineResult.infoCount++;
+        }
+      }
+
+      // Recompute aggregate flags
+      engineResult.isValid = engineResult.errorCount === 0;
+      engineResult.hasUnacknowledgedWarnings = engineResult.warnings.some(w => !w.isAcknowledged);
+      engineResult.canSubmit = engineResult.errorCount === 0 && !engineResult.hasUnacknowledgedWarnings;
+
+      return { success: true, data: engineResult };
     } catch (error) {
       console.error('Error running validation:', error);
       return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };

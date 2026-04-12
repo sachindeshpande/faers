@@ -13,6 +13,8 @@ import {
 } from '../database/repositories';
 import { Form3500ImportService } from '../services/form3500ImportService';
 import { XMLGeneratorService } from '../services/xmlGeneratorService';
+import { lintE2bXml } from '../services/xmlLintService';
+import { ExportFilenameService } from '../services/exportFilenameService';
 import { ValidationService } from '../services/validationService';
 import { IPC_CHANNELS } from '../../shared/types/ipc.types';
 import type {
@@ -335,12 +337,30 @@ export function registerIpcHandlers(): void {
 
   // XML Generation and Export
   const xmlService = new XMLGeneratorService(db);
+  const xmlFilenameService = new ExportFilenameService(db);
+
+  /**
+   * Resolve XML generation options from database settings
+   */
+  const resolveXmlOptions = () => {
+    const senderIdentifierType = xmlFilenameService.getSenderIdentifierType();
+    const senderIdentifierValue = senderIdentifierType === 'duns'
+      ? (xmlFilenameService.getDunsNumber() || '')
+      : (xmlFilenameService.getSenderId() || '');
+    return {
+      submissionEnvironment: xmlFilenameService.getSubmissionEnvironment(),
+      submissionReportType: xmlFilenameService.getReportType(),
+      senderIdentifierType,
+      senderIdentifierValue,
+      targetCenter: xmlFilenameService.getTargetCenter()
+    };
+  };
 
   ipcMain.handle(
     IPC_CHANNELS.XML_GENERATE,
     async (_, caseId: string) => {
       try {
-        const result = xmlService.generate(caseId);
+        const result = xmlService.generate(caseId, resolveXmlOptions());
         if (!result.success) {
           return {
             success: false,
@@ -364,12 +384,35 @@ export function registerIpcHandlers(): void {
     IPC_CHANNELS.XML_EXPORT,
     async (_, { caseId, filePath }: { caseId: string; filePath: string }) => {
       try {
-        const result = xmlService.generate(caseId);
+        const result = xmlService.generate(caseId, resolveXmlOptions());
+        console.log(`[XML_EXPORT] generate() => success=${result.success}, xml length=${result.xml?.length ?? 'undefined'}, errors=${result.errors.length}, warnings=${result.warnings.length}`);
+        if (result.warnings.length > 0) {
+          console.log(`[XML_EXPORT] warnings: ${result.warnings.join(' | ')}`);
+        }
         if (!result.success) {
+          console.log(`[XML_EXPORT] generate() failed: ${result.errors.join('; ')}`);
           return {
             success: false,
             error: result.errors.join('; ')
           };
+        }
+
+        // v37 pre-submission lint gate — same as the FDA export path.
+        // Blocks on any FAIL from the faers_xml_lint.py 55-check catalogue,
+        // skips cleanly when python3 / the script aren't available.
+        const lintResult = lintE2bXml(result.xml!);
+        console.log(`[XML_EXPORT] lint => ran=${lintResult.ran}, pass=${lintResult.pass}, fail=${lintResult.fail}, skip=${lintResult.skipReason || 'none'}`);
+        if (lintResult.ran && lintResult.fail > 0) {
+          const lintErrors = lintResult.failures
+            .map(f => (f.detail ? `${f.label} — ${f.detail}` : f.label))
+            .join('; ');
+          return {
+            success: false,
+            error: `v37 lint gate blocked export (${lintResult.fail} FAIL): ${lintErrors}`
+          };
+        }
+        if (!lintResult.ran && lintResult.skipReason) {
+          console.warn(`[XML_EXPORT] Lint gate skipped: ${lintResult.skipReason}`);
         }
 
         // Write XML to file

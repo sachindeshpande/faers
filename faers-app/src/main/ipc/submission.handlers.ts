@@ -10,6 +10,8 @@ import { CaseRepository, SubmissionRepository } from '../database/repositories';
 import { StatusTransitionService } from '../services/statusTransitionService';
 import { ExportFilenameService } from '../services/exportFilenameService';
 import { XMLGeneratorService } from '../services/xmlGeneratorService';
+import { ValidationService } from '../services/validationService';
+import { lintE2bXml } from '../services/xmlLintService';
 import { IPC_CHANNELS } from '../../shared/types/ipc.types';
 import type { IPCResponse } from '../../shared/types/ipc.types';
 import type {
@@ -251,21 +253,24 @@ export function registerSubmissionHandlers(): void {
         const environment = submissionEnvironment || filenameService.getSubmissionEnvironment();
         const repType = submissionReportType || filenameService.getReportType();
         const isTestMode = environment === 'Test';
-        // Note: Batch receiver is the same for Test and Production when using USP
-        const batchReceiver = BATCH_RECEIVERS[repType];
+        const batchReceiver = BATCH_RECEIVERS[environment][repType];
 
         // Resolve sender identifier for XML generation
+        // N.1.3 must be the actual identifier (DUNS or FDA Sender ID), NOT the company name
         const senderIdentifierType = filenameService.getSenderIdentifierType();
         const senderIdentifierValue = senderIdentifierType === 'duns'
           ? (filenameService.getDunsNumber() || '')
-          : (filenameService.getSenderOrganization() || filenameService.getSenderId());
+          : (filenameService.getSenderId() || '');
+
+        const targetCenter = filenameService.getTargetCenter();
 
         // Generate XML with environment-specific batch receiver and sender identifier
         const xmlResult = xmlService.generate(caseId, {
           submissionEnvironment: environment,
           submissionReportType: repType,
           senderIdentifierType,
-          senderIdentifierValue
+          senderIdentifierValue,
+          targetCenter
         });
         if (!xmlResult.success || !xmlResult.xml) {
           return {
@@ -274,12 +279,41 @@ export function registerSubmissionHandlers(): void {
           };
         }
 
+        // Validate XML envelope structure before writing
+        const structuralValidation = ValidationService.validateXmlStructure(xmlResult.xml);
+        if (!structuralValidation.valid) {
+          const structErrors = structuralValidation.errors
+            .filter(e => e.severity === 'error')
+            .map(e => e.message);
+          return {
+            success: false,
+            error: `XML structural validation failed: ${structErrors.join('; ')}`
+          };
+        }
+
+        // v37 pre-submission lint gate — blocks on any FAIL from the 55-check
+        // faers_xml_lint.py catalogue. Skipped cleanly when python3 or the
+        // lint script aren't available (e.g. a production build without the
+        // test tree shipped).
+        const lintResult = lintE2bXml(xmlResult.xml);
+        if (lintResult.ran && lintResult.fail > 0) {
+          const lintErrors = lintResult.failures
+            .map(f => (f.detail ? `${f.label} — ${f.detail}` : f.label))
+            .join('; ');
+          return {
+            success: false,
+            error: `v37 lint gate blocked submission (${lintResult.fail} FAIL): ${lintErrors}`
+          };
+        }
+        if (!lintResult.ran && lintResult.skipReason) {
+          console.warn(`[XML_EXPORT_FDA] Lint gate skipped: ${lintResult.skipReason}`);
+        }
+
         // Generate FDA-compliant filename (with _TEST suffix for test mode)
         const { filename, sequenceNumber } = filenameService.generateFilename({
           isTestMode
         });
         const filePath = join(exportPath, filename);
-        const targetCenter = filenameService.getTargetCenter();
 
         // Write XML to file
         fs.writeFileSync(filePath, xmlResult.xml, 'utf-8');

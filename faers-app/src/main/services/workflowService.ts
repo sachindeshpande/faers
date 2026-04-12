@@ -80,9 +80,23 @@ interface UserRow {
 const WORKFLOW_TRANSITIONS_MAP: WorkflowTransition[] = [
   {
     from: 'Draft',
+    to: 'Approved',
+    requiredPermission: '*',  // Admin-only fast track: skip review steps
+    requiresSignature: true,
+    label: 'Fast Track to Approved'
+  },
+  {
+    from: 'Draft',
     to: 'Data Entry Complete',
     requiredPermission: 'case.edit.own',  // Any user who can edit cases can submit for review
     label: 'Submit for Review'
+  },
+  {
+    from: 'Data Entry Complete',
+    to: 'Approved',
+    requiredPermission: '*',  // Admin-only fast track
+    requiresSignature: true,
+    label: 'Fast Track to Approved'
   },
   {
     from: 'Data Entry Complete',
@@ -106,10 +120,24 @@ const WORKFLOW_TRANSITIONS_MAP: WorkflowTransition[] = [
   },
   {
     from: 'Medical Review Complete',
+    to: 'Approved',
+    requiredPermission: '*',  // Admin-only fast track
+    requiresSignature: true,
+    label: 'Fast Track to Approved'
+  },
+  {
+    from: 'Medical Review Complete',
     to: 'In QC Review',
     requiredPermission: 'case.assign',
     requiresAssignment: true,
     label: 'Assign to QC Review'
+  },
+  {
+    from: 'In QC Review',
+    to: 'Approved',
+    requiredPermission: '*',  // Admin-only fast track
+    requiresSignature: true,
+    label: 'Fast Track to Approved'
   },
   {
     from: 'In QC Review',

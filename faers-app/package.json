@@ -17,6 +17,7 @@
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:ui": "vitest --ui",
+    "test:integration": "ELECTRON_RUN_AS_NODE=1 electron ./node_modules/.bin/vitest run src/main/**/*.integration.test.ts",
     "test:e2e": "playwright test",
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:debug": "playwright test --debug"
@@ -75,6 +76,12 @@
     "files": [
       "out/**/*",
       "resources/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "../test/test_submission/faers_xml_lint.py",
+        "to": "lint/faers_xml_lint.py"
+      }
     ],
     "mac": {
       "target": [

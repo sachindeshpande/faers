@@ -13,8 +13,10 @@ import React from 'react';
 import { Form, Input, Select, DatePicker, InputNumber, Switch, Card, Row, Col, Divider } from 'antd';
 import dayjs from 'dayjs';
 import type { Case } from '../../../shared/types/case.types';
+import { PatientRace, PatientEthnicity } from '../../../shared/types/case.types';
 
 const { Option } = Select;
+const { TextArea } = Input;
 
 interface PatientSectionProps {
   caseData: Case;
@@ -155,6 +157,79 @@ const PatientSection: React.FC<PatientSectionProps> = ({
                 onChange={(date) => onChange('patientLmpDate', date?.format('YYYY-MM-DD'))}
                 style={{ width: '100%' }}
                 disabled={disabled || caseData.patientSex !== 2}
+              />
+            </Form.Item>
+          </Col>
+        </Row>
+
+        <Divider orientation="left">Demographics (B.1.7)</Divider>
+
+        <Row gutter={24}>
+          <Col span={12}>
+            <Form.Item label="Race">
+              <Select
+                value={caseData.patientRace}
+                onChange={(value) => onChange('patientRace', value ?? null)}
+                placeholder="Not reported"
+                allowClear
+                disabled={disabled}
+              >
+                <Option value={PatientRace.AmericanIndianOrAlaskaNative}>American Indian or Alaska Native</Option>
+                <Option value={PatientRace.Asian}>Asian</Option>
+                <Option value={PatientRace.BlackOrAfricanAmerican}>Black or African American</Option>
+                <Option value={PatientRace.NativeHawaiianOrPacificIslander}>Native Hawaiian or Pacific Islander</Option>
+                <Option value={PatientRace.White}>White</Option>
+                <Option value={PatientRace.Other}>Other</Option>
+                <Option value={PatientRace.NotReported}>Not reported</Option>
+              </Select>
+            </Form.Item>
+          </Col>
+          <Col span={12}>
+            <Form.Item label="Ethnicity">
+              <Select
+                value={caseData.patientEthnicity}
+                onChange={(value) => onChange('patientEthnicity', value ?? null)}
+                placeholder="Not reported"
+                allowClear
+                disabled={disabled}
+              >
+                <Option value={PatientEthnicity.HispanicOrLatino}>Hispanic or Latino</Option>
+                <Option value={PatientEthnicity.NotHispanicOrLatino}>Not Hispanic or Latino</Option>
+                <Option value={PatientEthnicity.Unknown}>Unknown</Option>
+                <Option value={PatientEthnicity.NotReported}>Not reported</Option>
+              </Select>
+            </Form.Item>
+          </Col>
+        </Row>
+
+        <Divider orientation="left">Medical History (D.7)</Divider>
+
+        <Row gutter={24}>
+          <Col span={18}>
+            <Form.Item
+              label="Relevant Medical History and Concurrent Conditions (D.7.2)"
+              tooltip="Free-text narrative of the patient's relevant history and concurrent conditions."
+            >
+              <TextArea
+                value={caseData.medicalHistoryText || ''}
+                onChange={(e) => onChange('medicalHistoryText', e.target.value)}
+                rows={3}
+                maxLength={10000}
+                showCount
+                placeholder="e.g., History of hypertension treated with lisinopril."
+                disabled={disabled}
+              />
+            </Form.Item>
+          </Col>
+          <Col span={6}>
+            <Form.Item
+              label="Concomitant Therapy (D.7.3)"
+              tooltip="Whether the patient was on concomitant therapy at the time of the event."
+            >
+              <Switch
+                checked={caseData.hasConcomitantTherapy === true}
+                onChange={(checked) => onChange('hasConcomitantTherapy', checked)}
+                disabled={disabled}
               />
             </Form.Item>
           </Col>

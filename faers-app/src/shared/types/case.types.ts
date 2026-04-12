@@ -84,6 +84,31 @@ export enum AgeUnit {
   Hour = 'Hour'
 }
 
+// Patient Race (B.1.7.x) — NCI Thesaurus codes used by E2B(R3) per FDA Regional IG
+export enum PatientRace {
+  AmericanIndianOrAlaskaNative = 'C41259',
+  Asian = 'C41260',
+  BlackOrAfricanAmerican = 'C16352',
+  NativeHawaiianOrPacificIslander = 'C41219',
+  White = 'C41261',
+  Other = 'C17649',
+  NotReported = 'C67109'
+}
+
+// Patient Ethnicity (B.1.7.x) — NCI Thesaurus codes
+export enum PatientEthnicity {
+  HispanicOrLatino = 'C17459',
+  NotHispanicOrLatino = 'C41222',
+  NotReported = 'C67109',
+  Unknown = 'C17998'
+}
+
+// C.1.7 Local Report Type (E2B Regional IG §4.2.1) — lint requires 1 or 7
+export enum LocalReportTypeCode {
+  FifteenDay = 1,
+  SevenDay = 7
+}
+
 // Patient Age Group (B.1.2.3)
 export enum PatientAgeGroup {
   Neonate = 1,      // < 1 month
@@ -152,6 +177,7 @@ export interface CaseReporter {
   postcode?: string;
   country?: string;
   phone?: string;
+  fax?: string;
   email?: string;
   sortOrder: number;
 }
@@ -424,6 +450,15 @@ export interface Case {
   patientHeight?: number;
   patientSex?: PatientSex;
   patientLmpDate?: string;
+  patientRace?: PatientRace;
+  patientEthnicity?: PatientEthnicity;
+
+  // Medical History (D.7.2 / D.7.3) — free text narrative + concomitant flag
+  medicalHistoryText?: string;
+  hasConcomitantTherapy?: boolean;
+
+  // C.1.7 Local Report Type Code (15-Day vs 7-Day expedited classification)
+  localReportTypeCode?: LocalReportTypeCode;
 
   // Death Information (B.1.9)
   patientDeath: boolean;
@@ -460,7 +495,7 @@ export interface Case {
   expeditedCriteria?: '15_day' | 'periodic' | 'remedial' | 'malfunction';
   isSerious?: boolean;
   expectedness?: 'expected' | 'unexpected' | 'unknown';
-  expectednessJustification?: string;
+  // expectednessJustification is declared in the Phase 6 IND block below.
 
   // Phase 4: Follow-up
   parentCaseId?: string;
@@ -594,12 +629,17 @@ export const SENDER_OID_DEFAULT = '2.16.840.1.113883.3.989.2.1.3.13';
 // OID for DUNS number (Dun & Bradstreet Data Universal Numbering System)
 export const SENDER_OID_DUNS = '1.3.6.1.4.1.519.1';
 
-// Batch receiver identifiers for FDA ESG NextGen USP
-// Note: These are the SAME for both Test and Production environments when using USP
-// The distinction between test/production is made in the FDA portal, not in the XML
-export const BATCH_RECEIVERS: Record<SubmissionReportType, string> = {
-  Postmarket: 'ZZFDA',
-  Premarket: 'ZZFDA_PREMKT'
+// Batch receiver identifiers for FDA ESG
+// Test and Production use different receiver identifiers
+export const BATCH_RECEIVERS: Record<SubmissionEnvironment, Record<SubmissionReportType, string>> = {
+  Test: {
+    Postmarket: 'ZZFDATST',
+    Premarket: 'ZZFDATST_PREMKT'
+  },
+  Production: {
+    Postmarket: 'ZZFDA',
+    Premarket: 'ZZFDA_PREMKT'
+  }
 };
 
 // Message receiver identifiers based on target center and report type
@@ -658,6 +698,12 @@ export interface ExportSequence {
 export interface AppSettings {
   senderId: string;
   senderOrganization?: string;
+  // Default sender address fields — auto-populate new cases
+  senderAddress?: string;
+  senderCity?: string;
+  senderState?: string;
+  senderPostcode?: string;
+  senderCountry?: string;
   // Sender identifier type: 'senderId' (FDA-assigned) or 'duns' (DUNS number)
   senderIdentifierType: SenderIdentifierType;
   dunsNumber?: string;

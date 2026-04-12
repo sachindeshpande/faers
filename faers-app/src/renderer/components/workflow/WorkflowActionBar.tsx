@@ -15,7 +15,8 @@ import {
   SendOutlined,
   UserSwitchOutlined,
   MoreOutlined,
-  ArrowRightOutlined
+  ArrowRightOutlined,
+  ThunderboltOutlined
 } from '@ant-design/icons';
 import { useWorkflowStore, useWorkflowActions, useAvailableActions } from '../../stores/workflowStore';
 import { useAuthStore } from '../../stores/authStore';
@@ -170,8 +171,12 @@ const WorkflowActionBar: React.FC<WorkflowActionBarProps> = ({
     }
   };
 
+  // Check if this is a fast-track action
+  const isFastTrack = (label: string) => label.includes('Fast Track');
+
   // Get icon for action
-  const getActionIcon = (action: string) => {
+  const getActionIcon = (action: string, label: string = '') => {
+    if (isFastTrack(label)) return <ThunderboltOutlined />;
     switch (action) {
       case 'approve':
         return <CheckOutlined />;
@@ -187,7 +192,8 @@ const WorkflowActionBar: React.FC<WorkflowActionBarProps> = ({
   };
 
   // Get button type for action
-  const getButtonType = (action: string): 'primary' | 'default' | 'dashed' => {
+  const getButtonType = (action: string, label: string = ''): 'primary' | 'default' | 'dashed' => {
+    if (isFastTrack(label)) return 'primary';
     switch (action) {
       case 'approve':
         return 'primary';
@@ -217,7 +223,7 @@ const WorkflowActionBar: React.FC<WorkflowActionBarProps> = ({
 
   const moreMenuItems: MenuProps['items'] = secondaryActions.map((action, index) => ({
     key: index,
-    icon: getActionIcon(action.action),
+    icon: getActionIcon(action.action, action.label),
     label: action.label,
     onClick: () => handleAction(action),
     danger: isButtonDanger(action.action)
@@ -229,11 +235,12 @@ const WorkflowActionBar: React.FC<WorkflowActionBarProps> = ({
         {primaryActions.map((action, index) => (
           <Button
             key={index}
-            type={getButtonType(action.action)}
-            icon={getActionIcon(action.action)}
+            type={getButtonType(action.action, action.label)}
+            icon={getActionIcon(action.action, action.label)}
             danger={isButtonDanger(action.action)}
             loading={isTransitioning}
             onClick={() => handleAction(action)}
+            style={isFastTrack(action.label) ? { background: '#722ed1', borderColor: '#722ed1' } : undefined}
           >
             {action.label}
           </Button>

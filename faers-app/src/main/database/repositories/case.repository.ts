@@ -218,6 +218,15 @@ export class CaseRepository {
       patientHeight: 'patient_height',
       patientSex: 'patient_sex',
       patientLmpDate: 'patient_lmp_date',
+      // Phase 4 expedited criteria — was declared in the Case type but never
+      // wired through the repo update path; adding here so any future UI
+      // control that sets it actually persists.
+      expeditedCriteria: 'expedited_criteria',
+      patientRace: 'patient_race',
+      patientEthnicity: 'patient_ethnicity',
+      medicalHistoryText: 'medical_history_text',
+      hasConcomitantTherapy: 'has_concomitant_therapy',
+      localReportTypeCode: 'local_report_type_code',
       patientDeath: 'patient_death',
       deathDate: 'death_date',
       autopsyPerformed: 'autopsy_performed',
@@ -244,7 +253,12 @@ export class CaseRepository {
       if (key in data) {
         updates.push(`${column} = ?`);
         const value = (data as Record<string, unknown>)[key];
-        values.push(value === undefined ? null : (value as string | number | null));
+        // better-sqlite3 cannot bind booleans directly — coerce to 0/1.
+        const coerced =
+          value === undefined ? null :
+          typeof value === 'boolean' ? (value ? 1 : 0) :
+          (value as string | number | null);
+        values.push(coerced);
       }
     }
 
@@ -487,6 +501,11 @@ export class CaseRepository {
       patientHeight: row.patient_height as number | undefined,
       patientSex: row.patient_sex as number | undefined,
       patientLmpDate: row.patient_lmp_date as string | undefined,
+      patientRace: (row.patient_race ?? undefined) as Case['patientRace'],
+      patientEthnicity: (row.patient_ethnicity ?? undefined) as Case['patientEthnicity'],
+      medicalHistoryText: (row.medical_history_text ?? undefined) as string | undefined,
+      hasConcomitantTherapy: row.has_concomitant_therapy == null ? undefined : row.has_concomitant_therapy === 1,
+      localReportTypeCode: (row.local_report_type_code ?? undefined) as Case['localReportTypeCode'],
 
       // Death Information
       patientDeath: row.patient_death === 1,
@@ -505,10 +524,10 @@ export class CaseRepository {
       exportedXmlPath: row.exported_xml_path as string | undefined,
 
       // Workflow Status (Phase 3)
-      workflowStatus: row.workflow_status as string | undefined,
+      workflowStatus: (row.workflow_status ?? undefined) as Case['workflowStatus'],
 
       // Phase 2: Submission tracking fields
-      submissionId: row.submission_id as string | undefined,
+      submissionId: (row.submission_id ?? undefined) as number | undefined,
       lastSubmittedAt: row.last_submitted_at as string | undefined,
       srpConfirmationNumber: row.srp_confirmation_number as string | undefined,
       acknowledgmentDate: row.acknowledgment_date as string | undefined,
