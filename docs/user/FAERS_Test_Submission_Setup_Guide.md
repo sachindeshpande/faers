@@ -4,7 +4,7 @@
 
 **Document Purpose:** Complete guide for organizations setting up test submissions to FDA FAERS using the E2B(R3) standard via ESG NextGen.
 
-**Last Updated:** January 2025
+**Last Updated:** April 2026
 
 ---
 
@@ -45,9 +45,21 @@ Before starting, ensure you have:
 
 ## 2. Step 1: Validate Your XML (Before Account Setup)
 
-**You can validate your XML files before even creating an account.**
+**You can validate your XML files before even creating an account.** This app runs three local gates automatically at submission time — those catch the majority of failures before FDA sees anything — but running FDA's own validator is still worth doing for first-time submissions.
 
-### 2.1 Use FDA E2B(R3) Validator
+### 2.1 In-app pre-submission gates (automatic)
+
+The app enforces these on every Submit to FDA action, so passing them is a prerequisite for submission, not an extra step:
+
+| Gate | Source | What it catches |
+|------|--------|-----------------|
+| **55-check lint** | `test/test_submission/faers_xml_lint.py` (also wrapped by `xmlLintService.ts`) | Structural invariants learned from v1–v37: OIDs, reporter block shape, reaction block order, CE attribute completeness, etc. |
+| **5-pass empirical validator** | `fivePassValidatorService.ts` + `faersEmpiricalPolicy.ts` | Element-presence diff vs v37 golden XML, CE attribute completeness, empirical code policy (race / ethnicity / med history), full value diff, safety classification of divergences |
+| **File-export / ESG API gate** | `submission.handlers.ts`, `esgSubmissionService.ts` | Re-runs the above at the moment of submission so bad XML never leaves the app |
+
+The **Submit to FDA** dialog renders the 5-pass result as a row of coloured tags (P1–P5). The Submit button is disabled while any pass shows a red light.
+
+### 2.2 FDA E2B(R3) Validator (optional)
 
 | Feature | Details |
 |---------|---------|
@@ -68,6 +80,8 @@ Before starting, ensure you have:
 6. Re-validate until no rejections remain
 
 **Tip:** Validate multiple test files to ensure your system consistently generates compliant XML.
+
+**Note:** The FDA validator does not catch FAERS 2.18 business-rule rejections (e.g. `nullFlavor="NI"` on `D.7.2`, race code `C17998`, or a flat reporter organisation that fails `C.3.2`). The in-app 5-pass validator is the only place those are enforced before submission.
 
 ---
 

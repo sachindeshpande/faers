@@ -1,8 +1,8 @@
 # FAERS Application - Implementation Status
 
-**Last Updated:** January 2026
-**Phase:** 5 (Enhanced Data Management & Medical Terminology) + Phase 2B (ESG NextGen API)
-**Status:** Phase 5 & Phase 2B Complete
+**Last Updated:** April 2026
+**Phase:** 5 (Enhanced Data Management & Medical Terminology) + Phase 2B (ESG NextGen API) + **FAERS Empirical Validator Stack**
+**Status:** Phase 5 & Phase 2B Complete; v37 / 2L8T both achieved ZZFDATST CA+AA; in-app 5-pass validator and ACK parser landed after 2L8T acceptance
 
 ---
 
@@ -86,6 +86,24 @@ The FAERS Submission Application is an Electron desktop app for creating FDA Ind
 | **New Workflow Statuses** | Complete | `Submitting`, `Submission Failed` statuses |
 | **IPC Channels** | Complete | 17 new channels for ESG API operations |
 | **Database Migration** | Complete | Migration 020: `api_submission_attempts` table |
+
+### 2.2D FAERS Empirical Validator Stack ✓ Complete (post-2L8T)
+
+Hard-earned from the CF97 → 2GZK → QTXZ → 26ZL → 2L8T submission campaign against ZZFDATST. Gates both submission paths (file export + ESG API) on empirical policy violations the FDA E2B spec alone does not catch.
+
+| Feature | Status | Key Files |
+|---------|--------|-----------|
+| **Empirical Value Policy** | Complete | `faersEmpiricalPolicy.ts` — codifies race / ethnicity / med-history / C49489 / ICH outcome verdicts with provenance (v37, 2L8T, 26ZL, etc.) |
+| **5-Pass Pre-Submission Validator** | Complete | `fivePassValidatorService.ts` — P1 element diff, P2 CE completeness, P3 business-rule codes, P4 value diff, P5 empirical safety |
+| **Golden v37 Reference Resolution** | Complete | `resolveGoldenV37Path()` mirrors the lint-script lookup; passes 1/4/5 skip cleanly when the test tree isn't shipped |
+| **ACK3 Parser** | Complete | `ackParserService.ts` — parses HL7 MCCI_IN200101UV01 envelopes; extracts inner CA/CR, outer AA/AR, rejection tags (`C.3.4.3`, `FDA.D.11.r.1`, etc.) |
+| **Shared Types** | Complete | `faersValidation.types.ts` — `ParsedAck`, `FivePassResult`, `ValidatorFinding`, etc. (single source of truth across main/renderer) |
+| **File-Export Gate** | Complete | `submission.handlers.ts::XML_EXPORT_FDA` runs lint + 5-pass before writing the XML |
+| **ESG API Gate** | Complete | `esgSubmissionService.ts::executeSubmissionWithRetry` runs lint + 5-pass before any bytes leave for FDA (skipped in Demo mode) |
+| **IPC Channels** | Complete | `esg:parseAck`, `esg:fivePassValidate` (preload: `esgParseAck`, `esgFivePassValidate`) |
+| **5-Pass Validator Panel** | Complete | `FivePassValidatorPanel.tsx` — traffic-light strip + collapsible findings; embedded in `SubmitToFdaDialog`, disables Submit on errors |
+| **Import ACK Dialog** | Complete | `ImportAckDialog.tsx` — file picker / paste tabs → parsed verdict + rejection list; toolbar entry in `App.tsx` |
+| **Fixture-Driven Tests** | Complete | 11 service tests (real ACKs + 5 `from_app/` XMLs) + 16 component tests (rendering + mocked IPC) |
 
 ### 2.2C Demo Mode Enhancement ✓ Complete
 
@@ -222,9 +240,13 @@ faers-app/
 │   │   │   ├── credentialStorageService.ts # Phase 2B
 │   │   │   ├── esgAuthService.ts          # Phase 2B
 │   │   │   ├── esgApiService.ts           # Phase 2B
-│   │   │   ├── esgSubmissionService.ts    # Phase 2B
+│   │   │   ├── esgSubmissionService.ts    # Phase 2B (gated by lint + 5-pass)
 │   │   │   ├── esgPollingService.ts       # Phase 2B
-│   │   │   └── statusTransitionService.ts # Phase 2B (extended)
+│   │   │   ├── statusTransitionService.ts # Phase 2B (extended)
+│   │   │   ├── xmlLintService.ts          # Post-2L8T: wraps faers_xml_lint.py
+│   │   │   ├── fivePassValidatorService.ts # Post-2L8T: empirical validator
+│   │   │   ├── faersEmpiricalPolicy.ts    # Post-2L8T: codified policy table
+│   │   │   └── ackParserService.ts        # Post-2L8T: HL7 ACK parser
 │   │   └── pdf/
 │   │       └── form3500Parser.ts
 │   │
@@ -318,10 +340,12 @@ faers-app/
 │   │       │   └── ValidationResultsPanel.tsx
 │   │       └── submission/                  # Phase 2B (extended)
 │   │           ├── EsgApiSettingsTab.tsx
-│   │           ├── SubmitToFdaDialog.tsx
+│   │           ├── SubmitToFdaDialog.tsx    # embeds FivePassValidatorPanel
 │   │           ├── SubmissionProgressDialog.tsx
 │   │           ├── AcknowledgmentDisplay.tsx
-│   │           └── PollingStatusIndicator.tsx
+│   │           ├── PollingStatusIndicator.tsx
+│   │           ├── FivePassValidatorPanel.tsx # Post-2L8T
+│   │           └── ImportAckDialog.tsx        # Post-2L8T
 │   │
 │   ├── shared/                          # Shared between processes
 │   │   └── types/
@@ -339,7 +363,8 @@ faers-app/
 │   │       ├── template.types.ts        # Phase 5
 │   │       ├── import.types.ts          # Phase 5
 │   │       ├── validation.types.ts      # Phase 5
-│   │       └── esgApi.types.ts          # Phase 2B
+│   │       ├── esgApi.types.ts          # Phase 2B
+│   │       └── faersValidation.types.ts # Post-2L8T: ParsedAck, FivePassResult, …
 │   │
 │   ├── preload/
 │   │   └── index.ts                     # contextBridge API exposure

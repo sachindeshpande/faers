@@ -15,6 +15,8 @@ import { MockEsgApiService, MockApiError } from './mockEsgApiService';
 import { XMLGeneratorService } from './xmlGeneratorService';
 import { ExportFilenameService } from './exportFilenameService';
 import { StatusTransitionService } from './statusTransitionService';
+import { runFivePassValidation } from './fivePassValidatorService';
+import { lintE2bXml } from './xmlLintService';
 import {
   CaseRepository,
   ReactionRepository,
@@ -379,6 +381,40 @@ export class EsgSubmissionService {
             xmlResult.errors?.join('; ') || 'Failed to generate XML',
             'validation'
           );
+        }
+
+        // Pre-submission gates: v37 lint (55 checks) + 5-pass empirical
+        // validator. Block the API submission before any bytes reach FDA if
+        // either gate finds an error. Same logic as the file-export path in
+        // submission.handlers.ts — kept in both places because this path
+        // skips the file-export handler entirely.
+        if (!isDemoMode) {
+          const lintResult = lintE2bXml(xmlResult.xml);
+          if (lintResult.ran && lintResult.fail > 0) {
+            const lintErrors = lintResult.failures
+              .map(f => (f.detail ? `${f.label} — ${f.detail}` : f.label))
+              .join('; ');
+            throw new EsgApiError(
+              `v37 lint gate blocked submission (${lintResult.fail} FAIL): ${lintErrors}`,
+              'validation'
+            );
+          }
+
+          const fiveResult = runFivePassValidation(xmlResult.xml);
+          if (fiveResult.ran) {
+            const blocking = fiveResult.findings.filter(f => f.severity === 'error');
+            if (blocking.length > 0) {
+              const summary = blocking
+                .slice(0, 5)
+                .map(f => `P${f.pass}: ${f.label}${f.detail ? ` — ${f.detail}` : ''}`)
+                .join('; ');
+              const extra = blocking.length > 5 ? ` (+${blocking.length - 5} more)` : '';
+              throw new EsgApiError(
+                `5-pass validator blocked submission (${blocking.length} error${blocking.length === 1 ? '' : 's'}): ${summary}${extra}`,
+                'validation'
+              );
+            }
+          }
         }
 
         // Step 3: Create submission record on ESG (or mock)

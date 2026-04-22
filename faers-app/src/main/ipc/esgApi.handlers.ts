@@ -28,6 +28,15 @@ import { EsgSubmissionService } from '../services/esgSubmissionService';
 import { EsgPollingService } from '../services/esgPollingService';
 import { EsgSubmissionRepository } from '../database/repositories/esgSubmission.repository';
 import { MockEsgApiService } from '../services/mockEsgApiService';
+import { parseFdaAck, type ParsedAck } from '../services/ackParserService';
+import {
+  runFivePassValidation,
+  type FivePassResult
+} from '../services/fivePassValidatorService';
+import { XMLGeneratorService } from '../services/xmlGeneratorService';
+import { ExportFilenameService } from '../services/exportFilenameService';
+import { getDatabase } from '../database/connection';
+import * as fs from 'fs';
 
 /**
  * Service dependencies for ESG API handlers
@@ -404,6 +413,81 @@ export function registerEsgApiHandlers(services: EsgServices): void {
         return { success: true, data: status };
       } catch (error) {
         console.error('Error getting ESG polling status:', error);
+        return {
+          success: false,
+          error: error instanceof Error ? error.message : 'Unknown error'
+        };
+      }
+    }
+  );
+
+  /**
+   * Parse a raw FDA ACK XML payload or file path into structured form.
+   * Accepts either an inline `xml` string or a `filePath` on disk.
+   * Enables a renderer-side "Import ACK" feature without adding any
+   * service-level state.
+   */
+  ipcMain.handle(
+    IPC_CHANNELS.ESG_ACK_PARSE,
+    async (
+      _,
+      { xml, filePath }: { xml?: string; filePath?: string }
+    ): Promise<IPCResponse<ParsedAck>> => {
+      try {
+        let payload = xml;
+        if (!payload && filePath) {
+          payload = fs.readFileSync(filePath, 'utf-8');
+        }
+        if (!payload) {
+          return { success: false, error: 'Provide either xml or filePath' };
+        }
+        const parsed = parseFdaAck(payload);
+        return { success: true, data: parsed };
+      } catch (error) {
+        console.error('Error parsing ACK:', error);
+        return {
+          success: false,
+          error: error instanceof Error ? error.message : 'Unknown error'
+        };
+      }
+    }
+  );
+
+  /**
+   * Run the 5-pass empirical pre-submission validator against a case's
+   * current generated XML. Surfaces structured pass/fail so the UI can
+   * show per-pass traffic lights alongside the existing lint gate.
+   */
+  ipcMain.handle(
+    IPC_CHANNELS.ESG_FIVE_PASS_VALIDATE,
+    async (
+      _,
+      { caseId }: { caseId: string }
+    ): Promise<IPCResponse<FivePassResult>> => {
+      try {
+        const db = getDatabase();
+        const xmlSvc = new XMLGeneratorService(db);
+        const fnSvc = new ExportFilenameService(db);
+        const idType = fnSvc.getSenderIdentifierType();
+        const xmlResult = xmlSvc.generate(caseId, {
+          submissionEnvironment: fnSvc.getSubmissionEnvironment(),
+          submissionReportType: fnSvc.getReportType(),
+          senderIdentifierType: idType,
+          senderIdentifierValue: idType === 'duns'
+            ? (fnSvc.getDunsNumber() || '')
+            : (fnSvc.getSenderId() || ''),
+          targetCenter: fnSvc.getTargetCenter()
+        });
+        if (!xmlResult.success || !xmlResult.xml) {
+          return {
+            success: false,
+            error: xmlResult.errors?.join('; ') || 'Failed to generate XML'
+          };
+        }
+        const result = runFivePassValidation(xmlResult.xml);
+        return { success: true, data: result };
+      } catch (error) {
+        console.error('Error running 5-pass validator:', error);
         return {
           success: false,
           error: error instanceof Error ? error.message : 'Unknown error'

@@ -211,6 +211,11 @@ import type {
   SetDemoConfigRequest
 } from './esgApi.types';
 
+import type {
+  ParsedAck,
+  FivePassResult
+} from './faersValidation.types';
+
 // Phase 6 imports
 import type {
   Study,
@@ -599,6 +604,10 @@ export const IPC_CHANNELS = {
   ESG_API_POLLING_START: 'esg:pollingStart',
   ESG_API_POLLING_STOP: 'esg:pollingStop',
   ESG_API_POLLING_STATUS: 'esg:pollingStatus',
+  // ACK parsing (manual import of an ACK XML file from the ESG mailbox)
+  ESG_ACK_PARSE: 'esg:parseAck',
+  // 5-pass empirical validator (UI-visible pre-submission check)
+  ESG_FIVE_PASS_VALIDATE: 'esg:fivePassValidate',
   // Event channel (main -> renderer push)
   ESG_SUBMISSION_PROGRESS: 'esg:submission-progress',
 
@@ -1650,6 +1659,8 @@ export interface ElectronAPI {
   esgStartPolling: () => Promise<IPCResponse<void>>;
   esgStopPolling: () => Promise<IPCResponse<void>>;
   esgGetPollingStatus: () => Promise<IPCResponse<PollingStatus>>;
+  esgParseAck: (payload: { xml?: string; filePath?: string }) => Promise<IPCResponse<ParsedAck>>;
+  esgFivePassValidate: (caseId: string) => Promise<IPCResponse<FivePassResult>>;
   onEsgSubmissionProgress: (callback: (progress: ApiSubmissionProgress) => void) => () => void;
 
   // ============================================================

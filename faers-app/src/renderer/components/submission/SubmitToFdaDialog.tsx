@@ -9,8 +9,10 @@ import React, { useState, useEffect } from 'react';
 import { Modal, Descriptions, Alert, Checkbox, Spin, Tag, Select, Space, Typography, Divider, message } from 'antd';
 import { ExclamationCircleOutlined, CheckCircleOutlined, ExperimentOutlined } from '@ant-design/icons';
 import type { PreSubmissionSummary, DemoScenario, DemoSpeed } from '../../../shared/types/esgApi.types';
+import type { FivePassResult } from '../../../shared/types/faersValidation.types';
 import { DEMO_SCENARIO_LABELS, DEMO_SPEED_LABELS } from '../../../shared/types/esgApi.types';
 import { useEsgApiStore } from '../../stores/esgApiStore';
+import FivePassValidatorPanel from './FivePassValidatorPanel';
 
 const { Text } = Typography;
 
@@ -37,6 +39,11 @@ const SubmitToFdaDialog: React.FC = () => {
   const [confirmed, setConfirmed] = useState(false);
   const [demoScenario, setDemoScenario] = useState<DemoScenario>('happy_path');
   const [demoSpeed, setDemoSpeed] = useState<DemoSpeed>('realtime');
+  // Latest 5-pass validator result, reported back from the embedded panel.
+  // We block submit when the validator ran and reported errors — the main-
+  // process pre-submission gate would reject anyway, but failing earlier in
+  // the UI saves a round trip and makes the block visible.
+  const [validator, setValidator] = useState<FivePassResult | null>(null);
 
   useEffect(() => {
     if (visible && caseId) {
@@ -44,6 +51,7 @@ const SubmitToFdaDialog: React.FC = () => {
       setConfirmed(false);
       setDemoScenario('happy_path');
       setDemoSpeed('realtime');
+      setValidator(null);
     }
   }, [visible, caseId]);
 
@@ -88,6 +96,10 @@ const SubmitToFdaDialog: React.FC = () => {
   };
 
   const isDemoMode = summary?.isDemoMode;
+  // Block submit on validator errors for non-Demo submissions. Demo mode
+  // bypasses the main-process gate too, so mirror that here.
+  const validatorBlocks =
+    !isDemoMode && validator !== null && validator.ran && !validator.pass;
 
   return (
     <Modal
@@ -102,11 +114,11 @@ const SubmitToFdaDialog: React.FC = () => {
       onCancel={closeSubmitDialog}
       okText={isDemoMode ? 'Start Demo Submission' : 'Submit to FDA'}
       okButtonProps={{
-        disabled: !confirmed,
+        disabled: !confirmed || validatorBlocks,
         danger: summary?.environment === 'Production',
         style: isDemoMode ? { backgroundColor: '#553C9A', borderColor: '#553C9A' } : undefined
       }}
-      width={550}
+      width={620}
       destroyOnClose
     >
       {loading ? (
@@ -141,6 +153,22 @@ const SubmitToFdaDialog: React.FC = () => {
               )}
             </Descriptions.Item>
           </Descriptions>
+
+          {!isDemoMode && (
+            <div style={{ marginBottom: 16 }}>
+              <FivePassValidatorPanel caseId={caseId ?? null} onResult={setValidator} />
+            </div>
+          )}
+
+          {validatorBlocks && (
+            <Alert
+              type="error"
+              showIcon
+              message="5-pass validator blocked submission"
+              description="At least one pass reported an error. Review the errors above; the app will not submit until they are resolved."
+              style={{ marginBottom: 16 }}
+            />
+          )}
 
           {isDemoMode ? (
             <>

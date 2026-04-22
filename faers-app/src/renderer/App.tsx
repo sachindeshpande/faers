@@ -85,7 +85,8 @@ import {
   SettingsDialog,
   DemoModeBanner,
   SubmitToFdaDialog,
-  SubmissionProgressDialog
+  SubmissionProgressDialog,
+  ImportAckDialog
 } from './components/submission';
 import { useSubmissionStore, useDashboard } from './stores/submissionStore';
 import { useSettingsStore } from './stores/settingsStore';
@@ -159,6 +160,8 @@ const App: React.FC = () => {
   const [showFollowupDialog, setShowFollowupDialog] = useState(false);
   const [showNullifyDialog, setShowNullifyDialog] = useState(false);
   const [showVersionTimeline, setShowVersionTimeline] = useState(false);
+  // Import ACK dialog (global diagnostic tool — not case-specific)
+  const [showImportAckDialog, setShowImportAckDialog] = useState(false);
 
   // Phase 4: Batch management state
   const [showCreateBatchWizard, setShowCreateBatchWizard] = useState(false);
@@ -1566,6 +1569,16 @@ const App: React.FC = () => {
               </Button>
             </Tooltip>
 
+            <Tooltip title="Parse an FDA ACK XML from the ESG mailbox">
+              <Button
+                icon={<SafetyCertificateOutlined />}
+                onClick={() => setShowImportAckDialog(true)}
+                data-testid="import-ack-button"
+              >
+                Import ACK
+              </Button>
+            </Tooltip>
+
             <span className="toolbar-divider" />
 
             <Tooltip title="Save (Ctrl+S)">
@@ -1747,6 +1760,10 @@ const App: React.FC = () => {
       {/* Phase 2B: ESG API Submission Dialogs */}
       <SubmitToFdaDialog />
       <SubmissionProgressDialog />
+      <ImportAckDialog
+        open={showImportAckDialog}
+        onClose={() => setShowImportAckDialog(false)}
+      />
 
       {/* Phase 3: Auth Dialogs */}
       <ChangePasswordDialog

@@ -194,12 +194,16 @@ describe('XMLGeneratorService v37 lint conformance', () => {
     expect(result.xml).toContain(`code="${PatientEthnicity.NotHispanicOrLatino}"`);
     expect(result.xml).toContain('History of hypertension treated with lisinopril.');
     expect(result.xml).toContain('displayName="concomitantTherapy"/>\n                          <value xsi:type="BL" value="true"');
-    expect(result.xml).not.toMatch(/<value xsi:type="CE" nullFlavor="NI"\/>\s*<\/observation>\s*<\/subjectOf2>\s*<subjectOf2 typeCode="SBJ">\s*<observation[^>]*>\s*<code code="C16564"/);
+    // Real values should appear instead of v37 defaults.
+    // Fixture sets Asian (C41260) explicitly, so this is a no-op check,
+    // but ethnicity is set to C41222 which happens to match the default.
+    // Check the race code is the fixture's explicit value.
+    expect(result.xml).toContain(`code="${PatientRace.Asian}"`);
 
     runLint(result.xml!, 'populated');
   }, 15_000);
 
-  it('passes lint via nullFlavor fallback when new fields are empty', () => {
+  it('passes lint with coded Unknown fallback when new fields are empty', () => {
     // Strip the 5 new fields; everything else mirrors the populated fixture.
     const emptyCase: Case = {
       ...FIXTURE_CASE,
@@ -218,11 +222,12 @@ describe('XMLGeneratorService v37 lint conformance', () => {
     expect(result.errors).toEqual([]);
     expect(result.success).toBe(true);
 
-    // Race + ethnicity should fall back to nullFlavor CE.
-    expect(result.xml).toMatch(/code="C17049"[^/]*\/>\s*<value xsi:type="CE" nullFlavor="NI"/);
-    expect(result.xml).toMatch(/code="C16564"[^/]*\/>\s*<value xsi:type="CE" nullFlavor="NI"/);
-    // Medical history text should fall back to nullFlavor ED.
-    expect(result.xml).toMatch(/displayName="historyAndConcurrentConditionText"\/>\s*<value xsi:type="ED" nullFlavor="NI"/);
+    // Race + ethnicity fall back to v37-confirmed codes — FAERS 2.18 rejects
+    // both nullFlavor (QTXZ) and C17998 "Unknown" (26ZL).
+    expect(result.xml).toMatch(/code="C17049"[^/]*\/>\s*<value xsi:type="CE" code="C41260" displayName="Asian"/);
+    expect(result.xml).toMatch(/code="C16564"[^/]*\/>\s*<value xsi:type="CE" code="C41222" displayName="Not Hispanic or Latino"/);
+    // Medical history text falls back to "None reported" — NOT nullFlavor.
+    expect(result.xml).toContain('>None reported</value>');
     // Concomitant therapy auto-detected from drug list — the fixture includes
     // a concomitant drug (Lisinopril), so the flag is true even when the
     // explicit hasConcomitantTherapy field is unset.

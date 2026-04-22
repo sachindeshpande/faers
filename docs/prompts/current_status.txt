@@ -1,0 +1,20 @@
+I got the following confirmation from FDA ESNG
+Submission ci260320163055.5db10c0a3a314910a6210e0c82a2143d has been successfully received by ESG.
+
+ Company Name: DeepQuence
+Core ID: ci260320163055.5db10c0a3a314910a6210e0c82a2143d
+File Type: SINGLE
+File Count Received: 1
+File Count Identified to be Received: 1
+Total File Size: 14.00 KB
+Origination Date/Time: 03/20/2026 12:30:56 ET
+Next Step: Submission to be delivered to CDER
+
+However then I also received this
+
+Hi Sachin,
+
+The file was rejected due to missing batch sender identifier tag.
+
+Thanks,
+Deepak Nelivigi

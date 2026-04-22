@@ -12,6 +12,7 @@ import { ExportFilenameService } from '../services/exportFilenameService';
 import { XMLGeneratorService } from '../services/xmlGeneratorService';
 import { ValidationService } from '../services/validationService';
 import { lintE2bXml } from '../services/xmlLintService';
+import { runFivePassValidation } from '../services/fivePassValidatorService';
 import { IPC_CHANNELS } from '../../shared/types/ipc.types';
 import type { IPCResponse } from '../../shared/types/ipc.types';
 import type {
@@ -307,6 +308,30 @@ export function registerSubmissionHandlers(): void {
         }
         if (!lintResult.ran && lintResult.skipReason) {
           console.warn(`[XML_EXPORT_FDA] Lint gate skipped: ${lintResult.skipReason}`);
+        }
+
+        // 5-pass empirical validator — blocks on any proven-rejected value
+        // (race=C17998, nullFlavor="NI" on D.7.2, etc.) learned from the
+        // CF97 → 2L8T submission campaign. Passes that depend on the v37
+        // golden reference skip cleanly when the test tree is unavailable.
+        const fiveResult = runFivePassValidation(xmlResult.xml);
+        if (fiveResult.ran) {
+          const blockingErrors = fiveResult.findings.filter(f => f.severity === 'error');
+          if (blockingErrors.length > 0) {
+            const summary = blockingErrors
+              .slice(0, 5)
+              .map(f => `P${f.pass}: ${f.label}${f.detail ? ` — ${f.detail}` : ''}`)
+              .join('; ');
+            const extra = blockingErrors.length > 5
+              ? ` (+${blockingErrors.length - 5} more)`
+              : '';
+            return {
+              success: false,
+              error: `5-pass validator blocked submission (${blockingErrors.length} error${blockingErrors.length === 1 ? '' : 's'}): ${summary}${extra}`
+            };
+          }
+        } else if (fiveResult.skipReason) {
+          console.warn(`[XML_EXPORT_FDA] 5-pass validator skipped: ${fiveResult.skipReason}`);
         }
 
         // Generate FDA-compliant filename (with _TEST suffix for test mode)

@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?><MCCI_IN200101UV01 xmlns="urn:hl7-org:v3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" ITSVersion="XML_1.0" xsi:schemaLocation="urn:hl7-org:v3 MCCI_IN200101UV01.xsd">
+	<id extension="3229400283" root="2.16.840.1.113883.3.989.2.1.3.20"/>
+	<!-- ACK.M.1: Acknowledgement Batch Number -->
+	<creationTime value="20260407015726-0400"/>
+	<!-- ACK.M.4: Acknowledgement Date of Batch Transmission -->
+	<responseModeCode code="D"/>
+	<interactionId extension="MCCI_IN200101UV01" root="2.16.840.1.113883.1.6"/>
+	<!-- Ack Message #1 -->
+	<MCCI_IN000002UV01>
+		<id extension="830920" root="2.16.840.1.113883.3.989.2.1.3.19"/>
+		<!-- ACK.B.r.2 Local Report Number -->
+		<interactionId extension="MCCI_IN000002UV01" root="2.16.840.1.113883.1.6"/>
+		<processingCode code="P"/>
+		<processingModeCode code="T"/>
+		<acceptAckCode code="NE"/>
+		<receiver typeCode="RCV">
+			<device classCode="DEV" determinerCode="INSTANCE">
+				<id extension="334818134" root="2.16.840.1.113883.3.989.2.1.3.16"/>
+				<!-- ACK.B.r.3: ICSR Message ACK Receiver -->
+			</device>
+		</receiver>
+		<sender typeCode="SND">
+			<device classCode="DEV" determinerCode="INSTANCE">
+				<id extension="CDER" root="2.16.840.1.113883.3.989.2.1.3.15"/>
+				<!-- ACK.B.r.4: ICSR Message ACK Sender -->
+			</device>
+		</sender>
+		<attentionLine>
+			<keyWordText code="1" codeSystem="2.16.840.1.113883.3.989.2.1.1.24" codeSystemVersion="1.0" displayName="dateOfIcsrMessageCreation"/>
+			<value value="20260331191451-0400" xsi:type="TS"/>
+			<!-- ACK.B.r.5: Date of ICSR Message Creation -->
+		</attentionLine>
+		<acknowledgement typeCode="CR">
+			<!-- ACK.B.r.6: Acknowledgement Code for a ICSR Message -->
+			<targetMessage>
+				<id extension="SR-CASE-20260331-EMJQ" root="2.16.840.1.113883.3.989.2.1.3.1"/>
+				<!-- ACK.B.r.1: ICSR Message Number -->
+			</targetMessage>
+			<acknowledgementDetail>
+				<text>Safety report not loaded; Validated against 2.18 business rules;
+Rejections:
+1: Data value required for tag C.1.8.2.
+2: Data value required for tag C.1.6.1.
+3: Data value required for tag C.1.3.
+4: Data value required for tag C.3.4.4.
+5: Data value required for tag C.3.4.6.
+6: D.7.2 must be provided when D.7.1.r.1b is not provided.
+7: Data value required for tag C.3.4.3.
+8: Data value required for tag C.3.4.2.
+9: Data value required for tag C.3.4.8.
+10: Data value required for tag C.3.4.5.
+11: Data value required for tag FDA.C.1.7.1.
+12: Data value required for tag C.3.3.1.
+13: Patient Ethnicity Code (FDA.D.12) is mandatory.
+14: Data value required for tag C.3.1.
+15: The field Reaction / Event (MedDRA code) - E.i.2.1b must be provided
+16: Data value required for tag C.3.3.3.
+17: Data value required for tag D.1.
+18: Data value required for tag C.1.9.1.
+19: Data value required for tag C.3.4.7.
+20: Data value required for tag C.3.3.5.
+21: Data value required for tag C.1.7.
+22: Patient Race Code (FDA.D.11.r.1) is mandatory.
+23: Data value required for tag C.3.4.1.
+24: Data value required for tag FDA.C.1.12.
+25: Data value required for tag C.3.3.2.
+</text>
+				<!-- ACK.B.r.7: Error / Warning Message or Comment -->
+			</acknowledgementDetail>
+		</acknowledgement>
+	</MCCI_IN000002UV01>
+	<!-- Ack Message #1 -->
+	<receiver typeCode="RCV">
+		<device classCode="DEV" determinerCode="INSTANCE">
+			<id extension="334818134" root="2.16.840.1.113883.3.989.2.1.3.18"/>
+			<!-- ACK.M.3: Acknowledgement Batch Receiver Identifier -->
+		</device>
+	</receiver>
+	<sender typeCode="SND">
+		<device classCode="DEV" determinerCode="INSTANCE">
+			<id extension="ZZFDATST" root="2.16.840.1.113883.3.989.2.1.3.17"/>
+			<!-- ACK.M.2: Acknowledgement Batch Sender Identifier -->
+		</device>
+	</sender>
+	<attentionLine>
+		<keyWordText code="2" codeSystem="2.16.840.1.113883.3.989.2.1.1.24" codeSystemVersion="1.0" displayName="acknowledgementLocalMessageNumber"/>
+		<value extension="746812" root="2.16.840.1.113883.3.989.2.1.3.21" xsi:type="II"/>
+		<!-- ACK.A.2: Acknowledgement Local Message Number -->
+	</attentionLine>
+	<attentionLine>
+		<keyWordText code="3" codeSystem="2.16.840.1.113883.3.989.2.1.1.24" codeSystemVersion="1.0" displayName="dateOfIcsrBatchTransmission"/>
+		<value value="20260331191451-0400" xsi:type="TS"/>
+		<!-- ACK.A.3: Date of ICSR Batch Transmission -->
+	</attentionLine>
+	<acknowledgement typeCode="AR">
+		<!-- ACK.A.4: Transmission Acknowledgement Code -->
+		<targetBatch>
+			<id extension="DeepQuenceTest-20260402-a0533eab-6254-49ab-aaa7-9a37e22f8fa4" root="2.16.840.1.113883.3.989.2.1.3.22"/>
+			<!-- ACK.A.1: ICSR Batch Number -->
+			<!-- the sender-identifier-value is the batch sender value in M.1.4 -->
+		</targetBatch>
+		<acknowledgementDetail>
+			<text>Application Acknowledgment Reject (parsing error, no data extracted, re-send the entire transaction)</text>
+			<!-- ACK.A.5: Batch Validation Error -->
+		</acknowledgementDetail>
+	</acknowledgement>
+</MCCI_IN200101UV01>

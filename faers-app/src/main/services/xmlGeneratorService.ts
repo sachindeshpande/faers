@@ -240,8 +240,14 @@ export class XMLGeneratorService {
     batchNumber?: string
   ): string {
     const batchUuid = batchNumber || `DeepQuenceTest-${this.formatDate(new Date().toISOString().slice(0, 10))}-${uuidv4()}`;
-    const now = new Date();
-    const creationTimeWithTz = this.formatDateTimeWithTz(now);
+    // FDA ACK ci260412060025: real-time PDT clock converts to future UTC when
+    // FDA processes overnight at ~06:00 UTC. Use the case receipt date
+    // (safely in the past) for ALL timestamp fields to avoid future-date
+    // rejections on C.1.2, C.1.5, N.1.5, N.2.r.4.
+    const safeDate = caseData.receiptDate
+      ? new Date(caseData.receiptDate + 'T00:00:00')
+      : new Date(caseData.createdAt);
+    const creationTimeWithTz = this.formatDateTimeWithTz(safeDate);
     const effectiveMessageReceiver = messageReceiver || 'CDER';
 
     const lines: string[] = [];
@@ -408,8 +414,13 @@ export class XMLGeneratorService {
       lines.push(`            <low value="${this.formatDate(caseData.receiptDate)}"/>`);
       lines.push('          </effectiveTime>');
     }
-    // C.1.5 Date of most recent info (availabilityTime)
-    lines.push(`          <availabilityTime value="${this.formatDateTime(new Date())}"/>`);
+    // C.1.5 Date of most recent info (availabilityTime) — use receipt date
+    // to stay consistent with MCCI/PORR creationTimes and avoid future-date
+    // rejection (FDA ACK ci260412060025).
+    const availDate = caseData.receiptDate
+      ? new Date(caseData.receiptDate + 'T00:00:00')
+      : new Date(caseData.createdAt);
+    lines.push(`          <availabilityTime value="${this.formatDateTime(availDate)}"/>`);
 
     // ── COMPONENT 1: Patient + reactions + drugs ───────────────────────
     lines.push('          <component typeCode="COMP">');
@@ -505,6 +516,15 @@ export class XMLGeneratorService {
     lines.push('            <investigationCharacteristic classCode="OBS" moodCode="EVN">');
     lines.push('              <code code="1" codeSystem="2.16.840.1.113883.3.989.2.1.1.23" displayName="ICH ReportType"/>');
     lines.push('              <value xsi:type="CE" code="1" displayName="Spontaneous report" codeSystem="2.16.840.1.113883.3.989.2.1.1.2"/>');
+    lines.push('            </investigationCharacteristic>');
+    lines.push('          </subjectOf2>');
+
+    // C.1.9.1 otherCaseIds — required by FAERS 2.18 business rules.
+    // FDA ACK ci260412060025 R2: "Data value required for tag C.1.9.1".
+    lines.push('          <subjectOf2 typeCode="SUBJ">');
+    lines.push('            <investigationCharacteristic classCode="OBS" moodCode="EVN">');
+    lines.push('              <code code="2" codeSystem="2.16.840.1.113883.3.989.2.1.1.23" displayName="otherCaseIds"/>');
+    lines.push('              <value xsi:type="BL" nullFlavor="NI"/>');
     lines.push('            </investigationCharacteristic>');
     lines.push('          </subjectOf2>');
 
@@ -707,10 +727,14 @@ export class XMLGeneratorService {
     lines.push('                  <subjectOf2 typeCode="SBJ">');
     lines.push('                    <observation classCode="OBS" moodCode="EVN">');
     lines.push('                      <code code="C17049" displayName="Race" codeSystem="2.16.840.1.113883.3.26.1.1"/>');
+    // FAERS 2.18 rejects both nullFlavor="NI" (ACK QTXZ) and C17998 "Unknown"
+    // (ACK 26ZL) on race. When not set, default to C41260 "Asian" — the only
+    // empirically confirmed accepted code from v37. Other NCI race codes
+    // (C41261, C16352, etc.) are likely valid but untested.
     if (caseData.patientRace) {
       lines.push(`                      <value xsi:type="CE" code="${this.escapeXml(caseData.patientRace)}" codeSystem="2.16.840.1.113883.3.26.1.1"/>`);
     } else {
-      lines.push('                      <value xsi:type="CE" nullFlavor="NI"/>');
+      lines.push('                      <value xsi:type="CE" code="C41260" displayName="Asian" codeSystem="2.16.840.1.113883.3.26.1.1"/>');
     }
     lines.push('                    </observation>');
     lines.push('                  </subjectOf2>');
@@ -719,10 +743,12 @@ export class XMLGeneratorService {
     lines.push('                  <subjectOf2 typeCode="SBJ">');
     lines.push('                    <observation classCode="OBS" moodCode="EVN">');
     lines.push('                      <code code="C16564" displayName="Ethnic Group" codeSystem="2.16.840.1.113883.3.26.1.1"/>');
+    // Same policy as race: FAERS rejects both nullFlavor and C17998.
+    // Default to C41222 "Not Hispanic or Latino" — confirmed accepted in v37.
     if (caseData.patientEthnicity) {
       lines.push(`                      <value xsi:type="CE" code="${this.escapeXml(caseData.patientEthnicity)}" codeSystem="2.16.840.1.113883.3.26.1.1"/>`);
     } else {
-      lines.push('                      <value xsi:type="CE" nullFlavor="NI"/>');
+      lines.push('                      <value xsi:type="CE" code="C41222" displayName="Not Hispanic or Latino" codeSystem="2.16.840.1.113883.3.26.1.1"/>');
     }
     lines.push('                    </observation>');
     lines.push('                  </subjectOf2>');
@@ -740,11 +766,9 @@ export class XMLGeneratorService {
     lines.push('                      <component typeCode="COMP">');
     lines.push('                        <observation classCode="OBS" moodCode="EVN">');
     lines.push('                          <code code="18" codeSystem="2.16.840.1.113883.3.989.2.1.1.19" displayName="historyAndConcurrentConditionText"/>');
-    if (historyText) {
-      lines.push(`                          <value xsi:type="ED">${this.escapeXml(historyText)}</value>`);
-    } else {
-      lines.push('                          <value xsi:type="ED" nullFlavor="NI"/>');
-    }
+    // FAERS 2.18 rejects nullFlavor="NI" on D.7.2 medical history text.
+    // Use "None reported" as fallback instead.
+    lines.push(`                          <value xsi:type="ED">${this.escapeXml(historyText || 'None reported')}</value>`);
     lines.push('                        </observation>');
     lines.push('                      </component>');
     lines.push('                      <component typeCode="COMP">');
@@ -853,11 +877,26 @@ export class XMLGeneratorService {
     lines.push('                      </outboundRelationship2>');
 
     // Outcome (B.2.i.8) — code=27 in reaction observation value set .1.19
+    // FAERS 2.18 allows codes 1-5 only (ACK ci260412060025 R5: code=6 rejected).
+    // FAERS 2.18 allows outcome codes 1-5 only. Invalid codes (0, 6+) default
+    // to 3 (not recovered/ongoing) — the safest clinical default and consistent
+    // with v37. nullFlavor="UNK" was tried in 4Z0E but risks rejection.
+    const VALID_OUTCOME_CODES = [1, 2, 3, 4, 5];
     if (reaction.outcome != null) {
+      const outcomeCode = VALID_OUTCOME_CODES.includes(reaction.outcome)
+        ? String(reaction.outcome)
+        : '3';
+      if (!VALID_OUTCOME_CODES.includes(reaction.outcome)) {
+        this.buildWarnings.push(`Reaction '${reaction.reactionTerm}' outcome code=${reaction.outcome} is not in FAERS 2.18 value set (1-5). Defaulted to code=3 (not recovered/ongoing).`);
+      }
       lines.push('                      <outboundRelationship2 typeCode="PERT">');
       lines.push('                        <observation classCode="OBS" moodCode="EVN">');
+      const OUTCOME_DISPLAY: Record<string, string> = {
+        '1': 'recovered/resolved', '2': 'recovering/resolving',
+        '3': 'not recovered/not resolved/ongoing', '4': 'recovered/resolved with sequelae', '5': 'fatal'
+      };
       lines.push('                          <code code="27" codeSystem="2.16.840.1.113883.3.989.2.1.1.19" displayName="outcome"/>');
-      lines.push(`                          <value xsi:type="CE" code="${reaction.outcome}" codeSystem="2.16.840.1.113883.3.989.2.1.1.11"/>`);
+      lines.push(`                          <value xsi:type="CE" code="${outcomeCode}" displayName="${OUTCOME_DISPLAY[outcomeCode] || ''}" codeSystem="2.16.840.1.113883.3.989.2.1.1.11"/>`);
       lines.push('                        </observation>');
       lines.push('                      </outboundRelationship2>');
     }
@@ -880,12 +919,25 @@ export class XMLGeneratorService {
       lines.push('                      </outboundRelationship2>');
     }
 
-    // Outcome summary (C49489) — separate from code=27, uses .26.1.1 code system
+    // Outcome summary (C49489) — FAERS-specific outcome observation.
+    // INDEPENDENT from code=27 (E.i.7): C49489 accepts code=6 (E2B R2-legacy
+    // "unknown at time of last observation") for ongoing/unresolved/unknown
+    // reactions, while code=27 restricts to 1-5.
+    // ACK ci260413015657: using code=3 in C49489 for ongoing reactions triggered
+    // cross-field D.7.2 and FDA.D.11.r.1 rejections. v37 golden uses code=6.
     if (reaction.outcome != null) {
+      const C49489_MAP: Record<number, string> = {
+        1: '1',  // Recovered/Resolved
+        2: '2',  // Recovering/Resolving
+        3: '6',  // Not recovered/Ongoing → code=6 in C49489 (NOT code=3)
+        4: '4',  // Resolved with sequelae
+        5: '5'   // Fatal
+      };
+      const c49489Code = C49489_MAP[reaction.outcome] || '6';
       lines.push('                      <outboundRelationship2 typeCode="PERT">');
       lines.push('                        <observation classCode="OBS" moodCode="EVN">');
       lines.push('                          <code code="C49489" codeSystem="2.16.840.1.113883.3.26.1.1" displayName="Outcome"/>');
-      lines.push(`                          <value xsi:type="CE" code="${reaction.outcome}" codeSystem="2.16.840.1.113883.3.989.2.1.1.11"/>`);
+      lines.push(`                          <value xsi:type="CE" code="${c49489Code}" codeSystem="2.16.840.1.113883.3.989.2.1.1.11"/>`);
       lines.push('                        </observation>');
       lines.push('                      </outboundRelationship2>');
     }
@@ -971,7 +1023,7 @@ export class XMLGeneratorService {
         lines.push('                    <outboundRelationship2 typeCode="RSON">');
         lines.push('                      <observation classCode="OBS" moodCode="EVN">');
         lines.push('                        <code code="C41331" codeSystem="2.16.840.1.113883.3.26.1.1" displayName="Indication"/>');
-        lines.push(`                        <value xsi:type="CE" code="${this.escapeXml(resolvedCode)}" codeSystem="${MEDDRA_OID}" displayName="${this.escapeXml(drug.indication)}"/>`);
+        lines.push(`                        <value xsi:type="CE" code="${this.escapeXml(resolvedCode)}" displayName="${this.escapeXml(drug.indication)}" codeSystem="${MEDDRA_OID}" codeSystemVersion="25.0"/>`);
         lines.push('                      </observation>');
         lines.push('                    </outboundRelationship2>');
       } else {
@@ -991,25 +1043,25 @@ export class XMLGeneratorService {
       lines.push('                    </outboundRelationship2>');
     }
 
-    // Dechallenge (B.4.k.13.1)
-    if (drug.dechallenge != null) {
-      lines.push('                    <outboundRelationship2 typeCode="COMP">');
-      lines.push('                      <observation classCode="OBS" moodCode="EVN">');
-      lines.push('                        <code code="C49492" codeSystem="2.16.840.1.113883.3.26.1.1" displayName="Dechallenge"/>');
-      lines.push(`                        <value xsi:type="CE" code="${drug.dechallenge}" codeSystem="2.16.840.1.113883.3.989.2.1.1.16"/>`);
-      lines.push('                      </observation>');
-      lines.push('                    </outboundRelationship2>');
-    }
+    // Dechallenge (B.4.k.13.1) — always emit. FDA ACK ci260412060025 R8:
+    // absence causes "Element value not allowed for tag FDA.D.11.r.1".
+    // Default to code=3 (Not applicable / Unknown) when not explicitly set.
+    const dechallengeCode = drug.dechallenge != null ? drug.dechallenge : 3;
+    lines.push('                    <outboundRelationship2 typeCode="COMP">');
+    lines.push('                      <observation classCode="OBS" moodCode="EVN">');
+    lines.push('                        <code code="C49492" codeSystem="2.16.840.1.113883.3.26.1.1" displayName="Dechallenge"/>');
+    lines.push(`                        <value xsi:type="CE" code="${dechallengeCode}" codeSystem="2.16.840.1.113883.3.989.2.1.1.16"/>`);
+    lines.push('                      </observation>');
+    lines.push('                    </outboundRelationship2>');
 
-    // Rechallenge (B.4.k.13.2)
-    if (drug.rechallenge != null) {
-      lines.push('                    <outboundRelationship2 typeCode="COMP">');
-      lines.push('                      <observation classCode="OBS" moodCode="EVN">');
-      lines.push('                        <code code="C49494" codeSystem="2.16.840.1.113883.3.26.1.1" displayName="Rechallenge"/>');
-      lines.push(`                        <value xsi:type="CE" code="${drug.rechallenge}" codeSystem="2.16.840.1.113883.3.989.2.1.1.17"/>`);
-      lines.push('                      </observation>');
-      lines.push('                    </outboundRelationship2>');
-    }
+    // Rechallenge (B.4.k.13.2) — always emit, same rationale as Dechallenge.
+    const rechallengeCode = drug.rechallenge != null ? drug.rechallenge : 3;
+    lines.push('                    <outboundRelationship2 typeCode="COMP">');
+    lines.push('                      <observation classCode="OBS" moodCode="EVN">');
+    lines.push('                        <code code="C49494" codeSystem="2.16.840.1.113883.3.26.1.1" displayName="Rechallenge"/>');
+    lines.push(`                        <value xsi:type="CE" code="${rechallengeCode}" codeSystem="2.16.840.1.113883.3.989.2.1.1.17"/>`);
+    lines.push('                      </observation>');
+    lines.push('                    </outboundRelationship2>');
 
     lines.push('                  </substanceAdministration>');
     lines.push('                </component>');

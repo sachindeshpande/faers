@@ -2,10 +2,11 @@
 
 ## Requirements Specification for Claude Code
 
-**Version:** 2.0  
-**Phase:** 2B of 12 (Optional, implement when ready for automated submission)  
-**Estimated Duration:** 4-6 weeks  
+**Version:** 2.1
+**Phase:** 2B of 12 (Optional, implement when ready for automated submission)
+**Estimated Duration:** 4-6 weeks
 **Prerequisites:** Phase 1 and Phase 2 completed, FDA ESG NextGen account obtained
+**Status:** Phase 2B work **complete**. App-generated submission 2L8T received CA+AA from ZZFDATST on 2026-04-21. Post-2L8T, an in-app 5-pass empirical validator and a raw HL7 ACK3 parser were added — see `docs/architecture/04_Implementation_Status.md` §2.2D for the full service/UI map.
 
 ---
 
@@ -29,12 +30,14 @@ FDA explicitly recommends the API approach for new implementations.
 
 ### 1.3 Success Criteria
 
-- [ ] Application can authenticate with FDA ESG NextGen API
-- [ ] Users can submit cases directly to FDA with one click
-- [ ] System automatically retrieves FDA acknowledgments (ACK/NACK)
-- [ ] Failed submissions can be retried automatically
-- [ ] API credentials are securely stored
-- [ ] Seamless upgrade path from Phase 2 SRP workflow
+- [x] Application can authenticate with FDA ESG NextGen API
+- [x] Users can submit cases directly to FDA with one click
+- [x] System automatically retrieves FDA acknowledgments (ACK/NACK)
+- [x] Failed submissions can be retried automatically
+- [x] API credentials are securely stored
+- [x] Seamless upgrade path from Phase 2 SRP workflow
+- [x] **Post-2L8T:** Pre-submission empirical validator blocks submissions carrying known-rejected values (race `C17998`, nullFlavor on `D.7.2`, etc.) before any bytes leave for FDA
+- [x] **Post-2L8T:** Raw ACK XML can be imported from the gateway mailbox and parsed into structured outcome + field-tag rejections
 
 ### 1.4 Out of Scope for Phase 2B
 
@@ -642,28 +645,31 @@ Sender Settings:
 ## 9. Acceptance Criteria Summary
 
 ### 9.1 Must Have
-- [ ] API credential configuration and secure storage
-- [ ] OAuth authentication with token management
-- [ ] Submit case via API with progress display
-- [ ] Automatic acknowledgment polling
-- [ ] Manual acknowledgment check
-- [ ] Error categorization and user-friendly messages
-- [ ] Automatic retry for transient errors
-- [ ] Manual retry for failed submissions
-- [ ] Submission history with API details
-- [ ] Fallback to SRP export
+- [x] API credential configuration and secure storage
+- [x] OAuth authentication with token management
+- [x] Submit case via API with progress display
+- [x] Automatic acknowledgment polling
+- [x] Manual acknowledgment check
+- [x] Error categorization and user-friendly messages
+- [x] Automatic retry for transient errors
+- [x] Manual retry for failed submissions
+- [x] Submission history with API details
+- [x] Fallback to SRP export
+- [x] **Empirical pre-submission gate** (post-2L8T): `fivePassValidatorService` + `xmlLintService` enforce the CF97→2L8T lessons before any submission is sent to FDA
+- [x] **Raw ACK import** (post-2L8T): `ackParserService` + `ImportAckDialog` surface gateway-mailbox ACK XMLs as structured outcomes
 
 ### 9.2 Should Have
-- [ ] Connection test functionality
-- [ ] Dashboard updates for API submissions
-- [ ] NACK error detail display
+- [x] Connection test functionality
+- [x] Dashboard updates for API submissions
+- [x] NACK error detail display
 - [ ] Export acknowledgment as PDF
-- [ ] Configurable polling and retry settings
+- [x] Configurable polling and retry settings
 
 ### 9.3 Nice to Have
 - [ ] Submission queue for offline support
 - [ ] Email notifications for acknowledgments
 - [ ] API usage statistics
+- [ ] **Catalog-driven submission campaign runner** — drive `FAERS_Test_Case_Catalog.md` end-to-end from the UI, promoting untested values to proven via live ACKs
 
 ---
 

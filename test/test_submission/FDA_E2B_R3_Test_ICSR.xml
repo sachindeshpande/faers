@@ -1,0 +1,450 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  FDA E2B(R3) Test Submission - Individual Case Safety Report (ICSR)
+  
+  PURPOSE: This is a TEST submission for the FDA ESG Test Environment
+  DO NOT submit this to production (ZZFDA) - Use ZZFDATST only
+  
+  Key Test Environment Values:
+  - Batch Receiver Identifier (N.1.4): ZZFDATST (for postmarketing)
+  - Message Receiver Identifier (N.2.r.3): CDER_FAERS (postmarketing drugs)
+  
+  For premarketing test submissions, use:
+  - Batch Receiver Identifier: ZZFDATST_PREMKT
+  - Message Receiver Identifier: CDER_IND or CBER_IND
+  
+  IMPORTANT: Replace YOUR_DUNS_NUMBER with your actual FDA-approved sender ID
+-->
+<MCCI_IN200100UV01 xmlns="urn:hl7-org:v3"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   ITSVersion="XML_1.0">
+  
+  <!-- ============================================== -->
+  <!-- BATCH WRAPPER (Section N.1) -->
+  <!-- ============================================== -->
+  
+  <!-- N.1.1 Type of Messages in Batch -->
+  <id root="2.16.840.1.113883.3.989.2.1.3.22" extension="1"/>
+
+  <!-- N.1.2 Batch Number - Must be unique for each submission -->
+  <id root="2.16.840.1.113883.3.989.2.1.3.1" extension="TEST-BATCH-2026-001"/>
+
+  <!-- N.1.5 Date of Batch Transmission -->
+  <creationTime value="20260319120000-0500"/>
+
+  <responseModeCode code="D"/>
+  <interactionId root="2.16.840.1.113883.1.6" extension="MCCI_IN200100UV01"/>
+  <processingCode code="P"/>
+  <processingModeCode code="T"/>
+  <acceptAckCode code="AL"/>
+
+  <!-- N.1.4 Batch Receiver Identifier - inside receiver/device block -->
+  <receiver typeCode="RCV">
+    <device classCode="DEV" determinerCode="INSTANCE">
+      <id root="2.16.840.1.113883.3.989.2.1.3.14" extension="ZZFDATST"/>
+    </device>
+  </receiver>
+
+  <!-- N.1.3 Batch Sender Identifier - Replace YOUR_DUNS_NUMBER with your FDA-approved DUNS -->
+  <sender typeCode="SND">
+    <device classCode="DEV" determinerCode="INSTANCE">
+      <id root="1.3.6.1.4.1.519.1" extension="YOUR_DUNS_NUMBER"/>
+    </device>
+  </sender>
+  
+  <!-- ============================================== -->
+  <!-- MESSAGE WRAPPER (Section N.2) -->
+  <!-- ============================================== -->
+  <PORR_IN049016UV>
+    <id root="2.16.840.1.113883.3.989.2.1.3.1" extension="TEST-MSG-2026-001"/>
+    <creationTime value="20260319120000-0500"/>
+    <interactionId root="2.16.840.1.113883.1.6" extension="PORR_IN049016UV"/>
+    <processingCode code="P"/>
+    <processingModeCode code="T"/>
+    <acceptAckCode code="AL"/>
+    
+    <!-- N.2.r Message Receivers -->
+    <receiver typeCode="RCV">
+      <device classCode="DEV" determinerCode="INSTANCE">
+        <!-- N.2.r.1 Message Receiver Type -->
+        <id root="2.16.840.1.113883.3.989.2.1.3.12" extension="2"/>
+        <!-- N.2.r.3 Message Receiver Identifier - CDER_FAERS for postmarketing drugs -->
+        <id root="2.16.840.1.113883.3.989.2.1.3.7" extension="CDER_FAERS"/>
+      </device>
+    </receiver>
+    
+    <!-- N.2.r Message Sender -->
+    <sender typeCode="SND">
+      <device classCode="DEV" determinerCode="INSTANCE">
+        <!-- N.2.r.1 Message Sender Type -->
+        <id root="2.16.840.1.113883.3.989.2.1.3.12" extension="1"/>
+        <!-- N.2.r.2 Message Sender Identifier - Your DUNS -->
+        <id root="1.3.6.1.4.1.519.1" extension="YOUR_DUNS_NUMBER"/>
+      </device>
+    </sender>
+    
+    <controlActProcess classCode="CACT" moodCode="EVN">
+      <code code="PORR_TE049016UV" codeSystem="2.16.840.1.113883.1.18"/>
+      <effectiveTime value="20260319120000-0500"/>
+      
+      <!-- ============================================== -->
+      <!-- SAFETY REPORT (Sections A-H) -->
+      <!-- ============================================== -->
+      <subject typeCode="SUBJ">
+        <investigationEvent classCode="INVSTG" moodCode="EVN">
+          
+          <!-- A.1.0.1 Sender's (case) Safety Report Unique Identifier -->
+          <id root="2.16.840.1.113883.3.989.2.1.3.1" extension="US-TESTCOMPANY-2026-TEST001"/>
+          
+          <!-- A.1.2 Date of Creation -->
+          <effectiveTime value="20260319"/>
+          
+          <!-- A.1.4 Type of Report -->
+          <code code="1" codeSystem="2.16.840.1.113883.3.989.2.1.1.2"
+                codeSystemVersion="2.0" displayName="Spontaneous report"/>
+          
+          <text mediaType="text/plain">TEST SUBMISSION - This is a test ICSR for FDA ESG validation purposes only. No real patient data is contained in this submission.</text>
+          
+          <!-- A.1.5.1 Primary Source Regulatory Purposes -->
+          <outboundRelationship1 typeCode="COMP">
+            <priorityNumber value="1"/>
+            <relatedInvestigation classCode="INVSTG" moodCode="EVN">
+              <code code="1" codeSystem="2.16.840.1.113883.3.989.2.1.1.23"
+                    codeSystemVersion="2.0" displayName="Initial"/>
+              <subjectOf2 typeCode="SUBJ">
+                <controlActEvent classCode="CACT" moodCode="EVN">
+                  <author typeCode="AUT">
+                    <assignedEntity classCode="ASSIGNED">
+                      <!-- A.1.5.2 Identification of the Country of the Primary Source -->
+                      <addr>
+                        <country>US</country>
+                      </addr>
+                    </assignedEntity>
+                  </author>
+                </controlActEvent>
+              </subjectOf2>
+            </relatedInvestigation>
+          </outboundRelationship1>
+          
+          <!-- A.1.6 Date of Most Recent Information -->
+          <outboundRelationship1 typeCode="COMP">
+            <relatedInvestigation classCode="INVSTG" moodCode="EVN">
+              <code code="1" codeSystem="2.16.840.1.113883.3.989.2.1.1.22"
+                    codeSystemVersion="1.0" displayName="source"/>
+              <activityTime value="20260315"/>
+            </relatedInvestigation>
+          </outboundRelationship1>
+          
+          <!-- A.1.7 Report Nullification / Amendment -->
+          <outboundRelationship1 typeCode="COMP">
+            <relatedInvestigation classCode="INVSTG" moodCode="EVN">
+              <code code="1" codeSystem="2.16.840.1.113883.3.989.2.1.1.5"
+                    codeSystemVersion="2.0" displayName="Report"/>
+            </relatedInvestigation>
+          </outboundRelationship1>
+          
+          <!-- A.1.8.1 Worldwide Unique Case Identification Number -->
+          <outboundRelationship1 typeCode="COMP">
+            <relatedInvestigation classCode="INVSTG" moodCode="EVN">
+              <code code="3" codeSystem="2.16.840.1.113883.3.989.2.1.1.4"
+                    codeSystemVersion="2.0"/>
+              <subjectOf2 typeCode="SUBJ">
+                <controlActEvent classCode="CACT" moodCode="EVN">
+                  <id root="2.16.840.1.113883.3.989.2.1.3.2" extension="US-TESTCOMPANY-2026-TEST001"/>
+                </controlActEvent>
+              </subjectOf2>
+            </relatedInvestigation>
+          </outboundRelationship1>
+          
+          <!-- A.1.9 Other Case Identifiers -->
+          <outboundRelationship1 typeCode="COMP">
+            <relatedInvestigation classCode="INVSTG" moodCode="EVN">
+              <code code="3" codeSystem="2.16.840.1.113883.3.989.2.1.1.4"
+                    codeSystemVersion="2.0"/>
+              <subjectOf2 typeCode="SUBJ">
+                <controlActEvent classCode="CACT" moodCode="EVN">
+                  <!-- A.1.9.1r.1 Source(s) of the Case Identifier -->
+                  <id root="2.16.840.1.113883.3.989.2.1.3.2" extension="TEST-CASE-2026-001"/>
+                </controlActEvent>
+              </subjectOf2>
+            </relatedInvestigation>
+          </outboundRelationship1>
+          
+          <!-- A.1.10.1 Fulfills Local Criteria for Expedited Report -->
+          <outboundRelationship1 typeCode="COMP">
+            <relatedInvestigation classCode="INVSTG" moodCode="EVN">
+              <code code="1" codeSystem="2.16.840.1.113883.3.989.2.1.1.24"
+                    codeSystemVersion="2.0" displayName="Yes"/>
+            </relatedInvestigation>
+          </outboundRelationship1>
+          
+          <!-- A.2.1.1 Primary Source Information - Reporter -->
+          <primaryRole classCode="PRS">
+            <player1 classCode="PSN" determinerCode="INSTANCE">
+              <!-- A.2.1.1a Title -->
+              <name>
+                <prefix>Dr.</prefix>
+                <!-- A.2.1.1b Given Name -->
+                <given>Test</given>
+                <!-- A.2.1.1c Middle Name -->
+                <given>T</given>
+                <!-- A.2.1.1d Family Name -->
+                <family>Reporter</family>
+              </name>
+              <!-- A.2.1.2 Reporter's Qualification -->
+              <asQualifiedEntity classCode="QUAL">
+                <code code="1" codeSystem="2.16.840.1.113883.3.989.2.1.1.6"
+                      codeSystemVersion="2.0" displayName="Physician"/>
+              </asQualifiedEntity>
+            </player1>
+            <!-- A.2.1.3 Reporter's Address and Telephone -->
+            <addr>
+              <!-- A.2.1.3.1 Reporter's Organisation -->
+              <streetAddressLine>Test Medical Center</streetAddressLine>
+              <!-- A.2.1.3.2 Reporter's Street Address -->
+              <streetAddressLine>123 Test Street</streetAddressLine>
+              <!-- A.2.1.3.3 Reporter's City -->
+              <city>Testville</city>
+              <!-- A.2.1.3.4 Reporter's State or Province -->
+              <state>MD</state>
+              <!-- A.2.1.3.5 Reporter's Postcode -->
+              <postalCode>20850</postalCode>
+              <!-- A.2.1.3.6 Reporter's Country Code -->
+              <country>US</country>
+            </addr>
+            <telecom value="tel:+13015551234"/>
+          </primaryRole>
+          
+          <!-- A.3.1 Sender Information -->
+          <author typeCode="AUT">
+            <assignedEntity classCode="ASSIGNED">
+              <code code="1" codeSystem="2.16.840.1.113883.3.989.2.1.1.7"
+                    codeSystemVersion="2.0" displayName="Pharmaceutical Company"/>
+              <assignedPerson classCode="PSN" determinerCode="INSTANCE">
+                <!-- A.3.1.1 Sender Type -->
+                <name>
+                  <!-- A.3.1.3b Sender's Given Name -->
+                  <given>Safety</given>
+                  <!-- A.3.1.3d Sender's Family Name -->
+                  <family>Contact</family>
+                </name>
+              </assignedPerson>
+              <representedOrganization classCode="ORG" determinerCode="INSTANCE">
+                <!-- A.3.1.2 Sender's Organisation -->
+                <name>Test Pharmaceutical Company</name>
+                <addr>
+                  <streetAddressLine>456 Pharma Drive</streetAddressLine>
+                  <city>Rockville</city>
+                  <state>MD</state>
+                  <postalCode>20852</postalCode>
+                  <country>US</country>
+                </addr>
+                <contactParty classCode="CON">
+                  <!-- A.3.1.4 Sender's Telephone -->
+                  <telecom value="tel:+13015559876"/>
+                  <!-- A.3.1.6 Sender's E-mail Address -->
+                  <telecom value="mailto:safety@testpharma.com"/>
+                </contactParty>
+              </representedOrganization>
+            </assignedEntity>
+          </author>
+          
+          <!-- ============================================== -->
+          <!-- B. PATIENT INFORMATION -->
+          <!-- ============================================== -->
+          <subject1 typeCode="SBJ">
+            <primaryRole classCode="INVSBJ">
+              <player1 classCode="PSN" determinerCode="INSTANCE">
+                <!-- B.1.1 Patient (Name or Initials) -->
+                <name>
+                  <given>T.P.</given>
+                </name>
+                <!-- B.1.1.1 Patient Medical Record Number(s) -->
+                <asIdentifiedEntity classCode="IDENT">
+                  <id root="2.16.840.1.113883.3.989.2.1.3.9" extension="TEST-MRN-001"/>
+                </asIdentifiedEntity>
+                <!-- B.1.2.1 Date of Birth -->
+                <birthTime value="19700515"/>
+              </player1>
+              
+              <!-- B.1.5 Patient Weight (kg) -->
+              <subjectOf2 typeCode="SBJ">
+                <observation classCode="OBS" moodCode="EVN">
+                  <code code="1" codeSystem="2.16.840.1.113883.3.989.2.1.1.9"
+                        codeSystemVersion="2.0" displayName="Weight"/>
+                  <value xsi:type="PQ" value="75" unit="kg"/>
+                </observation>
+              </subjectOf2>
+              
+              <!-- B.1.6 Patient Height (cm) -->
+              <subjectOf2 typeCode="SBJ">
+                <observation classCode="OBS" moodCode="EVN">
+                  <code code="2" codeSystem="2.16.840.1.113883.3.989.2.1.1.9"
+                        codeSystemVersion="2.0" displayName="Height"/>
+                  <value xsi:type="PQ" value="175" unit="cm"/>
+                </observation>
+              </subjectOf2>
+              
+              <!-- B.1.7 Patient Sex -->
+              <subjectOf2 typeCode="SBJ">
+                <observation classCode="OBS" moodCode="EVN">
+                  <code code="3" codeSystem="2.16.840.1.113883.3.989.2.1.1.9"
+                        codeSystemVersion="2.0" displayName="Sex"/>
+                  <value xsi:type="CE" code="1" codeSystem="2.16.840.1.113883.3.989.2.1.1.12"
+                         codeSystemVersion="2.0" displayName="Male"/>
+                </observation>
+              </subjectOf2>
+              
+              <!-- ============================================== -->
+              <!-- E. REACTION(S) / EVENT(S) -->
+              <!-- ============================================== -->
+              <subjectOf1 typeCode="SBJ">
+                <adverseEventAssessment classCode="INVSTG" moodCode="EVN">
+                  <subject1 typeCode="SBJ">
+                    <primaryRole classCode="INVSBJ">
+                      <subjectOf2 typeCode="SBJ">
+                        <observation classCode="OBS" moodCode="EVN">
+                          <!-- E.i Reaction / Event as Reported by the Primary Source -->
+                          <id root="2.16.840.1.113883.3.989.2.1.3.11" extension="1"/>
+                          <!-- E.i.1 Reaction/Event as Reported by the Primary Source -->
+                          <code nullFlavor="NA"/>
+                          <!-- E.i.2.1 Reaction/Event MedDRA Term (LLT) -->
+                          <value xsi:type="CE" code="10028813"
+                                 codeSystem="2.16.840.1.113883.6.163"
+                                 codeSystemVersion="27.0" displayName="Nausea"/>
+                          <!-- E.i.3.1 Term Highlighted by the Reporter -->
+                          <outboundRelationship2 typeCode="PERT">
+                            <observation classCode="OBS" moodCode="EVN">
+                              <code code="1" codeSystem="2.16.840.1.113883.3.989.2.1.1.10"
+                                    codeSystemVersion="2.0" displayName="Yes"/>
+                            </observation>
+                          </outboundRelationship2>
+                          <!-- E.i.3.2 Seriousness Criteria at Event Level -->
+                          <!-- E.i.3.2c Caused/Prolonged Hospitalisation -->
+                          <outboundRelationship2 typeCode="PERT">
+                            <observation classCode="OBS" moodCode="EVN">
+                              <code code="3" codeSystem="2.16.840.1.113883.3.989.2.1.1.19"
+                                    codeSystemVersion="2.0" displayName="Hospitalisation"/>
+                              <value xsi:type="BL" value="true"/>
+                            </observation>
+                          </outboundRelationship2>
+                          <!-- E.i.4 Date of Start of Reaction/Event -->
+                          <effectiveTime>
+                            <low value="20260301"/>
+                          </effectiveTime>
+                          <!-- E.i.7 Outcome of Reaction/Event -->
+                          <outboundRelationship2 typeCode="PERT">
+                            <observation classCode="OBS" moodCode="EVN">
+                              <code code="1" codeSystem="2.16.840.1.113883.3.989.2.1.1.11"
+                                    codeSystemVersion="2.0" displayName="Outcome"/>
+                              <value xsi:type="CE" code="1"
+                                     codeSystem="2.16.840.1.113883.3.989.2.1.1.11"
+                                     codeSystemVersion="2.0" displayName="recovered/resolved"/>
+                            </observation>
+                          </outboundRelationship2>
+                        </observation>
+                      </subjectOf2>
+                    </primaryRole>
+                  </subject1>
+                  
+                  <!-- ============================================== -->
+                  <!-- G. DRUG INFORMATION -->
+                  <!-- ============================================== -->
+                  <component typeCode="COMP">
+                    <substanceAdministration classCode="SBADM" moodCode="EVN">
+                      <id root="2.16.840.1.113883.3.989.2.1.3.19" extension="1"/>
+                      <!-- G.k.1 Characterisation of Drug Role -->
+                      <code code="1" codeSystem="2.16.840.1.113883.3.989.2.1.1.13"
+                            codeSystemVersion="2.0" displayName="Suspect"/>
+                      <effectiveTime xsi:type="IVL_TS">
+                        <!-- G.k.4.r.1 Date of Start of Drug -->
+                        <low value="20260215"/>
+                        <!-- G.k.4.r.2 Date of Last Administration -->
+                        <high value="20260228"/>
+                      </effectiveTime>
+                      <!-- G.k.4.r.4 Duration of Drug Administration -->
+                      <effectiveTime xsi:type="PIVL_TS">
+                        <period value="1" unit="d"/>
+                      </effectiveTime>
+                      <!-- G.k.4.r.5 Dose (Number) -->
+                      <doseQuantity value="500" unit="mg"/>
+                      <consumable typeCode="CSM">
+                        <instanceOfKind classCode="INST">
+                          <kindOfProduct classCode="MMAT" determinerCode="KIND">
+                            <!-- G.k.2.2 Medicinal Product Name as Reported -->
+                            <name>TESTDRUG 500MG TABLET</name>
+                            <!-- G.k.2.3 Substance / Specified Substance -->
+                            <ingredient classCode="ACTI">
+                              <ingredientSubstance classCode="MMAT" determinerCode="KIND">
+                                <!-- G.k.2.3.r.1 Substance Name -->
+                                <name>TESTSUBSTANCE</name>
+                              </ingredientSubstance>
+                            </ingredient>
+                            <!-- G.k.2.4 Identification of the Country Where the Drug Was Obtained -->
+                            <asManufacturedProduct classCode="MANU">
+                              <subjectOf typeCode="SBJ">
+                                <approval classCode="CNTRCT" moodCode="EVN">
+                                  <id root="2.16.840.1.113883.3.989.2.1.3.4" extension="NDA123456"/>
+                                  <holder typeCode="HLD">
+                                    <role classCode="HLD">
+                                      <scoper classCode="ORG" determinerCode="INSTANCE">
+                                        <addr>
+                                          <country>US</country>
+                                        </addr>
+                                      </scoper>
+                                    </role>
+                                  </holder>
+                                </approval>
+                              </subjectOf>
+                            </asManufacturedProduct>
+                          </kindOfProduct>
+                        </instanceOfKind>
+                      </consumable>
+                      <!-- G.k.9.i Drug-Reaction Assessment -->
+                      <outboundRelationship2 typeCode="PERT">
+                        <observation classCode="OBS" moodCode="EVN">
+                          <code code="C53257" codeSystem="2.16.840.1.113883.3.26.1.1"
+                                displayName="Relatedness Assessment"/>
+                          <value xsi:type="CE" code="possible"/>
+                          <!-- Reference to reaction -->
+                          <outboundRelationship1 typeCode="REFR">
+                            <actReference classCode="OBS" moodCode="EVN">
+                              <id root="2.16.840.1.113883.3.989.2.1.3.11" extension="1"/>
+                            </actReference>
+                          </outboundRelationship1>
+                        </observation>
+                      </outboundRelationship2>
+                    </substanceAdministration>
+                  </component>
+                </adverseEventAssessment>
+              </subjectOf1>
+            </primaryRole>
+          </subject1>
+          
+          <!-- ============================================== -->
+          <!-- H. NARRATIVE CASE SUMMARY -->
+          <!-- ============================================== -->
+          <component typeCode="COMP">
+            <adverseEventAssessment classCode="INVSTG" moodCode="EVN">
+              <component typeCode="COMP">
+                <causalityAssessment classCode="OBS" moodCode="EVN">
+                  <!-- H.1 Case Narrative -->
+                  <text mediaType="text/plain">TEST SUBMISSION - NARRATIVE SUMMARY
+
+This is a TEST submission for FDA ESG validation purposes only. No real patient data is contained herein.
+
+A 55-year-old male patient was prescribed TESTDRUG 500MG TABLET on 15-Feb-2026 for a test condition. On 01-Mar-2026, the patient experienced nausea which required hospitalization. The patient recovered fully. The drug was discontinued.
+
+This case is being reported as a serious adverse event due to hospitalization.
+
+DISCLAIMER: This is a test case created for validation of E2B(R3) submission capabilities. All data is fictitious.</text>
+                </causalityAssessment>
+              </component>
+            </adverseEventAssessment>
+          </component>
+          
+        </investigationEvent>
+      </subject>
+    </controlActProcess>
+  </PORR_IN049016UV>
+</MCCI_IN200100UV01>

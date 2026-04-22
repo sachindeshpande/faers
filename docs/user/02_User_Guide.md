@@ -1,8 +1,8 @@
 # FAERS Submission Application - User Guide
 
-**Version:** 5.0
-**Applies to:** Phase 5 (Enhanced Data Management) + Phase 2B (ESG NextGen API)
-**Last Updated:** January 2026
+**Version:** 5.1
+**Applies to:** Phase 5 (Enhanced Data Management) + Phase 2B (ESG NextGen API) + FAERS Empirical Validator (post-2L8T)
+**Last Updated:** April 2026
 
 ---
 
@@ -222,6 +222,7 @@ The main window consists of three main areas:
 | **New**         | Create a new ICSR case                  |
 | **Open**        | Return to the case list                 |
 | **Import 3500** | Import a Form 3500A PDF                 |
+| **Import ACK**  | Parse an FDA ACK XML file from the ESG mailbox (see §21) |
 | **Save**        | Save the current case                   |
 | **Validate**    | Check the case for errors               |
 | **Export XML**  | Generate E2B(R3) XML file               |
@@ -1359,8 +1360,25 @@ Once your case is approved and ready for submission:
    - Case ID and patient information
    - Validation status
    - Environment (Test/Production)
-4. Check the confirmation checkbox
-5. Click **Submit**
+4. **Review the 5-Pass Validator panel** (see §11.3.1). If any pass shows a red light, the Submit button is disabled until the case is corrected.
+5. Check the confirmation checkbox
+6. Click **Submit**
+
+#### 11.3.1 5-Pass Empirical Validator
+
+Every Submit to FDA dialog (except Demo mode) runs the case's generated XML through five passes before the button becomes enabled. The result is rendered as a row of coloured tags — P1 through P5 — plus a collapsible list of findings grouped by severity.
+
+| Pass | What it checks |
+|---|---|
+| **P1 — Element-Presence Diff** | Generated XML has the same element structure as the `v37` golden reference. Missing elements block submission. |
+| **P2 — CE Attribute Completeness** | Every coded (CE) value has `codeSystem`. HL7 simple-code elements (`statusCode`, `processingCode`, etc.) are exempt. |
+| **P3 — Business-Rule Codes** | Coded values for race, ethnicity, medical history, and reaction outcomes match the app's empirical policy — learned from real ACK responses. A red P3 means a value that FAERS has previously rejected (e.g. race `C17998`, `nullFlavor="NI"` on D.7.2). |
+| **P4 — Value Diff vs v37** | Lists every attribute/text difference from v37 and categorises each (UUID, case ID, timestamp, reporter, or content). |
+| **P5 — Empirical Safety** | Each content divergence is classified **proven_safe**, **proven_rejected**, or **untested** using the policy. Multiple untested changes in one submission are blocked. |
+
+Green = clean, orange = warnings only, red = errors. Hover any tag for a tooltip with counts and the skip reason (if the pass didn't run).
+
+The same gate runs again in the backend before any bytes leave for FDA, so a case that somehow bypasses the UI still cannot submit with a proven-rejected value.
 
 ### 11.4 Submission Progress
 
@@ -1441,6 +1459,25 @@ If FDA returns a NACK:
 2. Click **Return to Draft** to correct issues
 3. Fix the identified problems
 4. Re-submit through the workflow
+
+### 11.9.1 Importing a raw ACK file
+
+When you download an ACK XML directly from the ESG mailbox (rather than letting the app's polling pick it up), use the **Import ACK** toolbar button to parse it:
+
+1. Click **Import ACK** in the top toolbar.
+2. Choose between the two tabs:
+    - **From file** — file picker, filters default to `.ack` / `.xml`.
+    - **Paste XML** — paste the raw `MCCI_IN200101UV01` envelope.
+3. Click **Parse ACK**.
+
+The dialog shows:
+- **Overall verdict** — ACCEPTED when both inner (CA) and outer (AA) codes are positive; REJECTED if either fails.
+- **Inner message ack** — CA (Commit Accept) or CR (Commit Reject) from the ICSR layer.
+- **Outer batch ack** — AA (Accept) or AR (Reject) from the transport layer.
+- **Target case** (Safety Report ID), batch ID, FDA local report number, creation time.
+- **Structured rejections** — if rejected, a list of `{ index, tag, message }` entries such as `FDA.D.11.r.1`, `D.7.2`, `C.3.4.3`. Map each tag back to the case's data to decide the fix.
+
+This is a read-only diagnostic — the dialog does not write anything back to the case record. If you need to record the ACK against a case, use **Actions > Record Acknowledgment** separately.
 
 ### 11.10 Polling Configuration
 
