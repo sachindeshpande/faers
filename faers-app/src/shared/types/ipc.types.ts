@@ -216,6 +216,8 @@ import type {
   FivePassResult
 } from './faersValidation.types';
 
+import type { CaseImportResult } from './caseImport.types';
+
 // Phase 6 imports
 import type {
   Study,
@@ -289,6 +291,7 @@ export const IPC_CHANNELS = {
   CASE_DUPLICATE: 'case:duplicate',
   CASE_VALIDATE: 'case:validate',
   CASE_COUNT: 'case:count',
+  CASE_IMPORT_JSON: 'case:importFromJson',
 
   // Reporter operations
   REPORTER_LIST: 'reporter:list',
@@ -1344,6 +1347,9 @@ export interface ElectronAPI {
   duplicateCase: (id: string) => Promise<IPCResponse<Case>>;
   validateCase: (id: string) => Promise<IPCResponse<ValidationResult>>;
   getCaseCount: () => Promise<IPCResponse<number>>;
+  importCaseFromJson: (
+    payload: { filePath?: string; jsonText?: string; jsonObject?: unknown }
+  ) => Promise<IPCResponse<CaseImportResult>>;
 
   // Reporter operations
   getReporters: (caseId: string) => Promise<IPCResponse<CaseReporter[]>>;

@@ -16,6 +16,7 @@ import { XMLGeneratorService } from '../services/xmlGeneratorService';
 import { lintE2bXml } from '../services/xmlLintService';
 import { ExportFilenameService } from '../services/exportFilenameService';
 import { ValidationService } from '../services/validationService';
+import { CaseImportService } from '../services/caseImportService';
 import { IPC_CHANNELS } from '../../shared/types/ipc.types';
 import type {
   CaseFilterOptions,
@@ -85,6 +86,18 @@ export function registerIpcHandlers(): void {
   ipcMain.handle(
     IPC_CHANNELS.CASE_CREATE,
     wrapHandler((data?: CreateCaseDTO) => caseRepo.create(data))
+  );
+
+  // Import a new Draft case from a JSON document (file path or inline JSON).
+  // The service validates with zod and creates Case + reporter + reactions +
+  // drugs atomically inside a DB transaction. Returns the new caseId on
+  // success; structured per-field errors on failure.
+  ipcMain.handle(
+    IPC_CHANNELS.CASE_IMPORT_JSON,
+    wrapHandler((payload: { filePath?: string; jsonText?: string; jsonObject?: unknown }) => {
+      const svc = new CaseImportService(db);
+      return svc.importCaseFromJson(payload ?? {});
+    })
   );
 
   ipcMain.handle(

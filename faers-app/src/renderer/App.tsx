@@ -620,6 +620,46 @@ const App: React.FC = () => {
 
   // Handle import Form 3500
   const [isImporting, setIsImporting] = useState(false);
+  const [isImportingJson, setIsImportingJson] = useState(false);
+
+  // Handle import case from JSON — creates a populated Draft, navigates to
+  // it, and marks dirty so the user sees a Save prompt as a "confirm the
+  // imported values" UX signal (see b-pragmatic note in the branch history).
+  const handleImportCaseJson = async () => {
+    try {
+      const dialogResult = await window.electronAPI.showOpenDialog({
+        title: 'Select Case JSON file',
+        filters: [{ name: 'JSON files', extensions: ['json'] }],
+        properties: ['openFile']
+      });
+      if (!dialogResult.success || !dialogResult.data || dialogResult.data.length === 0) return;
+
+      const filePath = dialogResult.data[0];
+      setIsImportingJson(true);
+      const result = await window.electronAPI.importCaseFromJson({ filePath });
+
+      if (result.success && result.data?.success && result.data.caseId) {
+        messageApi.success(`Case JSON imported. Draft created as ${result.data.caseId}.`);
+        if (result.data.warnings?.length) {
+          result.data.warnings.forEach((w) => messageApi.warning(w));
+        }
+        await useCaseStore.getState().fetchCase(result.data.caseId);
+        useCaseStore.getState().setDirty(true);
+        setActiveSection('report');
+      } else {
+        const errs = result.data?.errors;
+        const detail = errs && errs.length > 0
+          ? errs.map((e) => `${e.path}: ${e.message}`).join('; ')
+          : (result.error || 'Import failed');
+        messageApi.error(`Import failed: ${detail}`);
+      }
+    } catch (error) {
+      console.error('JSON import error:', error);
+      messageApi.error('An error occurred while importing the JSON file');
+    } finally {
+      setIsImportingJson(false);
+    }
+  };
 
   const handleImportForm3500 = async () => {
     try {
@@ -1576,6 +1616,17 @@ const App: React.FC = () => {
                 data-testid="import-ack-button"
               >
                 Import ACK
+              </Button>
+            </Tooltip>
+
+            <Tooltip title="Create a pre-filled Draft from a case JSON file">
+              <Button
+                icon={<ImportOutlined />}
+                onClick={handleImportCaseJson}
+                loading={isImportingJson}
+                data-testid="import-json-button"
+              >
+                Import JSON
               </Button>
             </Tooltip>
 

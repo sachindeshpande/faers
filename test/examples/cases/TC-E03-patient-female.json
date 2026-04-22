@@ -1,0 +1,46 @@
+{
+  "$schema": "faers-case-import-v1",
+  "exampleId": "TC-E03-patient-female",
+  "description": "Test catalog TC-E03: patient sex = Female. Expected low risk — sex is a factual field with no consistency rules.",
+  "baseline": "2L8T",
+  "case": {
+    "safetyReportId": "SR-CASE-EXAMPLE-TCE03",
+    "reportType": "Spontaneous",
+    "initialOrFollowup": "Initial",
+    "receiptDate": "2026-03-15",
+    "expeditedReport": true,
+    "localReportTypeCode": 1,
+    "caseNarrative": "Variant of 2L8T baseline. Patient sex changed from Male to Female for TC-E03."
+  },
+  "patient": {
+    "initials": "T.P.",
+    "sex": "Female",
+    "birthDate": "1970-05-15",
+    "ageValue": 55,
+    "ageUnit": "Year",
+    "weightKg": 70,
+    "race": "C41260",
+    "ethnicity": "C41222",
+    "medicalHistoryText": "None reported",
+    "hasConcomitantTherapy": true,
+    "death": false
+  },
+  "reporter": {
+    "qualification": "Physician",
+    "prefix": "Dr",
+    "givenName": "Jane",
+    "familyName": "Doe",
+    "organization": "City General Hospital",
+    "department": "Drug Safety",
+    "address": { "street": "100 Main St", "city": "Anytown", "state": "CA", "postalCode": "94085", "country": "US" },
+    "contact": { "phone": "+1-408-555-0100", "email": "jane.doe@example.com" }
+  },
+  "reactions": [
+    { "term": "Nausea", "meddraCode": "10028813", "outcomeCode": 1, "seriousness": { "otherMedicallyImportant": false } },
+    { "term": "Hepatic enzyme increased", "meddraCode": "10019675", "outcomeCode": 3, "seriousness": { "otherMedicallyImportant": false } }
+  ],
+  "drugs": [
+    { "role": "Suspect", "productName": "Testdrugimab", "indication": "Rheumatoid arthritis", "indicationMeddraCode": "10039073", "actionTakenCode": 1, "dechallengeCode": 3, "rechallengeCode": 3 },
+    { "role": "Concomitant", "productName": "Lisinopril", "indication": "Hypertension", "indicationMeddraCode": "10020772", "actionTakenCode": 4, "dechallengeCode": 4, "rechallengeCode": 4 }
+  ]
+}
