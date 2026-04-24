@@ -2061,6 +2061,56 @@ function runMigrations(database: DatabaseInstance): void {
     ).run('024_patient_demographics_and_local_report_type');
     console.log('Migration 024 applied successfully.');
   }
+
+  // Migration 025: SUSAR / IND Safety Report fields.
+  //
+  // Adds the E2B C.5.* and FDA.C.5.* fields that drive the <researchStudy>
+  // block (spec docs/requirements/SUSAR_IND_Feature_Spec.md §3/§4) onto the
+  // `cases` table, plus G.k.3.1 / G.k.10a.r drug-level columns. Flat-column
+  // layout mirrors how sender + patient race/ethnicity are already modelled
+  // on `cases`; `ind_cross_ref_numbers` is stored as a JSON-serialized array
+  // because SQLite can't efficiently represent a repeating scalar.
+  const migration025Exists = database.prepare(
+    'SELECT 1 FROM migrations WHERE name = ?'
+  ).get('025_ind_safety_report_fields');
+
+  if (!migration025Exists) {
+    console.log('Applying migration 025: Adding IND safety report fields...');
+
+    const caseColumns = database.prepare("PRAGMA table_info(cases)").all() as Array<{ name: string }>;
+    const caseColumnNames = caseColumns.map(c => c.name);
+
+    if (!caseColumnNames.includes('ind_number')) {
+      database.exec('ALTER TABLE cases ADD COLUMN ind_number TEXT');
+    }
+    if (!caseColumnNames.includes('ind_sponsor_study_number')) {
+      database.exec('ALTER TABLE cases ADD COLUMN ind_sponsor_study_number TEXT');
+    }
+    if (!caseColumnNames.includes('ind_study_name')) {
+      database.exec('ALTER TABLE cases ADD COLUMN ind_study_name TEXT');
+    }
+    if (!caseColumnNames.includes('ind_study_registration_number')) {
+      database.exec('ALTER TABLE cases ADD COLUMN ind_study_registration_number TEXT');
+    }
+    if (!caseColumnNames.includes('ind_cross_ref_numbers')) {
+      database.exec('ALTER TABLE cases ADD COLUMN ind_cross_ref_numbers TEXT');
+    }
+
+    const drugColumns = database.prepare("PRAGMA table_info(case_drugs)").all() as Array<{ name: string }>;
+    const drugColumnNames = drugColumns.map(c => c.name);
+
+    if (!drugColumnNames.includes('ind_authorization_number')) {
+      database.exec('ALTER TABLE case_drugs ADD COLUMN ind_authorization_number TEXT');
+    }
+    if (!drugColumnNames.includes('fda_additional_drug_info')) {
+      database.exec('ALTER TABLE case_drugs ADD COLUMN fda_additional_drug_info TEXT');
+    }
+
+    database.prepare(
+      'INSERT INTO migrations (name) VALUES (?)'
+    ).run('025_ind_safety_report_fields');
+    console.log('Migration 025 applied successfully.');
+  }
 }
 
 /**

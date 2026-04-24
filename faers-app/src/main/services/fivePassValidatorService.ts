@@ -622,6 +622,15 @@ export interface FivePassOptions {
   v37Path?: string | null;
   /** Inline v37 XML — bypasses filesystem lookup entirely. */
   v37Xml?: string;
+  /**
+   * Case type. When `'ind'`, passes that compare against the v37 postmarket
+   * golden XML (1, 4, 5) are skipped with a reason rather than run — v37
+   * is Scenario-7-shaped and does not model the SUSAR `<researchStudy>`
+   * block or IND routing. Pass 2/3 still run. A dedicated IND golden
+   * XML + empirical policy table land once the first ZZFDA_PREMKT ACK3
+   * confirms an accepted baseline.
+   */
+  caseType?: 'postmarket' | 'ind' | 'babe';
 }
 
 export function runFivePassValidation(xml: string, opts: FivePassOptions = {}): FivePassResult {
@@ -663,10 +672,28 @@ export function runFivePassValidation(xml: string, opts: FivePassOptions = {}): 
     }
   }
 
-  const p1 = runPass1(candidate, golden);
+  // IND cases can't be compared against the v37 Scenario-7 golden — the
+  // researchStudy block + different C.1.3 value legitimately change the
+  // element tree. Until we have a confirmed-accepted IND baseline in
+  // test/golden/, passes 1/4/5 are skipped with an explicit reason.
+  const indSkip = opts.caseType === 'ind'
+    ? 'IND case — no IND golden reference yet (postmarket v37 diff would be noise)'
+    : null;
+  const p1 = indSkip
+    ? { summary: { ran: false, skipReason: indSkip, errors: 0, warnings: 0 }, findings: [] as ValidatorFinding[] }
+    : runPass1(candidate, golden);
   const p2 = runPass2(candidate);
   const p3 = runPass3(candidate);
-  const { p4, p5 } = runPass4and5(candidate, golden);
+  const { p4, p5 } = indSkip
+    ? {
+        p4: { summary: { ran: false, skipReason: indSkip, errors: 0, warnings: 0 }, findings: [] as ValidatorFinding[] },
+        p5: {
+          summary: { ran: false, skipReason: indSkip, errors: 0, warnings: 0 },
+          findings: [] as ValidatorFinding[],
+          safety: { proven_safe: 0, proven_rejected: 0, untested: 0 }
+        }
+      }
+    : runPass4and5(candidate, golden);
 
   const findings = [...p1.findings, ...p2.findings, ...p3.findings, ...p4.findings, ...p5.findings];
   const totalErrors = findings.filter((f) => f.severity === 'error').length;

@@ -1,0 +1,96 @@
+{
+  "$schema": "faers-case-import-v1",
+  "exampleId": "IND-T01-susar-baseline",
+  "description": "Baseline SUSAR / IND safety report (spec §7, Phase 1 IND-T01). Drives ZZFDATST_PREMKT routing, CDER_IND message receiver, C.1.3=2 (Report from study), C.5.4=1 (Clinical trials), FDA.C.5.5a IND number 123456, and a single suspect IND drug with G.k.3.1=IND123456. All IND values start UNTESTED — promote to proven_safe in IND_POLICY only after CA+AA from ZZFDATST_PREMKT.",
+  "baseline": "Scenario 3 (FAERS2022Scenario3.xml)",
+  "case": {
+    "safetyReportId": "SR-CASE-EXAMPLE-INDT01",
+    "worldwideCaseId": "SR-CASE-EXAMPLE-INDT01",
+    "reportType": "Study",
+    "initialOrFollowup": "Initial",
+    "receiptDate": "2026-03-15",
+    "receiveDate": "2026-03-15",
+    "expeditedReport": true,
+    "localReportTypeCode": 1,
+    "caseType": "ind",
+    "indReportType": "15_day",
+    "studyId": 1,
+    "subjectNumber": "S001",
+    "dateInformed": "2026-03-10",
+    "caseNarrative": "Serious unexpected adverse reaction (hepatic enzyme elevation) observed in subject T.P. during the Phase II study of Testdrugimab under IND 123456. Event met SUSAR criteria per 21 CFR 312.32. Expedited 15-day report submitted."
+  },
+  "indStudy": {
+    "indNumber": "123456",
+    "sponsorStudyNumber": "CT-00-01",
+    "studyName": "Phase II Study of Testdrugimab in Rheumatoid Arthritis",
+    "studyRegistrationNumber": "NCT00000001",
+    "crossReferencedIndNumbers": []
+  },
+  "patient": {
+    "initials": "T.P.",
+    "sex": "Male",
+    "birthDate": "1970-05-15",
+    "ageValue": 55,
+    "ageUnit": "Year",
+    "weightKg": 82,
+    "race": "C41260",
+    "ethnicity": "C41222",
+    "medicalHistoryText": "None reported",
+    "hasConcomitantTherapy": true,
+    "death": false
+  },
+  "sender": {
+    "senderType": "PharmaceuticalCompany",
+    "organization": "DeepQuence",
+    "department": "Drug Safety",
+    "givenName": "Sachin",
+    "familyName": "Deshpande",
+    "address": { "street": "123 Test St", "city": "Sunnyvale", "state": "CA", "postalCode": "94085", "country": "US" },
+    "contact": { "phone": "+1-408-555-0100", "email": "sachin@deepquence.com" }
+  },
+  "reporter": {
+    "qualification": "Physician",
+    "prefix": "Dr",
+    "givenName": "Jane",
+    "familyName": "Doe",
+    "organization": "City General Hospital",
+    "department": "Drug Safety",
+    "address": { "street": "100 Main St", "city": "Anytown", "state": "CA", "postalCode": "94085", "country": "US" },
+    "contact": { "phone": "+1-408-555-0100", "email": "jane.doe@example.com" }
+  },
+  "reactions": [
+    {
+      "term": "Hepatic enzyme increased",
+      "meddraCode": "10019675",
+      "startDate": "2026-03-05",
+      "outcomeCode": 3,
+      "seriousness": {
+        "death": false,
+        "lifeThreatening": false,
+        "hospitalization": true,
+        "disability": false,
+        "congenitalAnomaly": false,
+        "otherMedicallyImportant": false
+      }
+    }
+  ],
+  "drugs": [
+    {
+      "role": "Suspect",
+      "productName": "Testdrugimab",
+      "dose": "50mg",
+      "doseValue": 50,
+      "doseUnit": "mg",
+      "route": "Subcutaneous",
+      "indication": "Rheumatoid arthritis",
+      "indicationMeddraCode": "10039073",
+      "startDate": "2026-01-15",
+      "endDate": "2026-03-10",
+      "actionTakenCode": 1,
+      "dechallengeCode": 3,
+      "rechallengeCode": 3,
+      "manufacturerName": "DeepQuence",
+      "indAuthorizationNumber": "IND123456"
+    }
+  ]
+}

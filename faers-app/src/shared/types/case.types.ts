@@ -342,6 +342,13 @@ export interface CaseDrug {
   atcCode?: string;
   atcName?: string;
   verbatimName?: string; // Original name as reported
+
+  // SUSAR / IND Safety Report — per-drug IND fields (spec §3.2).
+  // `indAuthorizationNumber` drives the G.k.3.1 <approval> block when set.
+  // `fdaAdditionalDrugInfo` drives the G.k.10a.r <outboundRelationship2>
+  // observation; required only for IND-Exempt BA/BE submissions.
+  indAuthorizationNumber?: string;
+  fdaAdditionalDrugInfo?: FdaAdditionalDrugInfo;
 }
 
 // Drug-Reaction Matrix (B.4.k.16)
@@ -390,6 +397,28 @@ export type CaseType = 'postmarket' | 'ind' | 'babe';
 
 // Phase 6: IND Report Type
 export type INDReportType = '7_day' | '15_day' | 'followup_7day' | 'followup_15day' | 'annual_only';
+
+/**
+ * IND study block (E2B C.5.*, FDA.C.5.*) — populated for cases where
+ * `caseType === 'ind'`. Drives the <researchStudy> emission under
+ * primaryRole/subjectOf1 per SUSAR / IND Safety Report spec §4.4.
+ * `indNumber` (FDA.C.5.5a) is the only required field; all others are
+ * optional and suppressed from the XML when absent.
+ */
+export interface IndStudyInfo {
+  indNumber: string;
+  sponsorStudyNumber?: string;
+  studyName?: string;
+  studyRegistrationNumber?: string;
+  crossReferencedIndNumbers?: string[];
+}
+
+/**
+ * Drug role within a BA/BE study, per E2B G.k.10a.r. Populated only for
+ * IND-Exempt BA/BE submissions; `NA` is the nullFlavor sentinel the spec
+ * mandates for non-test/reference drugs in such studies.
+ */
+export type FdaAdditionalDrugInfo = 'TEST' | 'REFERENCE' | 'NA';
 
 // Main Case structure
 export interface Case {
@@ -527,6 +556,11 @@ export interface Case {
   expectednessIbSection?: string;
   expectednessJustification?: string;
   indReportType?: INDReportType;
+
+  // SUSAR / IND Safety Report — researchStudy block. Present when
+  // caseType === 'ind'. Required at XML generation time if caseType is
+  // 'ind'; the validator enforces `indStudy.indNumber` per spec §3.1.
+  indStudy?: IndStudyInfo;
 
   // Related data (loaded separately)
   reporters?: CaseReporter[];

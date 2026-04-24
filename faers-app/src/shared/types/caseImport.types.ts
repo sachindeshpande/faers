@@ -56,7 +56,44 @@ export const CaseImportCaseSchema = z
     caseNarrative: z.string().optional(),
     reporterComments: z.string().optional(),
     senderComments: z.string().optional(),
-    senderDiagnosis: z.string().optional()
+    senderDiagnosis: z.string().optional(),
+    /**
+     * SUSAR / IND mode switch. When `"ind"`, the importer populates
+     * indStudy + emits the researchStudy block, switches C.1.3 to `2`
+     * (Report from study), and the CLI routes via `ZZFDATST_PREMKT` +
+     * `CDER_IND`. `"postmarket"` / absent → current postmarket flow.
+     * `"babe"` reserved for the BA/BE follow-up.
+     */
+    caseType: z.enum(['postmarket', 'ind', 'babe']).optional(),
+    /**
+     * Phase-6 IND workflow fields enforced by ValidationService when
+     * `caseType === 'ind'`. Required for the Draft → Ready transition
+     * used by the headless CLI and the GUI export path. `indReportType`
+     * drives the 7- / 15-day expedited timeline.
+     */
+    indReportType: z.enum(['7_day', '15_day', 'followup_7day', 'followup_15day', 'annual_only']).optional(),
+    studyId: z.number().int().optional(),
+    subjectNumber: z.string().optional(),
+    dateInformed: isoDate.optional()
+  })
+  .strict();
+
+// ────────────────────────────────────────────────────────────────────────────
+//  IND study (SUSAR / IND Safety Report §3.1)
+// ────────────────────────────────────────────────────────────────────────────
+
+export const CaseImportIndStudySchema = z
+  .object({
+    /** FDA.C.5.5a — required when caseType === 'ind'. */
+    indNumber: z.string().min(1, 'indStudy.indNumber is required for IND cases'),
+    /** C.5.3 */
+    sponsorStudyNumber: z.string().optional(),
+    /** C.5.2 */
+    studyName: z.string().optional(),
+    /** C.5.1.r.1 — e.g. NCT number. */
+    studyRegistrationNumber: z.string().optional(),
+    /** FDA.C.5.6.r — repeating. */
+    crossReferencedIndNumbers: z.array(z.string().min(1)).optional()
   })
   .strict();
 
@@ -203,7 +240,18 @@ export const CaseImportDrugSchema = z
     expirationDate: isoDate.optional(),
     manufacturerName: z.string().optional(),
     ndcNumber: z.string().optional(),
-    additionalInfo: z.string().optional()
+    additionalInfo: z.string().optional(),
+    /**
+     * G.k.3.1 — IND number for this drug. Drives a drug-level `approval`
+     * block. Typically only set on the suspect IND drug.
+     */
+    indAuthorizationNumber: z.string().optional(),
+    /**
+     * G.k.10a.r — drug role in a BA/BE study. `TEST` or `REFERENCE` for
+     * the comparator pair; `NA` for all other drugs. Required only for
+     * IND-Exempt BA/BE submissions.
+     */
+    fdaAdditionalDrugInfo: z.enum(['TEST', 'REFERENCE', 'NA']).optional()
   })
   .strict();
 
@@ -231,6 +279,11 @@ export const CaseImportDocumentSchema = z
     patient: CaseImportPatientSchema.optional(),
     sender: CaseImportSenderSchema.optional(),
     reporter: CaseImportReporterSchema.optional(),
+    /**
+     * SUSAR / IND Safety Report block. Present when `case.caseType === 'ind'`;
+     * `indStudy.indNumber` is the only required field.
+     */
+    indStudy: CaseImportIndStudySchema.optional(),
     reactions: z.array(CaseImportReactionSchema).optional(),
     drugs: z.array(CaseImportDrugSchema).optional()
   })
@@ -248,6 +301,7 @@ export type CaseImportReporter = z.infer<typeof CaseImportReporterSchema>;
 export type CaseImportReaction = z.infer<typeof CaseImportReactionSchema>;
 export type CaseImportDrug = z.infer<typeof CaseImportDrugSchema>;
 export type CaseImportSeriousness = z.infer<typeof CaseImportSeriousnessSchema>;
+export type CaseImportIndStudy = z.infer<typeof CaseImportIndStudySchema>;
 
 // ────────────────────────────────────────────────────────────────────────────
 //  Service result shape (shared with renderer so preload can type it)

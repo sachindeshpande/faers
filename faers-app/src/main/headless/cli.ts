@@ -310,35 +310,53 @@ async function processOneFile(args: ProcessArgs): Promise<HeadlessFileResult> {
     anyGateFailed = true;
   }
 
+  // Look up the persisted case once so the downstream gates can branch
+  // on caseType. Separate from the earlier persistedCase lookup used for
+  // 5-pass because that one ran AFTER the gates; moving it up here keeps
+  // both the lint skip and the 5-pass switch in one place.
+  const persistedCaseForGates = args.caseRepo.findById(importRes.caseId);
+  const isIndCase = persistedCaseForGates?.caseType === 'ind';
+
   // ── Stage 6: 55-check lint ────────────────────────────────────────────
-  try {
-    const lint = lintE2bXml(xmlRes.xml);
-    result.lint = lint;
-    if (lint.ran) {
-      const summary = `${lint.pass} PASS / ${lint.warn} WARN / ${lint.fail} FAIL`;
-      if (lint.fail > 0) {
-        const detail = lint.failures.map((f) => f.label).slice(0, 5).join('; ');
-        stages.push({ stage: 'lint', ok: false, detail });
-        log(`  [lint] FAIL ${summary} — ${detail}`);
-        anyGateFailed = true;
+  // Skip for IND — the 55-check Python lint hard-codes the postmarket v37
+  // receiver set (ZZFDATST / CDER) and would always fail for a Premarket
+  // IND XML (ZZFDATST_PREMKT / CDER_IND). A future IND-specific lint
+  // catalogue can replace this skip.
+  if (isIndCase) {
+    stages.push({ stage: 'lint', ok: true, detail: 'skipped: IND case (postmarket lint N/A)' });
+    log('  [lint] skipped — IND case (postmarket 55-check N/A)');
+  } else {
+    try {
+      const lint = lintE2bXml(xmlRes.xml);
+      result.lint = lint;
+      if (lint.ran) {
+        const summary = `${lint.pass} PASS / ${lint.warn} WARN / ${lint.fail} FAIL`;
+        if (lint.fail > 0) {
+          const detail = lint.failures.map((f) => f.label).slice(0, 5).join('; ');
+          stages.push({ stage: 'lint', ok: false, detail });
+          log(`  [lint] FAIL ${summary} — ${detail}`);
+          anyGateFailed = true;
+        } else {
+          stages.push({ stage: 'lint', ok: true, detail: summary });
+          log(`  [lint] OK ${summary}`);
+        }
       } else {
-        stages.push({ stage: 'lint', ok: true, detail: summary });
-        log(`  [lint] OK ${summary}`);
+        stages.push({ stage: 'lint', ok: true, detail: `skipped: ${lint.skipReason}` });
+        log(`  [lint] skipped — ${lint.skipReason}`);
       }
-    } else {
-      stages.push({ stage: 'lint', ok: true, detail: `skipped: ${lint.skipReason}` });
-      log(`  [lint] skipped — ${lint.skipReason}`);
+    } catch (e) {
+      const detail = `gate crashed: ${(e as Error).message}`;
+      stages.push({ stage: 'lint', ok: false, detail });
+      log(`  [lint] ERR — ${detail}`);
+      anyGateFailed = true;
     }
-  } catch (e) {
-    const detail = `gate crashed: ${(e as Error).message}`;
-    stages.push({ stage: 'lint', ok: false, detail });
-    log(`  [lint] ERR — ${detail}`);
-    anyGateFailed = true;
   }
 
   // ── Stage 7: 5-pass empirical validator ───────────────────────────────
   try {
-    const fivePass = runFivePassValidation(xmlRes.xml);
+    const fivePass = runFivePassValidation(xmlRes.xml, {
+      caseType: persistedCaseForGates?.caseType
+    });
     result.fivePass = fivePass;
     if (fivePass.ran) {
       const errs = fivePass.findings.filter((f) => f.severity === 'error').length;

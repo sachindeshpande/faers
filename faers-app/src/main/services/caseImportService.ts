@@ -218,6 +218,27 @@ function buildUpdateDto(doc: CaseImportDocument, warnings: string[]): UpdateCase
       const code = mapLocalReportType(doc.case.localReportTypeCode, warnings);
       if (code !== undefined) update.localReportTypeCode = code;
     }
+    // SUSAR / IND mode switch — drives researchStudy emission, routing,
+    // and report-type code switch. Default stays 'postmarket'.
+    if (doc.case.caseType) update.caseType = doc.case.caseType;
+    // Phase-6 IND workflow fields the existing validator requires when
+    // caseType === 'ind'. Optional for postmarket cases.
+    if (doc.case.indReportType) update.indReportType = doc.case.indReportType;
+    if (doc.case.studyId !== undefined) update.studyId = doc.case.studyId;
+    if (doc.case.subjectNumber) update.subjectNumber = doc.case.subjectNumber;
+    if (doc.case.dateInformed) update.dateInformed = doc.case.dateInformed;
+  }
+
+  // SUSAR / IND Safety Report block (spec §3.1). Only populated when the
+  // caller supplies it; absent for postmarket cases.
+  if (doc.indStudy) {
+    update.indStudy = {
+      indNumber: doc.indStudy.indNumber,
+      sponsorStudyNumber: doc.indStudy.sponsorStudyNumber,
+      studyName: doc.indStudy.studyName,
+      studyRegistrationNumber: doc.indStudy.studyRegistrationNumber,
+      crossReferencedIndNumbers: doc.indStudy.crossReferencedIndNumbers
+    };
   }
 
   // Sender (E2B A.3) — required for validation; stored as flat columns on
@@ -361,7 +382,10 @@ function mapDrug(
     ndcNumber: d.ndcNumber,
     manufacturerName: d.manufacturerName,
     lotNumber: d.lotNumber,
-    expirationDate: d.expirationDate
+    expirationDate: d.expirationDate,
+    // SUSAR / IND — per-drug fields (spec §3.2).
+    indAuthorizationNumber: d.indAuthorizationNumber,
+    fdaAdditionalDrugInfo: d.fdaAdditionalDrugInfo
   };
 }
 

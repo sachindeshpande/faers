@@ -179,6 +179,30 @@ export class CaseRepository {
     const updates: string[] = ['updated_at = ?'];
     const values: (string | number | null)[] = [now];
 
+    // Flatten nested IND study block into the columns the mapping below
+    // expects. Doing this in the caller-facing layer avoids spreading
+    // serialization knowledge across every write site.
+    const patch: Record<string, unknown> = { ...(data as Record<string, unknown>) };
+    if ('indStudy' in patch) {
+      const s = patch.indStudy as Case['indStudy'];
+      delete patch.indStudy;
+      if (s === null || s === undefined) {
+        patch.indNumber = null;
+        patch.indSponsorStudyNumber = null;
+        patch.indStudyName = null;
+        patch.indStudyRegistrationNumber = null;
+        patch.indCrossRefNumbers = null;
+      } else {
+        patch.indNumber = s.indNumber;
+        patch.indSponsorStudyNumber = s.sponsorStudyNumber ?? null;
+        patch.indStudyName = s.studyName ?? null;
+        patch.indStudyRegistrationNumber = s.studyRegistrationNumber ?? null;
+        patch.indCrossRefNumbers = s.crossReferencedIndNumbers && s.crossReferencedIndNumbers.length > 0
+          ? JSON.stringify(s.crossReferencedIndNumbers)
+          : null;
+      }
+    }
+
     // Build dynamic update query based on provided fields
     const fieldMappings: Record<string, string> = {
       status: 'status',
@@ -246,13 +270,30 @@ export class CaseRepository {
       esgSubmissionId: 'esg_submission_id',
       esgCoreId: 'esg_core_id',
       apiAttemptCount: 'api_attempt_count',
-      apiLastError: 'api_last_error'
+      apiLastError: 'api_last_error',
+      // Phase 6 case-type switch. Not previously wired through the repo
+      // write path; needed now so the 5-pass validator can tell whether
+      // to diff the generated XML against the v37 postmarket golden.
+      caseType: 'case_type',
+      // Phase 6 IND-workflow fields enforced by ValidationService.
+      indReportType: 'ind_report_type',
+      studyId: 'study_id',
+      subjectNumber: 'subject_number',
+      dateInformed: 'date_informed',
+      // SUSAR / IND Safety Report (columns filled by the indStudy flatten
+      // step above; never set by callers directly but the mapping has to
+      // exist for the loop to forward them).
+      indNumber: 'ind_number',
+      indSponsorStudyNumber: 'ind_sponsor_study_number',
+      indStudyName: 'ind_study_name',
+      indStudyRegistrationNumber: 'ind_study_registration_number',
+      indCrossRefNumbers: 'ind_cross_ref_numbers'
     };
 
     for (const [key, column] of Object.entries(fieldMappings)) {
-      if (key in data) {
+      if (key in patch) {
         updates.push(`${column} = ?`);
-        const value = (data as Record<string, unknown>)[key];
+        const value = patch[key];
         // better-sqlite3 cannot bind booleans directly — coerce to 0/1.
         const coerced =
           value === undefined ? null :
@@ -537,7 +578,46 @@ export class CaseRepository {
       esgSubmissionId: row.esg_submission_id as string | undefined,
       esgCoreId: row.esg_core_id as string | undefined,
       apiAttemptCount: row.api_attempt_count as number | undefined,
-      apiLastError: row.api_last_error as string | undefined
+      apiLastError: row.api_last_error as string | undefined,
+
+      // Phase 6 case-type (postmarket / ind / babe). Default behaviour when
+      // the column is null is still postmarket.
+      caseType: (row.case_type ?? undefined) as Case['caseType'],
+      indReportType: (row.ind_report_type ?? undefined) as Case['indReportType'],
+      studyId: (row.study_id ?? undefined) as number | undefined,
+      subjectNumber: (row.subject_number ?? undefined) as string | undefined,
+      dateInformed: (row.date_informed ?? undefined) as string | undefined,
+
+      // SUSAR / IND Safety Report — hydrate into the nested IndStudyInfo
+      // shape only when at least the required IND number is present.
+      indStudy: row.ind_number
+        ? {
+            indNumber: row.ind_number as string,
+            sponsorStudyNumber: (row.ind_sponsor_study_number ?? undefined) as string | undefined,
+            studyName: (row.ind_study_name ?? undefined) as string | undefined,
+            studyRegistrationNumber: (row.ind_study_registration_number ?? undefined) as string | undefined,
+            crossReferencedIndNumbers: parseJsonArray(row.ind_cross_ref_numbers)
+          }
+        : undefined
     };
   }
+}
+
+/**
+ * Repository-internal helper: decode a JSON array stored as TEXT. Returns
+ * undefined for null / empty / malformed values so callers treat "missing"
+ * and "broken" the same way.
+ */
+function parseJsonArray(raw: unknown): string[] | undefined {
+  if (raw == null || raw === '') return undefined;
+  if (typeof raw !== 'string') return undefined;
+  try {
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed) && parsed.every((v) => typeof v === 'string')) {
+      return parsed.length > 0 ? parsed : undefined;
+    }
+  } catch {
+    // fall through
+  }
+  return undefined;
 }
