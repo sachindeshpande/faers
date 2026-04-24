@@ -663,12 +663,17 @@ export const SENDER_OID_DEFAULT = '2.16.840.1.113883.3.989.2.1.3.13';
 // OID for DUNS number (Dun & Bradstreet Data Universal Numbering System)
 export const SENDER_OID_DUNS = '1.3.6.1.4.1.519.1';
 
-// Batch receiver identifiers for FDA ESG
-// Test and Production use different receiver identifiers
+// Batch receiver identifiers for FDA ESG. Test and Production use the same
+// premarket value; the test/production split happens at the network endpoint
+// level, not in the receiver ID. Confirmed by the IND SUSAR gap analysis
+// (test/test_submission/IND-SUSAR-XML-Gap-Analysis.docx, Apr 2026): the
+// `ZZFDATST_PREMKT` identifier we briefly used in this codebase is not
+// recognised by any FDA gateway. Postmarket follows the standard `_TST`
+// suffix convention because that path has a real test variant.
 export const BATCH_RECEIVERS: Record<SubmissionEnvironment, Record<SubmissionReportType, string>> = {
   Test: {
     Postmarket: 'ZZFDATST',
-    Premarket: 'ZZFDATST_PREMKT'
+    Premarket: 'ZZFDA_PREMKT'
   },
   Production: {
     Postmarket: 'ZZFDA',

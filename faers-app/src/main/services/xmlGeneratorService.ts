@@ -26,6 +26,7 @@ import type {
 import {
   BATCH_RECEIVERS,
   MESSAGE_RECEIVERS,
+  ReportCategory,
   SENDER_OID_DEFAULT,
   SENDER_OID_DUNS
 } from '../../shared/types/case.types';
@@ -402,8 +403,25 @@ export class XMLGeneratorService {
     lines.push(`          <id root="2.16.840.1.113883.3.989.2.1.3.1" extension="${this.escapeXml(worldwideId)}"/>`);
     // C.1.2 Case ID (OID .3.2)
     lines.push(`          <id root="2.16.840.1.113883.3.989.2.1.3.2" extension="${this.escapeXml(caseData.id)}"/>`);
-    // C.1.9 Case version (OID .3.4)
-    lines.push(`          <id root="2.16.840.1.113883.3.989.2.1.3.4" extension="${caseData.version}"/>`);
+    // C.1.9 Case version (OID .3.4). The E2B(R3) semantic is:
+    //   2  = initial report (first-ever transmission of this case)
+    //   3+ = follow-up / amendment, incremented per submission
+    // It is NOT the DB record version. Earlier code used `caseData.version`
+    // which is the SQLite row-version counter — that produced extension="3"
+    // on freshly imported initial reports because the import flow does
+    // create + update + status-transition (≥3 row writes) before generation.
+    // Confirmed wrong by the IND SUSAR gap analysis (Apr 2026, Issue 2).
+    //
+    // Source-of-truth precedence: explicit `caseVersion` (set by follow-up
+    // wizard / IND-T07 examples), else derive from `initialOrFollowup` —
+    // FollowUp → "3", Initial / unset → "2". Never use the DB row version.
+    const reportVersion =
+      caseData.caseVersion != null
+        ? caseData.caseVersion
+        : caseData.initialOrFollowup === ReportCategory.FollowUp
+          ? 3
+          : 2;
+    lines.push(`          <id root="2.16.840.1.113883.3.989.2.1.3.4" extension="${reportVersion}"/>`);
 
     lines.push('          <code code="PAT_ADV_EVNT" codeSystem="2.16.840.1.113883.5.4"/>');
     lines.push('          <text>Case Narrative Including Clinical Course, Therapeutic Measures, Outcome and Additional Relevant Information</text>');

@@ -60,7 +60,7 @@ export const CaseImportCaseSchema = z
     /**
      * SUSAR / IND mode switch. When `"ind"`, the importer populates
      * indStudy + emits the researchStudy block, switches C.1.3 to `2`
-     * (Report from study), and the CLI routes via `ZZFDATST_PREMKT` +
+     * (Report from study), and the CLI routes via `ZZFDA_PREMKT` +
      * `CDER_IND`. `"postmarket"` / absent → current postmarket flow.
      * `"babe"` reserved for the BA/BE follow-up.
      */
