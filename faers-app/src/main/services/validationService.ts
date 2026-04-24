@@ -63,7 +63,7 @@ export class ValidationService {
     this.validateSenderInformation(caseData, errors);
     this.validatePatientInformation(caseData, errors);
     this.validateReactions(reactions, caseData, errors);
-    this.validateDrugs(drugs, errors);
+    this.validateDrugs(drugs, caseData, errors);
     this.validateNarrative(caseData, errors);
     this.validateCrossFieldRules(caseData, reactions, errors);
     this.validatePremarketFields(caseData, errors);
@@ -475,7 +475,7 @@ export class ValidationService {
   /**
    * Validate Drugs (B.4)
    */
-  private validateDrugs(drugs: CaseDrug[], errors: ValidationError[]): void {
+  private validateDrugs(drugs: CaseDrug[], caseData: Case, errors: ValidationError[]): void {
     // At least one drug is required
     if (drugs.length === 0) {
       errors.push({
@@ -494,6 +494,40 @@ export class ValidationService {
         message: 'At least one Suspect drug is required (characterization = Suspect)',
         severity: 'error'
       });
+    }
+
+    // ── BA/BE G.k.10a.r enforcement (SUSAR spec §4.6) ──────────────────
+    // For IND-Exempt BA/BE submissions every drug must carry a role and
+    // the study must contain exactly one TEST + one REFERENCE. Remaining
+    // drugs (if any) must be marked NA so the G.k.10a.r slot is never
+    // absent. Spec §4.6: non-BA/BE IND cases are exempt from this rule,
+    // so gate on caseType === 'babe' rather than 'ind'.
+    if (caseData.caseType === 'babe') {
+      drugs.forEach((d, index) => {
+        if (!d.fdaAdditionalDrugInfo) {
+          errors.push({
+            field: `drugs[${index}].fdaAdditionalDrugInfo`,
+            message: `Drug ${index + 1}: fdaAdditionalDrugInfo is required for BA/BE cases (G.k.10a.r) — one of "TEST", "REFERENCE", or "NA"`,
+            severity: 'error'
+          });
+        }
+      });
+      const testCount = drugs.filter((d) => d.fdaAdditionalDrugInfo === 'TEST').length;
+      const refCount = drugs.filter((d) => d.fdaAdditionalDrugInfo === 'REFERENCE').length;
+      if (testCount !== 1) {
+        errors.push({
+          field: 'drugs',
+          message: `BA/BE case must contain exactly one TEST drug (G.k.10a.r=1); found ${testCount}`,
+          severity: 'error'
+        });
+      }
+      if (refCount !== 1) {
+        errors.push({
+          field: 'drugs',
+          message: `BA/BE case must contain exactly one REFERENCE drug (G.k.10a.r=2); found ${refCount}`,
+          severity: 'error'
+        });
+      }
     }
 
     drugs.forEach((drug, index) => {

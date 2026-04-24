@@ -1665,7 +1665,12 @@ export interface ElectronAPI {
   esgStartPolling: () => Promise<IPCResponse<void>>;
   esgStopPolling: () => Promise<IPCResponse<void>>;
   esgGetPollingStatus: () => Promise<IPCResponse<PollingStatus>>;
-  esgParseAck: (payload: { xml?: string; filePath?: string }) => Promise<IPCResponse<ParsedAck>>;
+  esgParseAck: (payload: {
+    xml?: string;
+    filePath?: string;
+    reportContext?: 'postmarket' | 'ind' | 'babe';
+    caseId?: string;
+  }) => Promise<IPCResponse<ParsedAck>>;
   esgFivePassValidate: (caseId: string) => Promise<IPCResponse<FivePassResult>>;
   onEsgSubmissionProgress: (callback: (progress: ApiSubmissionProgress) => void) => () => void;
 

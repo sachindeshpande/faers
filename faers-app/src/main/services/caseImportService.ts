@@ -218,6 +218,51 @@ function buildUpdateDto(doc: CaseImportDocument, warnings: string[]): UpdateCase
       const code = mapLocalReportType(doc.case.localReportTypeCode, warnings);
       if (code !== undefined) update.localReportTypeCode = code;
     }
+    // SUSAR / IND mode switch — drives researchStudy emission, routing,
+    // and report-type code switch. Default stays 'postmarket'.
+    if (doc.case.caseType) update.caseType = doc.case.caseType;
+    // Phase-6 IND workflow fields the existing validator requires when
+    // caseType === 'ind'. Optional for postmarket cases.
+    if (doc.case.indReportType) update.indReportType = doc.case.indReportType;
+    if (doc.case.studyId !== undefined) update.studyId = doc.case.studyId;
+    if (doc.case.subjectNumber) update.subjectNumber = doc.case.subjectNumber;
+    if (doc.case.dateInformed) update.dateInformed = doc.case.dateInformed;
+
+    // 7-day vs 15-day timeline derivation (21 CFR 312.32). When the case
+    // is IND and the caller didn't supply indReportType, derive from the
+    // reaction seriousness: any fatal/life-threatening → 7-day, otherwise
+    // 15-day. When the caller DID supply a value that disagrees with the
+    // regulation, keep their value but surface a warning — they may know
+    // something about the regulatory context we don't.
+    if (doc.case.caseType === 'ind') {
+      const inferred = inferIndReportType(doc.reactions);
+      if (!doc.case.indReportType && inferred) {
+        update.indReportType = inferred;
+        warnings.push(`indReportType auto-derived as "${inferred}" from reaction seriousness (21 CFR 312.32)`);
+      } else if (
+        doc.case.indReportType &&
+        inferred &&
+        doc.case.indReportType !== inferred &&
+        (doc.case.indReportType === '7_day' || doc.case.indReportType === '15_day') &&
+        (inferred === '7_day' || inferred === '15_day')
+      ) {
+        warnings.push(
+          `indReportType="${doc.case.indReportType}" but reaction seriousness implies "${inferred}" (21 CFR 312.32). Keeping caller-supplied value.`
+        );
+      }
+    }
+  }
+
+  // SUSAR / IND Safety Report block (spec §3.1). Only populated when the
+  // caller supplies it; absent for postmarket cases.
+  if (doc.indStudy) {
+    update.indStudy = {
+      indNumber: doc.indStudy.indNumber,
+      sponsorStudyNumber: doc.indStudy.sponsorStudyNumber,
+      studyName: doc.indStudy.studyName,
+      studyRegistrationNumber: doc.indStudy.studyRegistrationNumber,
+      crossReferencedIndNumbers: doc.indStudy.crossReferencedIndNumbers
+    };
   }
 
   // Sender (E2B A.3) — required for validation; stored as flat columns on
@@ -361,7 +406,10 @@ function mapDrug(
     ndcNumber: d.ndcNumber,
     manufacturerName: d.manufacturerName,
     lotNumber: d.lotNumber,
-    expirationDate: d.expirationDate
+    expirationDate: d.expirationDate,
+    // SUSAR / IND — per-drug fields (spec §3.2).
+    indAuthorizationNumber: d.indAuthorizationNumber,
+    fdaAdditionalDrugInfo: d.fdaAdditionalDrugInfo
   };
 }
 
@@ -369,6 +417,22 @@ function mapDrug(
 //  Enum mappers — accept name-string OR numeric code.
 //  `name` key on each case is the field path we use for the warning.
 // ────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Derive indReportType from reaction seriousness per 21 CFR 312.32:
+ * fatal OR life-threatening → 7-day, otherwise 15-day. Returns
+ * undefined when there are no reactions at all — caller can't infer
+ * without a seriousness signal.
+ */
+function inferIndReportType(
+  reactions: CaseImportDocument['reactions']
+): '7_day' | '15_day' | undefined {
+  if (!reactions || reactions.length === 0) return undefined;
+  const isFastTrack = reactions.some(
+    (r) => r.seriousness?.death === true || r.seriousness?.lifeThreatening === true
+  );
+  return isFastTrack ? '7_day' : '15_day';
+}
 
 function mapSenderType(v: unknown, warnings: string[]): SenderType | undefined {
   if (v === undefined) return undefined;

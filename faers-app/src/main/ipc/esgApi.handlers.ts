@@ -28,7 +28,8 @@ import { EsgSubmissionService } from '../services/esgSubmissionService';
 import { EsgPollingService } from '../services/esgPollingService';
 import { EsgSubmissionRepository } from '../database/repositories/esgSubmission.repository';
 import { MockEsgApiService } from '../services/mockEsgApiService';
-import { parseFdaAck, type ParsedAck } from '../services/ackParserService';
+import { parseFdaAck, type ParsedAck, type AckReportContext } from '../services/ackParserService';
+import { CaseRepository } from '../database/repositories';
 import {
   runFivePassValidation,
   type FivePassResult
@@ -431,7 +432,21 @@ export function registerEsgApiHandlers(services: EsgServices): void {
     IPC_CHANNELS.ESG_ACK_PARSE,
     async (
       _,
-      { xml, filePath }: { xml?: string; filePath?: string }
+      {
+        xml,
+        filePath,
+        reportContext,
+        caseId
+      }: {
+        xml?: string;
+        filePath?: string;
+        /** Explicit report context (postmarket / ind / babe). */
+        reportContext?: AckReportContext;
+        /** Case the ACK belongs to — its caseType supplies the context
+         *  when `reportContext` isn't set. Lets the GUI's Import ACK
+         *  dialog stamp the right table without asking the user. */
+        caseId?: string;
+      }
     ): Promise<IPCResponse<ParsedAck>> => {
       try {
         let payload = xml;
@@ -441,7 +456,19 @@ export function registerEsgApiHandlers(services: EsgServices): void {
         if (!payload) {
           return { success: false, error: 'Provide either xml or filePath' };
         }
-        const parsed = parseFdaAck(payload);
+        // Resolve the report context: caller-supplied value wins, then
+        // derive from the case record if caseId is given, otherwise leave
+        // unset.
+        let ctx: AckReportContext | undefined = reportContext;
+        if (!ctx && caseId) {
+          const db = getDatabase();
+          const caseRepo = new CaseRepository(db);
+          const cs = caseRepo.findById(caseId);
+          if (cs?.caseType === 'ind' || cs?.caseType === 'babe' || cs?.caseType === 'postmarket') {
+            ctx = cs.caseType;
+          }
+        }
+        const parsed = parseFdaAck(payload, { reportContext: ctx });
         return { success: true, data: parsed };
       } catch (error) {
         console.error('Error parsing ACK:', error);

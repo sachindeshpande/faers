@@ -942,8 +942,12 @@ const electronAPI: ElectronAPI = {
   esgGetPollingStatus: () =>
     ipcRenderer.invoke(IPC_CHANNELS.ESG_API_POLLING_STATUS),
 
-  esgParseAck: (payload: { xml?: string; filePath?: string }) =>
-    ipcRenderer.invoke(IPC_CHANNELS.ESG_ACK_PARSE, payload),
+  esgParseAck: (payload: {
+    xml?: string;
+    filePath?: string;
+    reportContext?: 'postmarket' | 'ind' | 'babe';
+    caseId?: string;
+  }) => ipcRenderer.invoke(IPC_CHANNELS.ESG_ACK_PARSE, payload),
 
   esgFivePassValidate: (caseId: string) =>
     ipcRenderer.invoke(IPC_CHANNELS.ESG_FIVE_PASS_VALIDATE, { caseId }),

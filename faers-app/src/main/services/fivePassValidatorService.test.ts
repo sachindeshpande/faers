@@ -101,3 +101,88 @@ describe('runFivePassValidation', () => {
     expect(result.skipReason).toMatch(/empty/i);
   });
 });
+
+describe('Pass 3 — IND structural checks', () => {
+  // Minimal IND-shaped XML fragment sufficient to exercise the three
+  // structural checks. Intentionally terse — we feed snippets, not full
+  // MCCI envelopes, because runPass3 doesn't care about the outer wrapper.
+  // Passes 1/4/5 are skipped for IND so the v37 golden isn't relevant.
+  function indXml(opts: {
+    c13?: string | null;           // C.1.3 report type value code
+    c54?: string | null;           // C.5.4 study type code
+    fdaAddDrug?: Array<{ code?: string; nullFlavor?: string }>;
+  } = {}): string {
+    const c13 = opts.c13 === undefined ? '2' : opts.c13;
+    const c54 = opts.c54 === undefined ? '1' : opts.c54;
+    const c13Block = c13 === null
+      ? ''
+      : `<subjectOf2><investigationCharacteristic><code code="1" codeSystem="2.16.840.1.113883.3.989.2.1.1.23"/><value xsi:type="CE" code="${c13}" codeSystem="2.16.840.1.113883.3.989.2.1.1.2"/></investigationCharacteristic></subjectOf2>`;
+    const researchStudy = c54 === null
+      ? ''
+      : `<researchStudy classCode="CLNTRL" moodCode="EVN"><code code="${c54}" codeSystem="2.16.840.1.113883.3.989.2.1.1.8"/></researchStudy>`;
+    const fdaAddObservations = (opts.fdaAddDrug ?? [])
+      .map((d) => {
+        const valAttrs = d.nullFlavor
+          ? `nullFlavor="${d.nullFlavor}"`
+          : `code="${d.code ?? ''}"`;
+        return `<observation><code code="9" codeSystem="2.16.840.1.113883.3.989.2.1.1.19" displayName="FDAAddDrugInformation"/><value xsi:type="CE" ${valAttrs} codeSystem="2.16.840.1.113883.3.989.2.1.1.7"/></observation>`;
+      })
+      .join('');
+    return `<?xml version="1.0"?><root>${c13Block}${researchStudy}${fdaAddObservations}</root>`;
+  }
+
+  it('passes cleanly on a correctly-shaped IND XML', () => {
+    const r = runFivePassValidation(indXml(), { caseType: 'ind', v37Path: null });
+    const p3Errors = r.findings.filter((f) => f.pass === 3 && f.severity === 'error');
+    expect(p3Errors).toEqual([]);
+  });
+
+  it('flags C.1.3 = "1" in an IND case', () => {
+    const r = runFivePassValidation(indXml({ c13: '1' }), { caseType: 'ind', v37Path: null });
+    const errs = r.findings.filter((f) => f.pass === 3 && f.severity === 'error');
+    expect(errs.some((e) => e.label.includes('C.1.3 must be code="2"'))).toBe(true);
+  });
+
+  it('flags a missing researchStudy block', () => {
+    const r = runFivePassValidation(indXml({ c54: null }), { caseType: 'ind', v37Path: null });
+    const errs = r.findings.filter((f) => f.pass === 3 && f.severity === 'error');
+    expect(errs.some((e) => e.label.includes('missing <researchStudy>'))).toBe(true);
+  });
+
+  it('flags a researchStudy with wrong C.5.4 code', () => {
+    const r = runFivePassValidation(indXml({ c54: '2' }), { caseType: 'ind', v37Path: null });
+    const errs = r.findings.filter((f) => f.pass === 3 && f.severity === 'error');
+    expect(errs.some((e) => e.label.includes('C.5.4 must be code="1"'))).toBe(true);
+  });
+
+  it('flags an invalid G.k.10a.r code', () => {
+    const r = runFivePassValidation(
+      indXml({ fdaAddDrug: [{ code: '99' }] }),
+      { caseType: 'ind', v37Path: null }
+    );
+    const errs = r.findings.filter((f) => f.pass === 3 && f.severity === 'error');
+    expect(errs.some((e) => e.label.includes('G.k.10a.r'))).toBe(true);
+  });
+
+  it('accepts nullFlavor="NA" on G.k.10a.r', () => {
+    const r = runFivePassValidation(
+      indXml({ fdaAddDrug: [{ nullFlavor: 'NA' }] }),
+      { caseType: 'ind', v37Path: null }
+    );
+    const errs = r.findings.filter((f) => f.pass === 3 && f.severity === 'error');
+    expect(errs.filter((e) => e.label.includes('G.k.10a.r'))).toEqual([]);
+  });
+
+  it('does not run IND checks on postmarket cases', () => {
+    // Feed an IND-shaped XML but declare caseType='postmarket' — the
+    // IND structural checks should all be silent.
+    const r = runFivePassValidation(indXml({ c13: '1', c54: '2' }), {
+      caseType: 'postmarket',
+      v37Path: null
+    });
+    const indErrs = r.findings.filter(
+      (f) => f.pass === 3 && f.severity === 'error' && f.label.startsWith('IND:')
+    );
+    expect(indErrs).toEqual([]);
+  });
+});

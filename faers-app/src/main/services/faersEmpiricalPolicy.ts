@@ -106,3 +106,34 @@ export function classifyValue(field: FieldPolicy, value: string): PolicyVerdict 
 export function allPolicyFields(): FieldPolicy[] {
   return Object.values(FAERS_POLICY);
 }
+
+// ────────────────────────────────────────────────────────────────────────────
+//  IND / SUSAR empirical policy
+//
+//  Every IND field starts as `untested` — the app has never successfully
+//  round-tripped a ZZFDA_PREMKT submission, so there is no evidence yet that
+//  any specific value is accepted or rejected. Promote rows to
+//  `proven_safe` / `proven_rejected` as real ACK3s come back, following the
+//  same protocol we used for FAERS_POLICY (see §7 of FAERS_Test_Case_Catalog
+//  and §5.5 of SUSAR_IND_Feature_Spec). Fields here are informational for
+//  UI reporting; the 5-pass validator skips IND comparisons entirely until
+//  a dedicated IND golden XML exists.
+// ────────────────────────────────────────────────────────────────────────────
+
+export interface IndPolicyEntry {
+  /** Value we expect to emit for this field, e.g. `'1'` or `'ZZFDA_PREMKT'`. */
+  value: string;
+  verdict: PolicyVerdict;
+  evidence?: string;
+}
+
+export const IND_POLICY: Record<string, IndPolicyEntry> = {
+  indNumber:     { value: '<required>',    verdict: 'untested' },
+  studyType:     { value: '1',             verdict: 'untested' },
+  typeOfReport:  { value: '2',             verdict: 'untested' },
+  drugRoleTest:  { value: '1',             verdict: 'untested' },
+  drugRoleRef:   { value: '2',             verdict: 'untested' },
+  drugRoleNa:    { value: 'nullFlavor=NA', verdict: 'untested' },
+  batchReceiver: { value: 'ZZFDA_PREMKT',  verdict: 'untested' },
+  msgReceiver:   { value: 'CDER_IND',      verdict: 'untested' }
+};

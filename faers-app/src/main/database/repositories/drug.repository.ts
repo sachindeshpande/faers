@@ -66,8 +66,9 @@ export class DrugRepository {
         time_to_onset, time_onset_unit, action_taken,
         dechallenge, rechallenge, additional_info,
         ndc_number, manufacturer_name, lot_number, expiration_date,
+        ind_authorization_number, fda_additional_drug_info,
         sort_order
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     const result = stmt.run(
@@ -97,6 +98,8 @@ export class DrugRepository {
       drug.manufacturerName ?? null,
       drug.lotNumber ?? null,
       drug.expirationDate ?? null,
+      drug.indAuthorizationNumber ?? null,
+      drug.fdaAdditionalDrugInfo ?? null,
       drug.sortOrder
     );
 
@@ -155,6 +158,8 @@ export class DrugRepository {
         manufacturer_name = ?,
         lot_number = ?,
         expiration_date = ?,
+        ind_authorization_number = ?,
+        fda_additional_drug_info = ?,
         sort_order = ?
       WHERE id = ?
     `);
@@ -185,6 +190,8 @@ export class DrugRepository {
       drug.manufacturerName ?? existing.manufacturerName ?? null,
       drug.lotNumber ?? existing.lotNumber ?? null,
       drug.expirationDate ?? existing.expirationDate ?? null,
+      drug.indAuthorizationNumber ?? existing.indAuthorizationNumber ?? null,
+      drug.fdaAdditionalDrugInfo ?? existing.fdaAdditionalDrugInfo ?? null,
       drug.sortOrder ?? existing.sortOrder,
       id
     );
@@ -356,6 +363,8 @@ export class DrugRepository {
       manufacturerName: row.manufacturer_name as string | undefined,
       lotNumber: row.lot_number as string | undefined,
       expirationDate: row.expiration_date as string | undefined,
+      indAuthorizationNumber: row.ind_authorization_number as string | undefined,
+      fdaAdditionalDrugInfo: row.fda_additional_drug_info as CaseDrug['fdaAdditionalDrugInfo'],
       sortOrder: row.sort_order as number
     };
   }

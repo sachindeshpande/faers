@@ -19,6 +19,7 @@ import type {
   CaseReaction,
   CaseDrug,
   CaseReporter,
+  IndStudyInfo,
   SubmissionEnvironment,
   SubmissionReportType
 } from '../../shared/types/case.types';
@@ -510,12 +511,17 @@ export class XMLGeneratorService {
       lines.push(this.buildReporter(reporter));
     }
 
-    // ── SUBJECT OF 2: ICH ReportType investigationCharacteristic ───────
-    // Lint section 13 requires code=1 here.
+    // ── SUBJECT OF 2: ICH ReportType investigationCharacteristic (C.1.3) ──
+    // Switch between "Spontaneous report" (postmarket, code=1) and
+    // "Report from study" (IND/SUSAR and IND-Exempt BA/BE, code=2) based
+    // on caseType. Per SUSAR_IND_Feature_Spec.md §4.3.
+    const isStudy = caseData.caseType === 'ind' || caseData.caseType === 'babe';
+    const ichReportCode = isStudy ? '2' : '1';
+    const ichReportDisplay = isStudy ? 'Report from study' : 'Spontaneous report';
     lines.push('          <subjectOf2 typeCode="SUBJ">');
     lines.push('            <investigationCharacteristic classCode="OBS" moodCode="EVN">');
     lines.push('              <code code="1" codeSystem="2.16.840.1.113883.3.989.2.1.1.23" displayName="ICH ReportType"/>');
-    lines.push('              <value xsi:type="CE" code="1" displayName="Spontaneous report" codeSystem="2.16.840.1.113883.3.989.2.1.1.2"/>');
+    lines.push(`              <value xsi:type="CE" code="${ichReportCode}" displayName="${ichReportDisplay}" codeSystem="2.16.840.1.113883.3.989.2.1.1.2"/>`);
     lines.push('            </investigationCharacteristic>');
     lines.push('          </subjectOf2>');
 
@@ -641,6 +647,62 @@ export class XMLGeneratorService {
    * Lint section 12 requires D.7.2 (code=18 history text) and D.7.3 (code=11
    * concomitant therapy BL) observations.
    */
+  /**
+   * Build the SUSAR / IND <researchStudy> block (E2B C.5.*, FDA.C.5.*).
+   *
+   * Inserted as the first child of primaryRole/subjectOf1, matching
+   * FAERS2022Scenario3.xml. `indNumber` (FDA.C.5.5a) is required; all
+   * other fields are elided when absent rather than emitted with
+   * nullFlavor, per spec §4.4.
+   */
+  private buildResearchStudy(ind: IndStudyInfo): string {
+    const lines: string[] = [];
+    lines.push('                  <subjectOf1 typeCode="SBJ">');
+    lines.push('                    <researchStudy classCode="CLNTRL" moodCode="EVN">');
+
+    // C.5.3 — Sponsor Study Number
+    if (ind.sponsorStudyNumber) {
+      lines.push(`                      <id extension="${this.escapeXml(ind.sponsorStudyNumber)}" root="2.16.840.1.113883.3.989.2.1.3.5"/>`);
+    }
+
+    // C.5.4 — Study Type (always Clinical trials = 1 for SUSAR per spec §2)
+    lines.push('                      <code code="1" displayName="Clinical trials" codeSystem="2.16.840.1.113883.3.989.2.1.1.8" codeSystemVersion="1.0"/>');
+
+    // C.5.2 — Study Name / Title
+    if (ind.studyName) {
+      lines.push(`                      <title>${this.escapeXml(ind.studyName)}</title>`);
+    }
+
+    // C.5.1.r.1 — Study Registration Number (e.g. NCT number)
+    if (ind.studyRegistrationNumber) {
+      lines.push('                      <authorization typeCode="AUTH">');
+      lines.push('                        <studyRegistration classCode="ACT" moodCode="EVN">');
+      lines.push(`                          <id extension="${this.escapeXml(ind.studyRegistrationNumber)}" root="2.16.840.1.113883.3.989.2.1.3.6"/>`);
+      lines.push('                        </studyRegistration>');
+      lines.push('                      </authorization>');
+    }
+
+    // FDA.C.5.5a — IND Number where AE Occurred (REQUIRED)
+    lines.push('                      <authorization typeCode="AUTH">');
+    lines.push('                        <studyRegistration classCode="ACT" moodCode="EVN">');
+    lines.push(`                          <id extension="${this.escapeXml(ind.indNumber)}" root="2.16.840.1.113883.3.989.5.1.2.2.1.2.1"/>`);
+    lines.push('                        </studyRegistration>');
+    lines.push('                      </authorization>');
+
+    // FDA.C.5.6.r — Cross-referenced IND numbers (repeating)
+    for (const crossRef of ind.crossReferencedIndNumbers ?? []) {
+      lines.push('                      <authorization typeCode="AUTH">');
+      lines.push('                        <studyRegistration classCode="ACT" moodCode="EVN">');
+      lines.push(`                          <id extension="${this.escapeXml(crossRef)}" root="2.16.840.1.113883.3.989.5.1.2.2.1.2.3"/>`);
+      lines.push('                        </studyRegistration>');
+      lines.push('                      </authorization>');
+    }
+
+    lines.push('                    </researchStudy>');
+    lines.push('                  </subjectOf1>');
+    return lines.join('\n');
+  }
+
   private buildPatient(caseData: Case, reactions: CaseReaction[], drugs: CaseDrug[]): string {
     const lines: string[] = [];
 
@@ -662,6 +724,15 @@ export class XMLGeneratorService {
       lines.push(`                    <birthTime value="${this.formatDate(caseData.patientBirthdate)}"/>`);
     }
     lines.push('                  </player1>');
+
+    // SUSAR / IND + IND-Exempt BA/BE — researchStudy block. Sits between
+    // <player1> and the first <subjectOf2> (age), matching the anchor in
+    // Scenario 3 (FAERS2022Scenario3.xml lines 71–112). Emitted only for
+    // study-type cases with an indStudy payload; postmarket cases skip.
+    const isStudyCase = caseData.caseType === 'ind' || caseData.caseType === 'babe';
+    if (isStudyCase && caseData.indStudy) {
+      lines.push(this.buildResearchStudy(caseData.indStudy));
+    }
 
     // B.1.2.2 age (PQ)
     if (caseData.patientAge != null) {
@@ -1008,6 +1079,29 @@ export class XMLGeneratorService {
     // Product name (B.4.k.2.1)
     lines.push(`                          <name>${this.escapeXml(drug.productName)}</name>`);
 
+    // SUSAR / IND — G.k.3.1 authorization / application number (e.g. IND
+    // number for the suspect drug). Nested inside asManufacturedProduct /
+    // subjectOf / approval, matching FAERS2022Scenario3.xml lines 378–401.
+    // Holder name is best-effort (prefers manufacturerName, falls back to
+    // the drug's own productName so the slot is never empty).
+    if (drug.indAuthorizationNumber) {
+      const holderName = drug.manufacturerName || drug.productName;
+      lines.push('                          <asManufacturedProduct classCode="MANU">');
+      lines.push('                            <subjectOf typeCode="SBJ">');
+      lines.push('                              <approval classCode="CNTRCT" moodCode="EVN">');
+      lines.push(`                                <id extension="${this.escapeXml(drug.indAuthorizationNumber)}" root="2.16.840.1.113883.3.989.2.1.3.4"/>`);
+      lines.push('                                <holder typeCode="HLD">');
+      lines.push('                                  <role classCode="HLD">');
+      lines.push('                                    <playingOrganization classCode="ORG" determinerCode="INSTANCE">');
+      lines.push(`                                      <name>${this.escapeXml(holderName)}</name>`);
+      lines.push('                                    </playingOrganization>');
+      lines.push('                                  </role>');
+      lines.push('                                </holder>');
+      lines.push('                              </approval>');
+      lines.push('                            </subjectOf>');
+      lines.push('                          </asManufacturedProduct>');
+    }
+
     lines.push('                        </kindOfProduct>');
     lines.push('                      </instanceOfKind>');
     lines.push('                    </consumable>');
@@ -1062,6 +1156,28 @@ export class XMLGeneratorService {
     lines.push(`                        <value xsi:type="CE" code="${rechallengeCode}" codeSystem="2.16.840.1.113883.3.989.2.1.1.17"/>`);
     lines.push('                      </observation>');
     lines.push('                    </outboundRelationship2>');
+
+    // SUSAR / IND — G.k.10a.r FDA additional drug information (BA/BE only).
+    // Per spec §4.6: Test/Reference drugs get the coded CE value; all other
+    // drugs in a BA/BE study get nullFlavor="NA". For non-BA/BE IND cases
+    // the field is absent on the drug record and we skip emission.
+    if (drug.fdaAdditionalDrugInfo) {
+      lines.push('                    <outboundRelationship2 typeCode="COMP">');
+      lines.push('                      <observation classCode="OBS" moodCode="EVN">');
+      lines.push('                        <code code="9" codeSystem="2.16.840.1.113883.3.989.2.1.1.19" codeSystemVersion="1.1" displayName="FDAAddDrugInformation"/>');
+      if (drug.fdaAdditionalDrugInfo === 'TEST') {
+        lines.push('                        <value xsi:type="CE" code="1" displayName="Test" codeSystem="2.16.840.1.113883.3.989.2.1.1.7" codeSystemVersion="1.0"/>');
+      } else if (drug.fdaAdditionalDrugInfo === 'REFERENCE') {
+        lines.push('                        <value xsi:type="CE" code="2" displayName="Reference drug" codeSystem="2.16.840.1.113883.3.989.2.1.1.7" codeSystemVersion="1.0"/>');
+      } else {
+        // NA — nullFlavor for the drugs in the BA/BE study that aren't the
+        // test/reference pair. Still must emit so the observation is
+        // present across all drugs in a BA/BE submission.
+        lines.push('                        <value xsi:type="CE" nullFlavor="NA" codeSystem="2.16.840.1.113883.3.989.2.1.1.7" codeSystemVersion="1.0"/>');
+      }
+      lines.push('                      </observation>');
+      lines.push('                    </outboundRelationship2>');
+    }
 
     lines.push('                  </substanceAdministration>');
     lines.push('                </component>');
