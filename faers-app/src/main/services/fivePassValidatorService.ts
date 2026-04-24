@@ -48,9 +48,12 @@ const V37_FILENAME = 'CASE-20260331-EMJQ_fixed_v37_patch.xml';
 
 export function resolveGoldenV37Path(): string | null {
   const candidates: string[] = [];
+  // `app` is undefined in standalone-node / headless-CLI contexts. Guard
+  // every access so the cwd fallbacks still work.
+  const electronApp = (app as unknown as typeof app | undefined);
 
   try {
-    if (app.isPackaged) {
+    if (electronApp?.isPackaged) {
       candidates.push(join(process.resourcesPath, 'lint', V37_FILENAME));
       candidates.push(join(process.resourcesPath, V37_FILENAME));
       candidates.push(join(process.resourcesPath, 'test', 'test_submission', 'package', V37_FILENAME));
@@ -60,9 +63,11 @@ export function resolveGoldenV37Path(): string | null {
   }
 
   try {
-    const appPath = app.getAppPath();
-    candidates.push(join(appPath, '..', 'test', 'test_submission', 'package', V37_FILENAME));
-    candidates.push(join(appPath, '..', '..', 'test', 'test_submission', 'package', V37_FILENAME));
+    const appPath = electronApp?.getAppPath?.();
+    if (appPath) {
+      candidates.push(join(appPath, '..', 'test', 'test_submission', 'package', V37_FILENAME));
+      candidates.push(join(appPath, '..', '..', 'test', 'test_submission', 'package', V37_FILENAME));
+    }
   } catch {
     // outside Electron
   }

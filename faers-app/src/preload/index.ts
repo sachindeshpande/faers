@@ -247,6 +247,10 @@ const electronAPI: ElectronAPI = {
   getCaseCount: (): Promise<IPCResponse<number>> =>
     ipcRenderer.invoke(IPC_CHANNELS.CASE_COUNT),
 
+  importCaseFromJson: (
+    payload: { filePath?: string; jsonText?: string; jsonObject?: unknown }
+  ) => ipcRenderer.invoke(IPC_CHANNELS.CASE_IMPORT_JSON, payload),
+
   // Reporter operations
   getReporters: (caseId: string): Promise<IPCResponse<CaseReporter[]>> =>
     ipcRenderer.invoke(IPC_CHANNELS.REPORTER_LIST, caseId),

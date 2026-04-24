@@ -1,0 +1,70 @@
+{
+  "$schema": "faers-case-import-v1",
+  "exampleId": "TC-C02-reporter-qual-3",
+  "description": "Test catalog TC-C02: reporter qualification = 3 (Other Health Professional per the app's ReporterQualification enum; Health Professional per FDA 2.18 OID .1.7 value set). Submit after TC-C01 (code=2) to maintain isolation. IMPORTANT: do NOT use OID .1.6 — causes C.3 block to be silently skipped.",
+  "baseline": "2L8T",
+  "case": {
+    "safetyReportId": "SR-CASE-EXAMPLE-TCC02",
+    "worldwideCaseId": "SR-CASE-EXAMPLE-TCC02",
+    "reportType": "Spontaneous",
+    "initialOrFollowup": "Initial",
+    "receiptDate": "2026-03-15",
+    "receiveDate": "2026-03-15",
+    "expeditedReport": true,
+    "localReportTypeCode": 1,
+    "caseNarrative": "Variant of 2L8T baseline. Reporter qualification changed from Physician (1) to OtherHealthProfessional (3) for TC-C02."
+  },
+  "patient": {
+    "initials": "T.P.",
+    "sex": "Male",
+    "birthDate": "1970-05-15",
+    "ageValue": 55,
+    "ageUnit": "Year",
+    "weightKg": 82,
+    "race": "C41260",
+    "ethnicity": "C41222",
+    "medicalHistoryText": "None reported",
+    "hasConcomitantTherapy": true,
+    "death": false
+  },
+  "sender": {
+    "senderType": "PharmaceuticalCompany",
+    "organization": "DeepQuence",
+    "department": "Drug Safety",
+    "givenName": "Sachin",
+    "familyName": "Deshpande",
+    "address": { "street": "123 Test St", "city": "Sunnyvale", "state": "CA", "postalCode": "94085", "country": "US" },
+    "contact": { "phone": "+1-408-555-0100", "email": "sachin@deepquence.com" }
+  },
+  "reporter": {
+    "qualification": "OtherHealthProfessional",
+    "prefix": "Ms",
+    "givenName": "Jordan",
+    "familyName": "Okafor",
+    "organization": "City General Hospital",
+    "department": "Drug Safety",
+    "address": { "street": "100 Main St", "city": "Anytown", "state": "CA", "postalCode": "94085", "country": "US" },
+    "contact": { "phone": "+1-408-555-0100", "email": "jordan.o@example.com" }
+  },
+  "reactions": [
+    { "term": "Nausea", "meddraCode": "10028813", "startDate": "2026-03-01", "endDate": "2026-03-10", "outcomeCode": 1, "seriousness": { "otherMedicallyImportant": true } },
+    { "term": "Hepatic enzyme increased", "meddraCode": "10019675", "startDate": "2026-03-05", "outcomeCode": 3, "seriousness": { "hospitalization": true } }
+  ],
+  "drugs": [
+    {
+      "role": "Suspect", "productName": "Testdrugimab",
+      "dose": "50mg", "doseValue": 50, "doseUnit": "mg", "route": "Subcutaneous",
+      "indication": "Rheumatoid arthritis", "indicationMeddraCode": "10039073",
+      "startDate": "2026-01-15", "endDate": "2026-03-10",
+      "actionTakenCode": 1, "dechallengeCode": 3, "rechallengeCode": 3,
+      "authorizationType": "NDA", "authorizationNumber": "NDA123456"
+    },
+    {
+      "role": "Concomitant", "productName": "Lisinopril",
+      "dose": "10mg", "doseValue": 10, "doseUnit": "mg", "route": "Oral",
+      "indication": "Hypertension", "indicationMeddraCode": "10020772",
+      "startDate": "2025-06-01",
+      "actionTakenCode": 4, "dechallengeCode": 4, "rechallengeCode": 4
+    }
+  ]
+}

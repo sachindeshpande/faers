@@ -719,11 +719,18 @@ export class ValidationService {
       });
     }
 
-    // Batch level must have <sender> and <receiver> blocks (before PORR_IN049016UV)
-    // FDA validator checks XPaths like sender/device/id[@root="...3.13"]
-    const batchSection = xml.includes('<PORR_IN049016UV>')
-      ? xml.substring(0, xml.indexOf('<PORR_IN049016UV>'))
-      : xml;
+    // Batch level must have <sender> and <receiver> blocks *outside* the
+    // inner PORR_IN049016UV message wrapper. Our generator emits them AFTER
+    // </PORR_IN049016UV> (matches the accepted v37 + 2L8T submissions), so
+    // we scan both the prefix and the suffix — the XML slice between
+    // <PORR_IN049016UV> and </PORR_IN049016UV> is the only region excluded.
+    const porrOpen = xml.indexOf('<PORR_IN049016UV>');
+    const porrCloseTag = '</PORR_IN049016UV>';
+    const porrClose = xml.indexOf(porrCloseTag);
+    const batchSection =
+      porrOpen >= 0 && porrClose >= 0
+        ? xml.substring(0, porrOpen) + xml.substring(porrClose + porrCloseTag.length)
+        : xml;
 
     // N.1.3 - Batch Sender Identifier inside <sender>/<device>/<id>
     if (!batchSection.includes('<sender typeCode="SND">')) {
