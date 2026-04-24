@@ -1,5 +1,5 @@
 /**
- * Fixture-driven tests for every JSON in test/examples/cases/.
+ * Fixture-driven tests for every JSON in test/test_submission/examples/cases/.
  *
  * Two layers of verification per fixture:
  *   1. The raw JSON validates against the zod schema.
@@ -43,7 +43,7 @@ vi.mock('../database/repositories', () => ({
 
 import { CaseImportService } from './caseImportService';
 
-const EXAMPLES_DIR = resolve(__dirname, '../../../../test/examples/cases');
+const EXAMPLES_DIR = resolve(__dirname, '../../../../test/test_submission/examples/cases');
 
 function fixtureFiles(): string[] {
   return readdirSync(EXAMPLES_DIR)
