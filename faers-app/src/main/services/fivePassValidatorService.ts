@@ -305,8 +305,20 @@ function runPass2(candidate: XmlNode): { summary: PassSummary; findings: Validat
  * policy: rejections become errors, untested-but-NI-rejecting fields warn, and
  * proven-safe values are silent.
  */
-function runPass3(candidate: XmlNode): { summary: PassSummary; findings: ValidatorFinding[] } {
+function runPass3(
+  candidate: XmlNode,
+  caseType?: 'postmarket' | 'ind' | 'babe'
+): { summary: PassSummary; findings: ValidatorFinding[] } {
   const findings: ValidatorFinding[] = [];
+
+  // IND structural checks — run FIRST so errors surface before the empirical
+  // policy sweep's warnings. These verify the XML matches what the generator
+  // is supposed to emit for an IND case (rather than what ACK3s have proven
+  // safe/rejected, which is what FAERS_POLICY covers below). Detectable
+  // regressions, not empirical policy questions.
+  if (caseType === 'ind') {
+    findings.push(...indStructuralChecks(candidate));
+  }
 
   for (const field of Object.values(FAERS_POLICY)) {
     const observations = findObservations(candidate, field.observationCode);
@@ -418,6 +430,115 @@ function findObservations(root: XmlNode, observationCode: string): XmlNode[] {
     if (codeEl?.attrs.code === observationCode) hits.push(n);
   });
   return hits;
+}
+
+/**
+ * Structural checks specific to IND / SUSAR emission (spec §5.4).
+ *
+ * Unlike the empirical-policy sweep, these are "the generator was supposed
+ * to emit X here" checks. They catch regressions — e.g. someone changes
+ * the C.1.3 switch and postmarket code leaks into an IND XML — long before
+ * the FDA sees the submission.
+ *
+ * Run only when caseType === 'ind'. Each check emits at most one error.
+ */
+function indStructuralChecks(root: XmlNode): ValidatorFinding[] {
+  const findings: ValidatorFinding[] = [];
+
+  // C.1.3 — Report type. The investigationCharacteristic with
+  // <code code="1" .../> carries the type-of-report value. For IND it
+  // must be "2" (Report from study); postmarket is "1" (Spontaneous).
+  const ichReportObs = findInvestigationCharacteristic(root, '1');
+  if (!ichReportObs) {
+    findings.push({
+      pass: 3,
+      severity: 'error',
+      label: 'IND: missing C.1.3 ICH ReportType observation'
+    });
+  } else {
+    const val = ichReportObs.children.find((c) => c.name === 'value');
+    if (val?.attrs.code !== '2') {
+      findings.push({
+        pass: 3,
+        severity: 'error',
+        label: 'IND: C.1.3 must be code="2" (Report from study)',
+        detail: `got code="${val?.attrs.code ?? '(missing)'}"`,
+        path: ichReportObs.path
+      });
+    }
+  }
+
+  // C.5.4 — Study type. The researchStudy block's direct <code> child
+  // must have code="1" (Clinical trials) per SUSAR §2.
+  const researchStudy = findFirstDescendant(root, 'researchStudy');
+  if (!researchStudy) {
+    findings.push({
+      pass: 3,
+      severity: 'error',
+      label: 'IND: missing <researchStudy> block'
+    });
+  } else {
+    const code = researchStudy.children.find((c) => c.name === 'code');
+    if (code?.attrs.code !== '1') {
+      findings.push({
+        pass: 3,
+        severity: 'error',
+        label: 'IND: researchStudy C.5.4 must be code="1" (Clinical trials)',
+        detail: `got code="${code?.attrs.code ?? '(missing)'}"`,
+        path: researchStudy.path
+      });
+    }
+  }
+
+  // G.k.10a.r — FDAAddDrugInformation. Only validate when present; not
+  // every IND case is BA/BE. Accept code="1" (Test), code="2" (Reference),
+  // or nullFlavor="NA".
+  const fdaAddDrugObservations = findObservations(root, '9')
+    .filter((n) => {
+      const code = n.children.find((c) => c.name === 'code');
+      return code?.attrs.displayName === 'FDAAddDrugInformation';
+    });
+  for (const obs of fdaAddDrugObservations) {
+    const val = obs.children.find((c) => c.name === 'value');
+    if (!val) continue;
+    const hasNullNa = val.attrs.nullFlavor === 'NA';
+    const isValidCode = val.attrs.code === '1' || val.attrs.code === '2';
+    if (!hasNullNa && !isValidCode) {
+      findings.push({
+        pass: 3,
+        severity: 'error',
+        label: 'IND: G.k.10a.r must be code 1/2 or nullFlavor="NA"',
+        detail: `got code="${val.attrs.code ?? '(none)'}" nullFlavor="${val.attrs.nullFlavor ?? '(none)'}"`,
+        path: obs.path
+      });
+    }
+  }
+
+  return findings;
+}
+
+/**
+ * Find the investigationCharacteristic observation inside the document
+ * whose <code> child carries the given `@code` attribute. Used for the
+ * C.1.3 lookup (`code="1"`) and similar ICH-level characteristics.
+ */
+function findInvestigationCharacteristic(root: XmlNode, codeValue: string): XmlNode | null {
+  let hit: XmlNode | null = null;
+  walk(root, (n) => {
+    if (hit || n.name !== 'investigationCharacteristic') return;
+    const codeEl = n.children.find((c) => c.name === 'code');
+    if (codeEl?.attrs.code === codeValue) hit = n;
+  });
+  return hit;
+}
+
+function findFirstDescendant(root: XmlNode, name: string): XmlNode | null {
+  let hit: XmlNode | null = null;
+  walk(root, (n) => {
+    if (hit || n.name !== name) return;
+    hit = n;
+  });
+  return hit;
 }
 
 function proveSafeList(f: FieldPolicy): string {
@@ -683,7 +804,7 @@ export function runFivePassValidation(xml: string, opts: FivePassOptions = {}): 
     ? { summary: { ran: false, skipReason: indSkip, errors: 0, warnings: 0 }, findings: [] as ValidatorFinding[] }
     : runPass1(candidate, golden);
   const p2 = runPass2(candidate);
-  const p3 = runPass3(candidate);
+  const p3 = runPass3(candidate, opts.caseType);
   const { p4, p5 } = indSkip
     ? {
         p4: { summary: { ran: false, skipReason: indSkip, errors: 0, warnings: 0 }, findings: [] as ValidatorFinding[] },

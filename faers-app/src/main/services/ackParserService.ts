@@ -22,10 +22,22 @@ import type {
   AckBatchCode,
   AckMessageCode,
   AckRejection,
+  AckReportContext,
   ParsedAck
 } from '../../shared/types/faersValidation.types';
 
-export type { AckBatchCode, AckMessageCode, AckRejection, ParsedAck };
+export type { AckBatchCode, AckMessageCode, AckRejection, AckReportContext, ParsedAck };
+
+export interface ParseFdaAckOptions {
+  /**
+   * Stamp the result with the originating submission's report type.
+   * The ACK XML doesn't encode this; the caller (typically case-aware
+   * code that triggered or is polling for the ACK) supplies it so that
+   * downstream consumers can promote values in the right empirical-
+   * policy table (FAERS_POLICY vs IND_POLICY).
+   */
+  reportContext?: AckReportContext;
+}
 
 /** Remove XML comments — they can contain our field-tag patterns and confuse matching. */
 function stripComments(xml: string): string {
@@ -97,14 +109,20 @@ function parseRejections(text: string): AckRejection[] {
 /**
  * Parse an FDA ESG ACK XML payload. Accepts either the outer batch envelope
  * (MCCI_IN200101UV01) or a bare inner message envelope (MCCI_IN000002UV01).
+ *
+ * Optional `opts.reportContext` stamps the result with the originating
+ * submission's report type. When omitted, `reportContext` is undefined on
+ * the returned object — downstream consumers should treat that as "context
+ * unknown" rather than assume postmarket.
  */
-export function parseFdaAck(xml: string): ParsedAck {
+export function parseFdaAck(xml: string, opts: ParseFdaAckOptions = {}): ParsedAck {
   const result: ParsedAck = {
     parsed: false,
     batchCode: null,
     messageCode: null,
     overall: 'unknown',
-    rejections: []
+    rejections: [],
+    reportContext: opts.reportContext
   };
 
   if (!xml || typeof xml !== 'string' || xml.trim().length === 0) {

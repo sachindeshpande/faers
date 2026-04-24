@@ -65,6 +65,19 @@ describe('parseFdaAck', () => {
     expect(ack.overall).toBe('unknown');
   });
 
+  it('leaves reportContext undefined when no option is passed', () => {
+    const xml = read('ci260421211040.39a4bea3542d4f6081340d5c03a105f3.ack');
+    const ack = parseFdaAck(xml);
+    expect(ack.reportContext).toBeUndefined();
+  });
+
+  it('stamps reportContext on the result when supplied via options', () => {
+    const xml = read('ci260421211040.39a4bea3542d4f6081340d5c03a105f3.ack');
+    expect(parseFdaAck(xml, { reportContext: 'postmarket' }).reportContext).toBe('postmarket');
+    expect(parseFdaAck(xml, { reportContext: 'ind' }).reportContext).toBe('ind');
+    expect(parseFdaAck(xml, { reportContext: 'babe' }).reportContext).toBe('babe');
+  });
+
   it('extracts tag from embedded FAERS-D-r patterns (synthetic)', () => {
     const synthetic = `<?xml version="1.0"?>
       <MCCI_IN200101UV01 xmlns="urn:hl7-org:v3">

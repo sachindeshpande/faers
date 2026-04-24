@@ -28,6 +28,16 @@ export interface AckRejection {
   index: number;
 }
 
+/**
+ * Originating report type for a parsed ACK. The ACK XML itself does not
+ * carry this information — it comes from the caller, who typically knows
+ * the case / submission that produced the acknowledgment. Used downstream
+ * to route empirical-policy promotions to the right table (FAERS_POLICY
+ * for postmarket, IND_POLICY for IND). Absent when the caller parsed an
+ * ACK blind (e.g. the GUI's Import ACK dialog without linking to a case).
+ */
+export type AckReportContext = 'postmarket' | 'ind' | 'babe';
+
 export interface ParsedAck {
   parsed: boolean;
   parseError?: string;
@@ -42,6 +52,9 @@ export interface ParsedAck {
   creationTime?: string;
   batchNumber?: string;
   localReportNumber?: string;
+  /** See `AckReportContext`. Optional — absent when the ACK was parsed
+   *  without knowledge of the originating submission. */
+  reportContext?: AckReportContext;
 }
 
 // ────────────────────────────────────────────────────────────────────────────
