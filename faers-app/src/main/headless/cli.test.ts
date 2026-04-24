@@ -9,7 +9,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { parseArgs, runHeadless } from './cli';
+import { parseArgs, runHeadless, resolveSubmissionReportType } from './cli';
 
 describe('parseArgs', () => {
   it('parses positional input file paths', () => {
@@ -70,5 +70,51 @@ describe('runHeadless — guard paths', () => {
     const result = await runHeadless({ inputs: [] });
     expect(result.exitCode).toBe(2);
     expect(result.results).toEqual([]);
+  });
+});
+
+describe('resolveSubmissionReportType', () => {
+  it('defaults to Postmarket when no caseType and no flag', () => {
+    const r = resolveSubmissionReportType(undefined, undefined);
+    expect(r.value).toBe('Postmarket');
+    expect(r.reason).toBe('default-postmarket');
+    expect(r.warning).toBeUndefined();
+  });
+
+  it('auto-selects Premarket for an IND case when no flag is set', () => {
+    const r = resolveSubmissionReportType('ind', undefined);
+    expect(r.value).toBe('Premarket');
+    expect(r.reason).toBe('inferred-ind');
+    expect(r.warning).toBeUndefined();
+  });
+
+  it('honors an explicit --report-type Premarket flag', () => {
+    const r = resolveSubmissionReportType('ind', 'Premarket');
+    expect(r.value).toBe('Premarket');
+    expect(r.reason).toBe('cli');
+    expect(r.warning).toBeUndefined();
+  });
+
+  it('warns when caseType=ind but flag says Postmarket', () => {
+    const r = resolveSubmissionReportType('ind', 'Postmarket');
+    expect(r.value).toBe('Postmarket');
+    expect(r.reason).toBe('cli');
+    expect(r.warning).toMatch(/case\.caseType="ind"/);
+  });
+
+  it('warns when caseType=postmarket but flag says Premarket', () => {
+    const r = resolveSubmissionReportType('postmarket', 'Premarket');
+    expect(r.value).toBe('Premarket');
+    expect(r.reason).toBe('cli');
+    expect(r.warning).toMatch(/case\.caseType="postmarket"/);
+  });
+
+  it('does not warn when caseType is unset and flag says Premarket', () => {
+    // No inference, no mismatch signal — treat undefined caseType as
+    // "caller knows what they're doing."
+    const r = resolveSubmissionReportType(undefined, 'Premarket');
+    expect(r.value).toBe('Premarket');
+    expect(r.reason).toBe('cli');
+    expect(r.warning).toBeUndefined();
   });
 });

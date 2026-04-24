@@ -129,8 +129,11 @@ export async function runHeadless(opts: HeadlessOptions): Promise<HeadlessResult
 
   const duns = opts.duns || DEFAULT_DUNS;
   const submissionEnvironment = opts.submissionEnvironment || 'Test';
-  const submissionReportType = opts.submissionReportType || 'Postmarket';
   const targetCenter = opts.targetCenter || 'CDER';
+  // Don't default submissionReportType globally — pass `undefined` through
+  // so each file's caseType can drive the choice (IND → Premarket,
+  // postmarket → Postmarket). An explicit CLI flag still wins per file.
+  const submissionReportTypeFlag = opts.submissionReportType;
 
   const caseRepo = new CaseRepository(db);
   const importSvc = new CaseImportService(db);
@@ -146,7 +149,7 @@ export async function runHeadless(opts: HeadlessOptions): Promise<HeadlessResult
       outDir: opts.outDir,
       duns,
       submissionEnvironment,
-      submissionReportType,
+      submissionReportTypeFlag,
       targetCenter,
       report: opts.report,
       noGate: opts.noGate,
@@ -189,7 +192,13 @@ interface ProcessArgs {
   outDir?: string;
   duns: string;
   submissionEnvironment: SubmissionEnvironment;
-  submissionReportType: SubmissionReportType;
+  /**
+   * CLI-provided report type override (`--report-type`). Undefined when
+   * the user omitted the flag, in which case the effective value is
+   * resolved from the imported case's caseType: `'ind'` → `Premarket`,
+   * otherwise `Postmarket`.
+   */
+  submissionReportTypeFlag?: SubmissionReportType;
   targetCenter: TargetCenter;
   report?: boolean;
   noGate?: boolean;
@@ -198,6 +207,40 @@ interface ProcessArgs {
   xmlSvc: XMLGeneratorService;
   statusSvc: StatusTransitionService;
   caseRepo: CaseRepository;
+}
+
+/**
+ * Per-file effective report type. When the user omits `--report-type`, we
+ * infer from the imported case's caseType so an IND JSON always routes
+ * via Premarket receivers even from a bare `npm run headless -- foo.json`
+ * invocation. When the flag IS set but disagrees with caseType (e.g. IND
+ * case but `--report-type Postmarket`), we honor the flag (user intent
+ * wins) and push a warning to `stages` so it's visible in the log.
+ */
+export function resolveSubmissionReportType(
+  caseType: string | undefined,
+  cliFlag: SubmissionReportType | undefined
+): { value: SubmissionReportType; reason: 'cli' | 'inferred-ind' | 'default-postmarket'; warning?: string } {
+  const isInd = caseType === 'ind';
+  if (cliFlag) {
+    if (isInd && cliFlag !== 'Premarket') {
+      return {
+        value: cliFlag,
+        reason: 'cli',
+        warning: `case.caseType="ind" but --report-type=${cliFlag}; routing headers will not match the IND body`
+      };
+    }
+    if (!isInd && cliFlag === 'Premarket' && caseType === 'postmarket') {
+      return {
+        value: cliFlag,
+        reason: 'cli',
+        warning: `case.caseType="postmarket" but --report-type=Premarket; IND receivers will wrap a postmarket ICSR`
+      };
+    }
+    return { value: cliFlag, reason: 'cli' };
+  }
+  if (isInd) return { value: 'Premarket', reason: 'inferred-ind' };
+  return { value: 'Postmarket', reason: 'default-postmarket' };
 }
 
 async function processOneFile(args: ProcessArgs): Promise<HeadlessFileResult> {
@@ -255,10 +298,31 @@ async function processOneFile(args: ProcessArgs): Promise<HeadlessFileResult> {
   stages.push({ stage: 'validate', ok: true });
   log(`  [validate] OK`);
 
+  // Look up the persisted case once so the downstream stages can branch
+  // on caseType — report-type resolution (this line), lint skip, and the
+  // 5-pass validator all need it.
+  const persistedCaseForRouting = args.caseRepo.findById(importRes.caseId);
+
+  // Resolve the effective submission report type for this file. Without a
+  // CLI flag, caseType="ind" auto-routes to Premarket; postmarket
+  // remains the default otherwise. A flag → caseType mismatch is kept
+  // non-fatal but logged so it's visible.
+  const reportTypeRes = resolveSubmissionReportType(
+    persistedCaseForRouting?.caseType,
+    args.submissionReportTypeFlag
+  );
+  if (reportTypeRes.reason === 'inferred-ind') {
+    log(`  [route] auto-selected Premarket for IND case (no --report-type given)`);
+  }
+  if (reportTypeRes.warning) {
+    log(`  [route] ⚠ ${reportTypeRes.warning}`);
+    stages.push({ stage: 'route', ok: true, detail: reportTypeRes.warning });
+  }
+
   // ── Stage 3: generate XML ─────────────────────────────────────────────
   const xmlRes = args.xmlSvc.generate(importRes.caseId, {
     submissionEnvironment: args.submissionEnvironment,
-    submissionReportType: args.submissionReportType,
+    submissionReportType: reportTypeRes.value,
     senderIdentifierType: 'duns',
     senderIdentifierValue: args.duns,
     targetCenter: args.targetCenter
@@ -310,12 +374,9 @@ async function processOneFile(args: ProcessArgs): Promise<HeadlessFileResult> {
     anyGateFailed = true;
   }
 
-  // Look up the persisted case once so the downstream gates can branch
-  // on caseType. Separate from the earlier persistedCase lookup used for
-  // 5-pass because that one ran AFTER the gates; moving it up here keeps
-  // both the lint skip and the 5-pass switch in one place.
-  const persistedCaseForGates = args.caseRepo.findById(importRes.caseId);
-  const isIndCase = persistedCaseForGates?.caseType === 'ind';
+  // Same persistedCase used above for report-type resolution; re-used
+  // here to drive the lint skip and 5-pass caseType option.
+  const isIndCase = persistedCaseForRouting?.caseType === 'ind';
 
   // ── Stage 6: 55-check lint ────────────────────────────────────────────
   // Skip for IND — the 55-check Python lint hard-codes the postmarket v37
@@ -355,7 +416,7 @@ async function processOneFile(args: ProcessArgs): Promise<HeadlessFileResult> {
   // ── Stage 7: 5-pass empirical validator ───────────────────────────────
   try {
     const fivePass = runFivePassValidation(xmlRes.xml, {
-      caseType: persistedCaseForGates?.caseType
+      caseType: persistedCaseForRouting?.caseType
     });
     result.fivePass = fivePass;
     if (fivePass.ran) {
@@ -562,7 +623,12 @@ OPTIONS
       --keep-db           Keep the ephemeral DB after run (ignored with --db)
       --duns <value>      Sender DUNS (default: 334818134)
       --env <env>         Test | Production (default: Test)
-      --report-type <t>   Postmarket | Premarket (default: Postmarket)
+      --report-type <t>   Postmarket | Premarket. Omit to auto-select
+                          per file from JSON case.caseType — "ind" maps
+                          to Premarket, everything else to Postmarket.
+                          An explicit flag wins; a flag mismatched with
+                          the file's caseType prints a warning but is
+                          still used.
       --center <c>        CDER | CBER (default: CDER)
       --report            Also emit <base>.report.json for each input
       --no-gate           Emit XML even when lint/5-pass report errors
