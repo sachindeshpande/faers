@@ -1,13 +1,15 @@
 {
   "$schema": "faers-case-import-v1",
   "exampleId": "TC-G04-fatal-outcome",
-  "description": "Test catalog TC-G04: reaction outcome = 5 (Fatal). Paired with resultsInDeath=true and a death date (logically coupled changes per the catalog — acceptable because fatal outcome without death flag is internally inconsistent).",
+  "description": "Test catalog TC-G04: reaction outcome = 5 (Fatal). Paired with seriousness.death=true and a deathDate (logically coupled changes per the catalog — acceptable because fatal outcome without death flag is internally inconsistent).",
   "baseline": "2L8T",
   "case": {
     "safetyReportId": "SR-CASE-EXAMPLE-TCG04",
+    "worldwideCaseId": "SR-CASE-EXAMPLE-TCG04",
     "reportType": "Spontaneous",
     "initialOrFollowup": "Initial",
     "receiptDate": "2026-03-15",
+    "receiveDate": "2026-03-15",
     "expeditedReport": true,
     "localReportTypeCode": 1,
     "caseNarrative": "Variant of 2L8T baseline. Primary reaction now has fatal outcome; patient death recorded with autopsy pending."
@@ -27,6 +29,15 @@
     "deathDate": "2026-03-12",
     "autopsyPerformed": false
   },
+  "sender": {
+    "senderType": "PharmaceuticalCompany",
+    "organization": "DeepQuence",
+    "department": "Drug Safety",
+    "givenName": "Sachin",
+    "familyName": "Deshpande",
+    "address": { "street": "123 Test St", "city": "Sunnyvale", "state": "CA", "postalCode": "94085", "country": "US" },
+    "contact": { "phone": "+1-408-555-0100", "email": "sachin@deepquence.com" }
+  },
   "reporter": {
     "qualification": "Physician",
     "prefix": "Dr",
@@ -41,17 +52,34 @@
     {
       "term": "Hepatic failure",
       "meddraCode": "10019663",
+      "startDate": "2026-03-05",
+      "endDate": "2026-03-12",
       "outcomeCode": 5,
       "seriousness": {
         "death": true,
         "lifeThreatening": true,
         "hospitalization": true,
+        "disability": false,
+        "congenitalAnomaly": false,
         "otherMedicallyImportant": false
       }
     }
   ],
   "drugs": [
-    { "role": "Suspect", "productName": "Testdrugimab", "indication": "Rheumatoid arthritis", "indicationMeddraCode": "10039073", "actionTakenCode": 1, "dechallengeCode": 3, "rechallengeCode": 3 },
-    { "role": "Concomitant", "productName": "Lisinopril", "indication": "Hypertension", "indicationMeddraCode": "10020772", "actionTakenCode": 4, "dechallengeCode": 4, "rechallengeCode": 4 }
+    {
+      "role": "Suspect", "productName": "Testdrugimab",
+      "dose": "50mg", "doseValue": 50, "doseUnit": "mg", "route": "Subcutaneous",
+      "indication": "Rheumatoid arthritis", "indicationMeddraCode": "10039073",
+      "startDate": "2026-01-15", "endDate": "2026-03-10",
+      "actionTakenCode": 1, "dechallengeCode": 3, "rechallengeCode": 3,
+      "authorizationType": "NDA", "authorizationNumber": "NDA123456"
+    },
+    {
+      "role": "Concomitant", "productName": "Lisinopril",
+      "dose": "10mg", "doseValue": 10, "doseUnit": "mg", "route": "Oral",
+      "indication": "Hypertension", "indicationMeddraCode": "10020772",
+      "startDate": "2025-06-01",
+      "actionTakenCode": 4, "dechallengeCode": 4, "rechallengeCode": 4
+    }
   ]
 }

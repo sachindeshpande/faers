@@ -5,9 +5,11 @@
   "baseline": "2L8T",
   "case": {
     "safetyReportId": "SR-CASE-EXAMPLE-TCC02",
+    "worldwideCaseId": "SR-CASE-EXAMPLE-TCC02",
     "reportType": "Spontaneous",
     "initialOrFollowup": "Initial",
     "receiptDate": "2026-03-15",
+    "receiveDate": "2026-03-15",
     "expeditedReport": true,
     "localReportTypeCode": 1,
     "caseNarrative": "Variant of 2L8T baseline. Reporter qualification changed from Physician (1) to OtherHealthProfessional (3) for TC-C02."
@@ -25,6 +27,15 @@
     "hasConcomitantTherapy": true,
     "death": false
   },
+  "sender": {
+    "senderType": "PharmaceuticalCompany",
+    "organization": "DeepQuence",
+    "department": "Drug Safety",
+    "givenName": "Sachin",
+    "familyName": "Deshpande",
+    "address": { "street": "123 Test St", "city": "Sunnyvale", "state": "CA", "postalCode": "94085", "country": "US" },
+    "contact": { "phone": "+1-408-555-0100", "email": "sachin@deepquence.com" }
+  },
   "reporter": {
     "qualification": "OtherHealthProfessional",
     "prefix": "Ms",
@@ -36,11 +47,24 @@
     "contact": { "phone": "+1-408-555-0100", "email": "jordan.o@example.com" }
   },
   "reactions": [
-    { "term": "Nausea", "meddraCode": "10028813", "outcomeCode": 1, "seriousness": { "otherMedicallyImportant": false } },
-    { "term": "Hepatic enzyme increased", "meddraCode": "10019675", "outcomeCode": 3, "seriousness": { "otherMedicallyImportant": false } }
+    { "term": "Nausea", "meddraCode": "10028813", "startDate": "2026-03-01", "endDate": "2026-03-10", "outcomeCode": 1, "seriousness": { "otherMedicallyImportant": true } },
+    { "term": "Hepatic enzyme increased", "meddraCode": "10019675", "startDate": "2026-03-05", "outcomeCode": 3, "seriousness": { "hospitalization": true } }
   ],
   "drugs": [
-    { "role": "Suspect", "productName": "Testdrugimab", "indication": "Rheumatoid arthritis", "indicationMeddraCode": "10039073", "actionTakenCode": 1, "dechallengeCode": 3, "rechallengeCode": 3 },
-    { "role": "Concomitant", "productName": "Lisinopril", "indication": "Hypertension", "indicationMeddraCode": "10020772", "actionTakenCode": 4, "dechallengeCode": 4, "rechallengeCode": 4 }
+    {
+      "role": "Suspect", "productName": "Testdrugimab",
+      "dose": "50mg", "doseValue": 50, "doseUnit": "mg", "route": "Subcutaneous",
+      "indication": "Rheumatoid arthritis", "indicationMeddraCode": "10039073",
+      "startDate": "2026-01-15", "endDate": "2026-03-10",
+      "actionTakenCode": 1, "dechallengeCode": 3, "rechallengeCode": 3,
+      "authorizationType": "NDA", "authorizationNumber": "NDA123456"
+    },
+    {
+      "role": "Concomitant", "productName": "Lisinopril",
+      "dose": "10mg", "doseValue": 10, "doseUnit": "mg", "route": "Oral",
+      "indication": "Hypertension", "indicationMeddraCode": "10020772",
+      "startDate": "2025-06-01",
+      "actionTakenCode": 4, "dechallengeCode": 4, "rechallengeCode": 4
+    }
   ]
 }

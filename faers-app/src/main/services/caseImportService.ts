@@ -35,6 +35,7 @@ import {
   ReportType,
   ReporterQualification,
   LocalReportTypeCode,
+  SenderType,
   type Case,
   type CaseDrug,
   type CaseReaction,
@@ -219,6 +220,28 @@ function buildUpdateDto(doc: CaseImportDocument, warnings: string[]): UpdateCase
     }
   }
 
+  // Sender (E2B A.3) — required for validation; stored as flat columns on
+  // the Case record itself.
+  if (doc.sender) {
+    const s = doc.sender;
+    if (s.senderType !== undefined) {
+      const t = mapSenderType(s.senderType, warnings);
+      if (t !== undefined) update.senderType = t;
+    }
+    if (s.organization) update.senderOrganization = s.organization;
+    if (s.department) update.senderDepartment = s.department;
+    if (s.givenName) update.senderGivenName = s.givenName;
+    if (s.familyName) update.senderFamilyName = s.familyName;
+    if (s.address?.street) update.senderAddress = s.address.street;
+    if (s.address?.city) update.senderCity = s.address.city;
+    if (s.address?.state) update.senderState = s.address.state;
+    if (s.address?.postalCode) update.senderPostcode = s.address.postalCode;
+    if (s.address?.country) update.senderCountry = s.address.country;
+    if (s.contact?.phone) update.senderPhone = s.contact.phone;
+    if (s.contact?.fax) update.senderFax = s.contact.fax;
+    if (s.contact?.email) update.senderEmail = s.contact.email;
+  }
+
   if (doc.patient) {
     const p = doc.patient;
     if (p.initials) update.patientInitials = p.initials;
@@ -346,6 +369,19 @@ function mapDrug(
 //  Enum mappers — accept name-string OR numeric code.
 //  `name` key on each case is the field path we use for the warning.
 // ────────────────────────────────────────────────────────────────────────────
+
+function mapSenderType(v: unknown, warnings: string[]): SenderType | undefined {
+  if (v === undefined) return undefined;
+  const byName: Record<string, SenderType> = {
+    PharmaceuticalCompany: SenderType.PharmaceuticalCompany,
+    RegulatoryAuthority: SenderType.RegulatoryAuthority,
+    HealthProfessional: SenderType.HealthProfessional,
+    RegionalPVCentre: SenderType.RegionalPVCentre,
+    WHOCollaboratingCentre: SenderType.WHOCollaboratingCentre,
+    Other: SenderType.Other
+  };
+  return resolveEnum(v, byName, [1, 2, 3, 4, 5, 6], 'sender.senderType', warnings) as SenderType | undefined;
+}
 
 function mapReportType(v: unknown, warnings: string[]): ReportType | undefined {
   if (v === undefined) return undefined;

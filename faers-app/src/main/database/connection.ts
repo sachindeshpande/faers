@@ -18,11 +18,17 @@ type DatabaseInstance = ReturnType<typeof Database>;
 let db: DatabaseInstance | null = null;
 
 /**
- * Get the database file path based on platform
+ * Get the database file path based on platform.
+ *
+ * Precedence:
+ *   1. `FAERS_DB_PATH` env var — set by the headless CLI to point at an
+ *      ephemeral file in the OS temp dir so GUI data isn't polluted.
+ *   2. `NODE_ENV=test` → `faers-test.db` under userData.
+ *   3. Default → `faers.db` under userData.
  */
 export function getDatabasePath(): string {
+  if (process.env.FAERS_DB_PATH) return process.env.FAERS_DB_PATH;
   const userDataPath = app.getPath('userData');
-  // Use a test-specific database when running E2E tests
   const dbName = process.env.NODE_ENV === 'test' ? 'faers-test.db' : 'faers.db';
   return join(userDataPath, dbName);
 }

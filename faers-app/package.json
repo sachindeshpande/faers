@@ -18,6 +18,8 @@
     "test:coverage": "vitest run --coverage",
     "test:ui": "vitest --ui",
     "test:integration": "ELECTRON_RUN_AS_NODE=1 electron ./node_modules/.bin/vitest run src/main/**/*.integration.test.ts",
+    "build:headless": "esbuild src/main/headless/cli.ts --bundle --platform=node --format=cjs --packages=external --outfile=out/main/headless.js",
+    "headless": "npm run build:headless && ELECTRON_RUN_AS_NODE=1 electron out/main/headless.js --",
     "test:e2e": "playwright test",
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:debug": "playwright test --debug"

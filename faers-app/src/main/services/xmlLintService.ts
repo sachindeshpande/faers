@@ -48,28 +48,41 @@ export interface LintResult {
 export function resolveLintScriptPath(): string | null {
   const candidates: string[] = [];
 
+  // `app` is undefined when running as a standalone headless script
+  // without the full Electron runtime attached (e.g. esbuild-bundled CLI
+  // invoked via ELECTRON_RUN_AS_NODE). Guard each access so lookup still
+  // works from process.cwd() fallbacks.
+  const electronApp = (app as unknown as typeof app | undefined);
+
   // Production: packaged into app resources via electron-builder
   // `extraResources` mapping in package.json — `from: ../test/test_submission/
   // faers_xml_lint.py, to: lint/faers_xml_lint.py` — so the script ends up at
   // {Contents/Resources/lint on macOS, resources/lint on Windows/Linux}.
-  if (app.isPackaged) {
-    candidates.push(join(process.resourcesPath, 'lint', 'faers_xml_lint.py'));
-    // Legacy / alternate layouts in case the build config changes.
-    candidates.push(join(process.resourcesPath, 'faers_xml_lint.py'));
-    candidates.push(join(process.resourcesPath, 'test', 'test_submission', 'faers_xml_lint.py'));
+  try {
+    if (electronApp?.isPackaged) {
+      candidates.push(join(process.resourcesPath, 'lint', 'faers_xml_lint.py'));
+      // Legacy / alternate layouts in case the build config changes.
+      candidates.push(join(process.resourcesPath, 'faers_xml_lint.py'));
+      candidates.push(join(process.resourcesPath, 'test', 'test_submission', 'faers_xml_lint.py'));
+    }
+  } catch {
+    // Accessing app.isPackaged outside a full Electron context throws.
   }
 
   // Dev (electron-vite): app.getAppPath() is the project's `faers-app/`
   // directory; the lint script is two levels up.
   try {
-    const appPath = app.getAppPath();
-    candidates.push(join(appPath, '..', 'test', 'test_submission', 'faers_xml_lint.py'));
-    candidates.push(join(appPath, '..', '..', 'test', 'test_submission', 'faers_xml_lint.py'));
+    const appPath = electronApp?.getAppPath?.();
+    if (appPath) {
+      candidates.push(join(appPath, '..', 'test', 'test_submission', 'faers_xml_lint.py'));
+      candidates.push(join(appPath, '..', '..', 'test', 'test_submission', 'faers_xml_lint.py'));
+    }
   } catch {
     // app.getAppPath can throw outside an Electron context — tests etc.
   }
 
-  // Fallback: process.cwd() (useful when vitest runs under Electron Node)
+  // Fallback: process.cwd() (useful when vitest runs under Electron Node
+  // or when the headless CLI is invoked from the repo root).
   candidates.push(join(process.cwd(), 'test', 'test_submission', 'faers_xml_lint.py'));
   candidates.push(join(process.cwd(), '..', 'test', 'test_submission', 'faers_xml_lint.py'));
 

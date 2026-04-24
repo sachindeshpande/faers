@@ -5,9 +5,11 @@
   "baseline": "2L8T (CA+AA, 2026-04-21)",
   "case": {
     "safetyReportId": "SR-CASE-EXAMPLE-2L8T",
+    "worldwideCaseId": "SR-CASE-EXAMPLE-2L8T",
     "reportType": "Spontaneous",
     "initialOrFollowup": "Initial",
     "receiptDate": "2026-03-15",
+    "receiveDate": "2026-03-15",
     "expeditedReport": true,
     "localReportTypeCode": 1,
     "caseNarrative": "Patient experienced an adverse event approximately 60 days after initiation of Testdrugimab therapy for rheumatoid arthritis. Nausea resolved within 48 hours. No hospitalization required. Concomitant therapy with lisinopril continued without modification."
@@ -24,6 +26,25 @@
     "medicalHistoryText": "None reported",
     "hasConcomitantTherapy": true,
     "death": false
+  },
+  "sender": {
+    "senderType": "PharmaceuticalCompany",
+    "organization": "DeepQuence",
+    "department": "Drug Safety",
+    "givenName": "Sachin",
+    "familyName": "Deshpande",
+    "address": {
+      "street": "123 Test St",
+      "city": "Sunnyvale",
+      "state": "CA",
+      "postalCode": "94085",
+      "country": "US"
+    },
+    "contact": {
+      "phone": "+1-408-555-0100",
+      "fax": "+1-408-555-0101",
+      "email": "sachin@deepquence.com"
+    }
   },
   "reporter": {
     "qualification": "Physician",
@@ -49,6 +70,8 @@
     {
       "term": "Nausea",
       "meddraCode": "10028813",
+      "startDate": "2026-03-01",
+      "endDate": "2026-03-10",
       "outcomeCode": 1,
       "seriousness": {
         "death": false,
@@ -56,17 +79,18 @@
         "hospitalization": false,
         "disability": false,
         "congenitalAnomaly": false,
-        "otherMedicallyImportant": false
+        "otherMedicallyImportant": true
       }
     },
     {
       "term": "Hepatic enzyme increased",
       "meddraCode": "10019675",
+      "startDate": "2026-03-05",
       "outcomeCode": 3,
       "seriousness": {
         "death": false,
         "lifeThreatening": false,
-        "hospitalization": false,
+        "hospitalization": true,
         "disability": false,
         "congenitalAnomaly": false,
         "otherMedicallyImportant": false

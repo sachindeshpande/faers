@@ -40,18 +40,56 @@ const isoDate = z.string().regex(
 export const CaseImportCaseSchema = z
   .object({
     safetyReportId: z.string().min(1).optional(),
+    worldwideCaseId: z.string().optional(),
     reportType: enumish.optional(),            // "Spontaneous" | "Study" | ... | 1..4
     initialOrFollowup: enumish.optional(),      // "Initial" | "FollowUp" | 1 | 2
     receiptDate: isoDate.optional(),
+    /**
+     * Most Recent Information Date (E2B A.1.5.2). Validator requires this
+     * distinct from receiptDate. For an Initial report they're the same
+     * day; for follow-ups it's the follow-up receipt.
+     */
     receiveDate: isoDate.optional(),
     expeditedReport: z.boolean().optional(),
     localReportTypeCode: enumish.optional(),    // 1 (15-Day) | 7 (7-Day)
-    worldwideCaseId: z.string().optional(),
     additionalDocs: z.boolean().optional(),
     caseNarrative: z.string().optional(),
     reporterComments: z.string().optional(),
     senderComments: z.string().optional(),
     senderDiagnosis: z.string().optional()
+  })
+  .strict();
+
+// ────────────────────────────────────────────────────────────────────────────
+//  Sender (E2B A.3) — required for validation, must live on the Case record
+//  itself (not as a child entity like reporter).
+// ────────────────────────────────────────────────────────────────────────────
+
+export const CaseImportSenderSchema = z
+  .object({
+    senderType: enumish.optional(),             // 1..6 per SenderType enum
+    organization: z.string().optional(),
+    department: z.string().optional(),
+    givenName: z.string().optional(),
+    familyName: z.string().optional(),
+    address: z
+      .object({
+        street: z.string().optional(),
+        city: z.string().optional(),
+        state: z.string().optional(),
+        postalCode: z.string().optional(),
+        country: z.string().optional()
+      })
+      .strict()
+      .optional(),
+    contact: z
+      .object({
+        phone: z.string().optional(),
+        fax: z.string().optional(),
+        email: z.string().email().optional()
+      })
+      .strict()
+      .optional()
   })
   .strict();
 
@@ -191,6 +229,7 @@ export const CaseImportDocumentSchema = z
 
     case: CaseImportCaseSchema.optional(),
     patient: CaseImportPatientSchema.optional(),
+    sender: CaseImportSenderSchema.optional(),
     reporter: CaseImportReporterSchema.optional(),
     reactions: z.array(CaseImportReactionSchema).optional(),
     drugs: z.array(CaseImportDrugSchema).optional()
@@ -204,6 +243,7 @@ export const CaseImportDocumentSchema = z
 export type CaseImportDocument = z.infer<typeof CaseImportDocumentSchema>;
 export type CaseImportCase = z.infer<typeof CaseImportCaseSchema>;
 export type CaseImportPatient = z.infer<typeof CaseImportPatientSchema>;
+export type CaseImportSender = z.infer<typeof CaseImportSenderSchema>;
 export type CaseImportReporter = z.infer<typeof CaseImportReporterSchema>;
 export type CaseImportReaction = z.infer<typeof CaseImportReactionSchema>;
 export type CaseImportDrug = z.infer<typeof CaseImportDrugSchema>;
