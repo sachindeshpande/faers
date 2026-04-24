@@ -1,0 +1,81 @@
+{
+  "$schema": "faers-case-import-v1",
+  "exampleId": "IND-T02-susar-repeat",
+  "description": "Identical to IND-T01 in structure (spec §7 Phase 1 requires two positive ACKs for production access). Different safety report ID so the same ZZFDATST_PREMKT environment can receive both without duplicate rejection. All fields mirror IND-T01.",
+  "baseline": "IND-T01",
+  "case": {
+    "safetyReportId": "SR-CASE-EXAMPLE-INDT02",
+    "worldwideCaseId": "SR-CASE-EXAMPLE-INDT02",
+    "reportType": "Study",
+    "initialOrFollowup": "Initial",
+    "receiptDate": "2026-03-16",
+    "receiveDate": "2026-03-16",
+    "expeditedReport": true,
+    "localReportTypeCode": 1,
+    "caseType": "ind",
+    "indReportType": "15_day",
+    "studyId": 1,
+    "subjectNumber": "S002",
+    "dateInformed": "2026-03-11",
+    "caseNarrative": "Second subject on the Phase II Testdrugimab study reported a serious unexpected hepatic enzyme elevation. SUSAR per 21 CFR 312.32. Structurally identical to the IND-T01 baseline submission."
+  },
+  "indStudy": {
+    "indNumber": "123456",
+    "sponsorStudyNumber": "CT-00-01",
+    "studyName": "Phase II Study of Testdrugimab in Rheumatoid Arthritis",
+    "studyRegistrationNumber": "NCT00000001",
+    "crossReferencedIndNumbers": []
+  },
+  "patient": {
+    "initials": "R.K.",
+    "sex": "Female",
+    "birthDate": "1972-09-01",
+    "ageValue": 53,
+    "ageUnit": "Year",
+    "weightKg": 70,
+    "race": "C41260",
+    "ethnicity": "C41222",
+    "medicalHistoryText": "None reported",
+    "hasConcomitantTherapy": true,
+    "death": false
+  },
+  "sender": {
+    "senderType": "PharmaceuticalCompany",
+    "organization": "DeepQuence",
+    "department": "Drug Safety",
+    "givenName": "Sachin",
+    "familyName": "Deshpande",
+    "address": { "street": "123 Test St", "city": "Sunnyvale", "state": "CA", "postalCode": "94085", "country": "US" },
+    "contact": { "phone": "+1-408-555-0100", "email": "sachin@deepquence.com" }
+  },
+  "reporter": {
+    "qualification": "Physician",
+    "prefix": "Dr",
+    "givenName": "Jane",
+    "familyName": "Doe",
+    "organization": "City General Hospital",
+    "department": "Drug Safety",
+    "address": { "street": "100 Main St", "city": "Anytown", "state": "CA", "postalCode": "94085", "country": "US" },
+    "contact": { "phone": "+1-408-555-0100", "email": "jane.doe@example.com" }
+  },
+  "reactions": [
+    {
+      "term": "Hepatic enzyme increased",
+      "meddraCode": "10019675",
+      "startDate": "2026-03-06",
+      "outcomeCode": 3,
+      "seriousness": { "hospitalization": true }
+    }
+  ],
+  "drugs": [
+    {
+      "role": "Suspect", "productName": "Testdrugimab",
+      "dose": "50mg", "doseValue": 50, "doseUnit": "mg", "route": "Subcutaneous",
+      "indication": "Rheumatoid arthritis", "indicationMeddraCode": "10039073",
+      "startDate": "2026-01-20", "endDate": "2026-03-11",
+      "actionTakenCode": 1, "dechallengeCode": 3, "rechallengeCode": 3,
+      "manufacturerName": "DeepQuence",
+      "indAuthorizationNumber": "IND123456"
+    }
+  ]
+}

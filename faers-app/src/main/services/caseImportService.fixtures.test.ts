@@ -115,7 +115,12 @@ describe('Shipped example JSONs', () => {
     }
     expect(result.success).toBe(true);
     // Warnings indicate an enum we couldn't map — shipped fixtures should
-    // all hit the known values. Catch drift early.
-    expect(result.warnings ?? []).toEqual([]);
+    // all hit the known values. Catch drift early. Filter out the
+    // intentional informational messages (like the 21 CFR 312.32 IND
+    // timeline auto-derivation) because those are by-design, not drift.
+    const driftWarnings = (result.warnings ?? []).filter(
+      (w) => !w.includes('21 CFR 312.32')
+    );
+    expect(driftWarnings).toEqual([]);
   });
 });

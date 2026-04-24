@@ -513,11 +513,11 @@ export class XMLGeneratorService {
 
     // ── SUBJECT OF 2: ICH ReportType investigationCharacteristic (C.1.3) ──
     // Switch between "Spontaneous report" (postmarket, code=1) and
-    // "Report from study" (IND/SUSAR, code=2) based on caseType. Per
-    // SUSAR_IND_Feature_Spec.md §4.3.
-    const isInd = caseData.caseType === 'ind';
-    const ichReportCode = isInd ? '2' : '1';
-    const ichReportDisplay = isInd ? 'Report from study' : 'Spontaneous report';
+    // "Report from study" (IND/SUSAR and IND-Exempt BA/BE, code=2) based
+    // on caseType. Per SUSAR_IND_Feature_Spec.md §4.3.
+    const isStudy = caseData.caseType === 'ind' || caseData.caseType === 'babe';
+    const ichReportCode = isStudy ? '2' : '1';
+    const ichReportDisplay = isStudy ? 'Report from study' : 'Spontaneous report';
     lines.push('          <subjectOf2 typeCode="SUBJ">');
     lines.push('            <investigationCharacteristic classCode="OBS" moodCode="EVN">');
     lines.push('              <code code="1" codeSystem="2.16.840.1.113883.3.989.2.1.1.23" displayName="ICH ReportType"/>');
@@ -725,11 +725,12 @@ export class XMLGeneratorService {
     }
     lines.push('                  </player1>');
 
-    // SUSAR / IND — researchStudy block. Sits between <player1> and the
-    // first <subjectOf2> (age), matching the anchor in Scenario 3
-    // (FAERS2022Scenario3.xml lines 71–112). Emitted only for IND cases
-    // with an indStudy payload; postmarket cases skip this branch.
-    if (caseData.caseType === 'ind' && caseData.indStudy) {
+    // SUSAR / IND + IND-Exempt BA/BE — researchStudy block. Sits between
+    // <player1> and the first <subjectOf2> (age), matching the anchor in
+    // Scenario 3 (FAERS2022Scenario3.xml lines 71–112). Emitted only for
+    // study-type cases with an indStudy payload; postmarket cases skip.
+    const isStudyCase = caseData.caseType === 'ind' || caseData.caseType === 'babe';
+    if (isStudyCase && caseData.indStudy) {
       lines.push(this.buildResearchStudy(caseData.indStudy));
     }
 

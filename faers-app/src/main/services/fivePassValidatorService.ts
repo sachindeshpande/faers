@@ -313,10 +313,11 @@ function runPass3(
 
   // IND structural checks — run FIRST so errors surface before the empirical
   // policy sweep's warnings. These verify the XML matches what the generator
-  // is supposed to emit for an IND case (rather than what ACK3s have proven
-  // safe/rejected, which is what FAERS_POLICY covers below). Detectable
-  // regressions, not empirical policy questions.
-  if (caseType === 'ind') {
+  // is supposed to emit for IND / BA-BE cases (rather than what ACK3s have
+  // proven safe/rejected, which is what FAERS_POLICY covers below). Both
+  // caseType flavours share the same researchStudy / C.1.3=2 emission, so
+  // the checks apply to either.
+  if (caseType === 'ind' || caseType === 'babe') {
     findings.push(...indStructuralChecks(candidate));
   }
 
@@ -793,12 +794,14 @@ export function runFivePassValidation(xml: string, opts: FivePassOptions = {}): 
     }
   }
 
-  // IND cases can't be compared against the v37 Scenario-7 golden — the
-  // researchStudy block + different C.1.3 value legitimately change the
-  // element tree. Until we have a confirmed-accepted IND baseline in
-  // test/golden/, passes 1/4/5 are skipped with an explicit reason.
-  const indSkip = opts.caseType === 'ind'
-    ? 'IND case — no IND golden reference yet (postmarket v37 diff would be noise)'
+  // Premarket cases (both IND SUSAR and IND-Exempt BA/BE) can't be
+  // compared against the v37 Scenario-7 golden — the researchStudy block
+  // + different C.1.3 value legitimately change the element tree. Until
+  // we have a confirmed-accepted IND / BA/BE baseline in test/golden/,
+  // passes 1/4/5 are skipped with an explicit reason.
+  const isPremarketCase = opts.caseType === 'ind' || opts.caseType === 'babe';
+  const indSkip = isPremarketCase
+    ? `${opts.caseType?.toUpperCase()} case — no golden reference yet (postmarket v37 diff would be noise)`
     : null;
   const p1 = indSkip
     ? { summary: { ran: false, skipReason: indSkip, errors: 0, warnings: 0 }, findings: [] as ValidatorFinding[] }

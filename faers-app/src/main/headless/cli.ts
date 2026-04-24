@@ -221,16 +221,19 @@ export function resolveSubmissionReportType(
   caseType: string | undefined,
   cliFlag: SubmissionReportType | undefined
 ): { value: SubmissionReportType; reason: 'cli' | 'inferred-ind' | 'default-postmarket'; warning?: string } {
-  const isInd = caseType === 'ind';
+  // Both IND SUSAR and IND-Exempt BA/BE route via Premarket receivers.
+  // Any case with caseType in {'ind', 'babe'} gets Premarket by default
+  // when the CLI flag is absent.
+  const isStudy = caseType === 'ind' || caseType === 'babe';
   if (cliFlag) {
-    if (isInd && cliFlag !== 'Premarket') {
+    if (isStudy && cliFlag !== 'Premarket') {
       return {
         value: cliFlag,
         reason: 'cli',
-        warning: `case.caseType="ind" but --report-type=${cliFlag}; routing headers will not match the IND body`
+        warning: `case.caseType="${caseType}" but --report-type=${cliFlag}; routing headers will not match the study-report body`
       };
     }
-    if (!isInd && cliFlag === 'Premarket' && caseType === 'postmarket') {
+    if (!isStudy && cliFlag === 'Premarket' && caseType === 'postmarket') {
       return {
         value: cliFlag,
         reason: 'cli',
@@ -239,7 +242,7 @@ export function resolveSubmissionReportType(
     }
     return { value: cliFlag, reason: 'cli' };
   }
-  if (isInd) return { value: 'Premarket', reason: 'inferred-ind' };
+  if (isStudy) return { value: 'Premarket', reason: 'inferred-ind' };
   return { value: 'Postmarket', reason: 'default-postmarket' };
 }
 
@@ -376,16 +379,17 @@ async function processOneFile(args: ProcessArgs): Promise<HeadlessFileResult> {
 
   // Same persistedCase used above for report-type resolution; re-used
   // here to drive the lint skip and 5-pass caseType option.
-  const isIndCase = persistedCaseForRouting?.caseType === 'ind';
+  const caseTypeForGates = persistedCaseForRouting?.caseType;
+  const isStudyCase = caseTypeForGates === 'ind' || caseTypeForGates === 'babe';
 
   // ── Stage 6: 55-check lint ────────────────────────────────────────────
-  // Skip for IND — the 55-check Python lint hard-codes the postmarket v37
-  // receiver set (ZZFDATST / CDER) and would always fail for a Premarket
-  // IND XML (ZZFDATST_PREMKT / CDER_IND). A future IND-specific lint
-  // catalogue can replace this skip.
-  if (isIndCase) {
-    stages.push({ stage: 'lint', ok: true, detail: 'skipped: IND case (postmarket lint N/A)' });
-    log('  [lint] skipped — IND case (postmarket 55-check N/A)');
+  // Skip for IND + BA/BE — the 55-check Python lint hard-codes the
+  // postmarket v37 receiver set (ZZFDATST / CDER) and would always fail
+  // for a Premarket XML (ZZFDATST_PREMKT / CDER_IND). A future Premarket-
+  // specific lint catalogue can replace this skip.
+  if (isStudyCase) {
+    stages.push({ stage: 'lint', ok: true, detail: `skipped: ${caseTypeForGates?.toUpperCase()} case (postmarket lint N/A)` });
+    log(`  [lint] skipped — ${caseTypeForGates?.toUpperCase()} case (postmarket 55-check N/A)`);
   } else {
     try {
       const lint = lintE2bXml(xmlRes.xml);
