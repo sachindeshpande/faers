@@ -1,8 +1,10 @@
 # FAERS Submission Application - User Guide
 
-**Version:** 5.1
-**Applies to:** Phase 5 (Enhanced Data Management) + Phase 2B (ESG NextGen API) + FAERS Empirical Validator (post-2L8T)
-**Last Updated:** April 2026
+**Version:** 5.2
+**Applies to:** Phase 5 (Enhanced Data Management) + Phase 2B (ESG NextGen API) + FAERS Empirical Validator + JSON Case Import + Headless CLI
+**Last Updated:** April 25, 2026
+
+> **Postmarket (Scenario 7) only.** This guide covers the GUI workflow for postmarket spontaneous reports — the path that produced the v37 + 2L8T accepted submissions. Premarket / IND / SUSAR safety reports (`caseType: 'ind'`) are currently driven through the headless CLI rather than the GUI; a Report Type selector and IND form section per [`SUSAR_IND_Feature_Spec.md`](../requirements/SUSAR_IND_Feature_Spec.md) §5.7 are a planned but deferred GUI addition. If you need to generate an IND XML today, see `npm run headless -- path/to/ind-case.json` and the IND examples under `test/test_submission/examples/cases/IND-T01..IND-T07`.
 
 ---
 

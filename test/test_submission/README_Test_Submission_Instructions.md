@@ -87,7 +87,7 @@ The repo is configured for the **ZZFDATST (test) environment**:
 | Submission type | `AERS` | `AERS` |
 | Report type | SINGLE | SINGLE |
 
-For premarket (IND) submissions, change the batch receiver to `ZZFDATST_PREMKT` and message receiver to `CDER_IND` / `CBER_IND`.
+For premarket (IND / SUSAR) submissions, change the batch receiver to `ZZFDA_PREMKT` (same value for both test and production — the test/prod split happens at the network endpoint URL, not in the receiver ID) and message receiver to `CDER_IND` / `CBER_IND`. The codebase exposes this through `caseType: 'ind'` in the import JSON, which auto-routes via `BATCH_RECEIVERS.{Test,Production}.Premarket = 'ZZFDA_PREMKT'`.
 
 ---
 

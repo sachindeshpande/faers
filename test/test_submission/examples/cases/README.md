@@ -6,7 +6,9 @@ Pre-filled JSON documents that can be imported into the DeepQuence FAERS app to 
 
 **From the UI (today):** toolbar → **Import JSON** → pick a file → the app creates a Draft with the fields populated and navigates to it. The Save button is highlighted as a "review and confirm" cue; the record is already in the DB.
 
-**From code / CLI (when the headless entry point lands):** the backing service is `src/main/services/caseImportService.ts::CaseImportService.importCaseFromJson(...)`. It accepts either a file path, inline JSON text, or a parsed object and returns `{ success, caseId, errors?, warnings? }`.
+**From the headless CLI:** `npm run headless -- path/to/example.json [more.json...]` runs the full import → validate → generate → gate → write XML pipeline against an ephemeral SQLite DB. Output XML lands at `<outDir>/<input-base>.xml`. Auto-routes `caseType: 'ind'` / `'babe'` cases via Premarket receivers; postmarket cases go through ZZFDATST. See `src/main/headless/cli.ts` and `--help` for full flags.
+
+**From code:** `src/main/services/caseImportService.ts::CaseImportService.importCaseFromJson(...)`. Accepts a file path, inline JSON text, or a parsed object and returns `{ success, caseId, errors?, warnings? }`.
 
 ## Schema
 
@@ -22,6 +24,8 @@ Identifier behaviour:
 
 ## The examples
 
+### Postmarket (Scenario 7) — proven against ZZFDATST
+
 | File | Test-catalog ID | What it exercises |
 |---|---|---|
 | `2L8T-baseline.json` | — | Proven-accepted 2L8T baseline; start here. |
@@ -36,6 +40,20 @@ Identifier behaviour:
 | `TC-G04-fatal-outcome.json` | TC-G04 | Reaction `outcomeCode = 5` + `patient.death = true`. |
 
 Each TC variant is a **minimal patch over `2L8T-baseline.json`** — the reporter, drugs, and reactions match 2L8T unless the test specifically changes them. That preserves the test catalog's §2 isolation rule: one untested field per submission.
+
+### Premarket — IND / SUSAR (no live ACK3 yet — every value is `IND_POLICY.untested`)
+
+All seven IND examples set `case.caseType = "ind"` (or `"babe"` for T06), which auto-routes via `ZZFDA_PREMKT` / `CDER_IND` and emits the `<researchStudy>` block per [`SUSAR_IND_Feature_Spec.md`](../../../../docs/requirements/SUSAR_IND_Feature_Spec.md). Run order: T01 → T02 (FDA's two-positive-ACK rule), then T03/T04 (low-risk variants), then T05/T06/T07 (higher risk).
+
+| File | Test-catalog ID | What it exercises |
+|---|---|---|
+| `IND-T01-susar-baseline.json` | IND-T01 | Baseline SUSAR — single suspect IND drug, 15-day timeline, full study block. |
+| `IND-T02-susar-repeat.json` | IND-T02 | Identical structure to T01 with a different case ID — for the FDA two-positive-ACK requirement. |
+| `IND-T03-cross-ref-ind.json` | IND-T03 | Adds `indStudy.crossReferencedIndNumbers` (FDA.C.5.6.r repeating). |
+| `IND-T04-no-study-registration.json` | IND-T04 | Omits `studyRegistrationNumber` (NCT) — verifies C.5.1.r.1 is truly optional. |
+| `IND-T05-fatal-seven-day.json` | IND-T05 | Fatal hepatic failure → `seriousness.death = true`, `outcomeCode = 5`. `indReportType` is intentionally omitted to exercise the auto-derivation to `7_day`. |
+| `IND-T06-babe-test-reference.json` | IND-T06 | `caseType: "babe"` with the required Test + Reference drug pair plus a concomitant `NA` — triggers the BA/BE G.k.10a.r enforcement rule. |
+| `IND-T07-followup-report.json` | IND-T07 | `initialOrFollowup: "FollowUp"` — auto-derives the C.1.9 version to `"3"`. |
 
 ## Adding a new example
 

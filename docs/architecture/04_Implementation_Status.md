@@ -1,8 +1,10 @@
 # FAERS Application - Implementation Status
 
-**Last Updated:** April 2026
-**Phase:** 5 (Enhanced Data Management & Medical Terminology) + Phase 2B (ESG NextGen API) + **FAERS Empirical Validator Stack**
-**Status:** Phase 5 & Phase 2B Complete; v37 / 2L8T both achieved ZZFDATST CA+AA; in-app 5-pass validator and ACK parser landed after 2L8T acceptance
+**Last Updated:** April 25, 2026
+**Phase:** 5 (Enhanced Data Management) + Phase 2B (ESG NextGen API) + Empirical Validator Stack + **JSON Import / Headless CLI** + **SUSAR / IND Safety Reports (E2B emission)**
+**Status:** All phases above are code-complete. Postmarket has live ZZFDATST evidence (v37 + 2L8T = CA+AA). IND has the full code path but no live ZZFDA_PREMKT submission yet — every `IND_POLICY` entry is `untested`.
+
+> The most current narrative for "where the project is right now" lives in **[`docs/handoffs/2026-04-25_session_handoff.md`](../handoffs/2026-04-25_session_handoff.md)**. This file is the architectural map; that file is the operational pickup point.
 
 ---
 
@@ -104,6 +106,40 @@ Hard-earned from the CF97 → 2GZK → QTXZ → 26ZL → 2L8T submission campaig
 | **5-Pass Validator Panel** | Complete | `FivePassValidatorPanel.tsx` — traffic-light strip + collapsible findings; embedded in `SubmitToFdaDialog`, disables Submit on errors |
 | **Import ACK Dialog** | Complete | `ImportAckDialog.tsx` — file picker / paste tabs → parsed verdict + rejection list; toolbar entry in `App.tsx` |
 | **Fixture-Driven Tests** | Complete | 11 service tests (real ACKs + 5 `from_app/` XMLs) + 16 component tests (rendering + mocked IPC) |
+
+### 2.2E JSON Case Import + Headless CLI ✓ Complete (Apr 2026)
+
+Skips the GUI for cases that come from automated tooling or test catalogs. The same import pipeline drives both the GUI's "Import JSON" toolbar action and the standalone `npm run headless` entry point.
+
+| Feature | Status | Key Files |
+|---------|--------|-----------|
+| **Human-friendly JSON DSL** | Complete | `src/shared/types/caseImport.types.ts` — zod schema; ~200 fields across `case`, `patient`, `sender`, `reporter`, `reactions`, `drugs`, `indStudy` |
+| **Import service** | Complete | `caseImportService.ts` — parses JSON / file / object, validates, populates Case + reporter + reactions + drugs in a single transaction |
+| **GUI Import JSON dialog** | Complete | `src/renderer/components/submission/ImportJsonDialog.tsx` (toolbar action); creates a Draft, navigates to the case form |
+| **Headless CLI** | Complete | `src/main/headless/cli.ts` (esbuild-bundled, runs under `ELECTRON_RUN_AS_NODE`); `npm run headless -- file.json` runs the full pipeline against an ephemeral SQLite DB |
+| **Auto-routing** | Complete | `--report-type` defaults from `case.caseType`: `'ind'` / `'babe'` → Premarket, otherwise Postmarket. Mismatch warns. |
+| **Per-case lint/validator skip** | Complete | IND/BA-BE cases skip the postmarket Python 55-check and 5-pass Passes 1/4/5 (no IND golden yet) |
+| **10 postmarket example JSONs** | Complete | `test/test_submission/examples/cases/2L8T-baseline.json` + 9 TC variants exercising race/ethnicity/medhistory/reporter/drug/sex/outcome scenarios |
+| **Fixture-driven tests** | Complete | Schema validation + import-and-render tests run on every shipped example |
+
+### 2.2F SUSAR / IND Safety Report (E2B Emission) ✓ Complete (Apr 2026)
+
+Implements the scope of [`docs/requirements/SUSAR_IND_Feature_Spec.md`](../requirements/SUSAR_IND_Feature_Spec.md) end-to-end through the headless pipeline. Switch is `case.caseType` (`'postmarket'` | `'ind'` | `'babe'`).
+
+| Feature | Status | Key Files |
+|---------|--------|-----------|
+| **C.1.3 = 2 (Report from study)** | Complete | `xmlGeneratorService.ts` switches based on `caseType` |
+| **`<researchStudy>` block** | Complete | Emitted under `primaryRole/subjectOf1` with C.5.3 sponsor study, C.5.4 study type, C.5.2 title, C.5.1.r.1 NCT, FDA.C.5.5a IND number, repeating FDA.C.5.6.r cross-refs |
+| **G.k.3.1 drug approval** | Complete | `<asManufacturedProduct>/subjectOf/approval>` block per suspect IND drug |
+| **G.k.10a.r FDAAddDrugInformation** | Complete | TEST / REFERENCE / nullFlavor=NA emission; required for `caseType: 'babe'` (BA/BE drug-pair enforced) |
+| **Premarket routing** | Complete | `BATCH_RECEIVERS.{Test,Production}.Premarket = 'ZZFDA_PREMKT'`; `MESSAGE_RECEIVERS.Premarket.{CDER,CBER}` = `'CDER_IND'` / `'CBER_IND'` |
+| **`IND_POLICY` empirical table** | Complete (all `untested`) | `faersEmpiricalPolicy.ts` — promotes to `proven_safe`/`proven_rejected` only after live ZZFDA_PREMKT ACK3s |
+| **Pass 3 IND structural checks** | Complete | C.1.3=2, C.5.4=1, G.k.10a.r ∈ {1, 2, NA} verified per case |
+| **ACK parser report-context** | Complete | `ParsedAck.reportContext` (postmarket / ind / babe) supplied by caller, derives from `caseId` via case repo when not explicit |
+| **7- vs 15-day timeline derivation** | Complete | Importer auto-picks `indReportType` from reaction seriousness when omitted |
+| **DB migration 025** | Complete | 5 new columns on `cases` (ind_number, sponsor_study_number, study_name, study_registration_number, ind_cross_ref_numbers JSON) + 2 on `case_drugs` |
+| **7 IND example JSONs** | Complete | T01 baseline, T02 repeat, T03 cross-ref, T04 NCT-less, T05 fatal/7-day, T06 BA/BE pair, T07 follow-up |
+| **First live submission** | **Pending** | Manual upload via `https://esgng.fda.gov` — see `docs/handoffs/2026-04-25_session_handoff.md` §4 |
 
 ### 2.2C Demo Mode Enhancement ✓ Complete
 
@@ -245,8 +281,12 @@ faers-app/
 │   │   │   ├── statusTransitionService.ts # Phase 2B (extended)
 │   │   │   ├── xmlLintService.ts          # Post-2L8T: wraps faers_xml_lint.py
 │   │   │   ├── fivePassValidatorService.ts # Post-2L8T: empirical validator
-│   │   │   ├── faersEmpiricalPolicy.ts    # Post-2L8T: codified policy table
-│   │   │   └── ackParserService.ts        # Post-2L8T: HL7 ACK parser
+│   │   │   ├── faersEmpiricalPolicy.ts    # Post-2L8T: codified policy table (FAERS_POLICY + IND_POLICY)
+│   │   │   ├── ackParserService.ts        # Post-2L8T: HL7 ACK parser (reportContext aware)
+│   │   │   ├── caseImportService.ts       # Apr 2026: JSON DSL → Case (zod-validated)
+│   │   │   └── indCaseService.ts          # Phase 6: SUSAR workflow (causality, expectedness, unblinding) — NOT yet wired into import/export
+│   │   ├── headless/                      # Apr 2026: standalone CLI entry
+│   │   │   └── cli.ts                     # `npm run headless -- file.json`; esbuild-bundled, runs under ELECTRON_RUN_AS_NODE
 │   │   └── pdf/
 │   │       └── form3500Parser.ts
 │   │
@@ -733,22 +773,47 @@ Located in `e2e/` directory, testing:
 
 ---
 
-## 10. Next Steps for Phase 6
+## 10. Next Steps
 
-### 10.1 Premarketing (IND) Reports
+### 10.1 Live FDA submissions (the actual blocker)
 
-1. **IND Safety Reporting**
-   - IND safety report support (21 CFR 312.32)
-   - Clinical trial case management
-   - Blinding management
+The codebase is ready to submit IND-T01. Without a live ZZFDA_PREMKT ACK3, no further IND code work pays back — every `IND_POLICY` entry is `untested` and Passes 1/4/5 of the validator are skipped because there's no IND golden XML to diff against.
 
-2. **Expectedness Assessment**
-   - Expectedness against Investigator Brochure
-   - Form FDA 3500A generation
+See **[`docs/handoffs/2026-04-25_session_handoff.md`](../handoffs/2026-04-25_session_handoff.md)** §4 for the explicit submit-and-respond workflow on both CA+AA and CR+AR outcomes.
 
-3. **Regulatory Compilation**
-   - IND annual report compilation
-   - Safety update reports
+### 10.2 Phase-6 IND items already shipped
+
+These were originally listed as Phase 6 deliverables; checking off what landed in the SUSAR/IND work (§2.2F above).
+
+| Originally listed | Status |
+|---|---|
+| IND safety report support (21 CFR 312.32) | ✓ E2B emission complete (researchStudy, drug approval, G.k.10a.r); 7- vs 15-day timeline auto-derives from seriousness |
+| Clinical trial case management (study ID, subject number, blinding) | ✓ DB columns + Case interface fields wired in via Phase 6 schema; IND import schema exposes them |
+| Blinding management | Schema exists (`Case.isBlinded`, `treatmentArm`); not yet enforced or surfaced in UI |
+| BA/BE study support | ✓ `caseType: 'babe'` enforces the G.k.10a.r drug-pair rule (exactly one TEST + one REFERENCE) |
+| Follow-up IND reports | ✓ E2B C.1.9 version derives from `initialOrFollowup`; IND-T07 example exercises it |
+
+### 10.3 Phase-6 IND items still open
+
+| Item | Notes |
+|---|---|
+| **IND-specific Python lint catalogue** | `faers_xml_lint.py` hard-codes postmarket receivers; the headless CLI skips it for IND/BA-BE today. A parallel `faers_ind_lint.py` (or `--ind` mode) would restore that gate. Only meaningful after T01 confirms the accepted shape. |
+| **IND golden XML + un-skip Passes 1/4/5** | Once ZZFDA_PREMKT returns CA+AA on T01, save the submitted XML to `test/golden/` and switch the 5-pass validator to use it as the IND diff target. |
+| **SUSAR workflow integration** | `indCaseService.ts` models causality, dual causality, expectedness vs IB, and unblinding. None of it is reachable from the import/export pipeline. Wire-up needed when SUSAR determination should gate Submit-to-FDA. |
+| **Form FDA 3500A generation** | Bidirectional with `Form3500ImportService` — the import path is built (PDF → Case); export path (Case → PDF) is not. |
+| **IND annual report compilation** | Roll up multiple SUSARs over a reporting period. |
+| **UI for IND fields** (spec §5.7) | Report Type selector + IndStudyInfo form + per-drug Drug Role dropdown. Deferred — headless is the primary path. |
+
+### 10.4 Reporting & Analytics (Phase 8 — not started)
+
+1. **Dashboards**
+   - Case volume trends
+   - Submission metrics
+   - User activity reports
+
+2. **Signal Detection**
+   - Statistical analysis support
+   - Disproportionality analysis
 
 ### 10.2 Reporting & Analytics (Phase 8)
 

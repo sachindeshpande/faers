@@ -47,6 +47,8 @@ This document covers the architecture through Phase 4, which includes:
 - Periodic Safety Report (PSR) management
 - Offline-first operation with audit trails
 
+> **Implementation evolution beyond this doc.** Phases 5 (data management + terminology), 2B (ESG NextGen API), and post-2L8T additions (the empirical-validator stack, JSON case import, the headless CLI, and SUSAR/IND E2B emission) all shipped after this design was authored. The high-level container/component diagrams below remain accurate for the GUI process; the **headless CLI** is a fourth process container running under `ELECTRON_RUN_AS_NODE` that reuses the same service layer without the renderer, and the **5-pass empirical validator** is now a peer of the existing `ValidationService` gating both the export and ESG-API submission paths. For the live structural map (services, repos, IPC channels, type files, and which phase they came from) read [`04_Implementation_Status.md`](04_Implementation_Status.md). For session-level pickup notes read [`../handoffs/2026-04-25_session_handoff.md`](../handoffs/2026-04-25_session_handoff.md).
+
 ### 1.2 Architecture Principles
 
 | Principle | Description |

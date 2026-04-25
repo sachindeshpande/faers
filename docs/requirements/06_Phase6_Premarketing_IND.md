@@ -2,10 +2,12 @@
 
 ## Requirements Specification for Claude Code
 
-**Version:** 1.0  
-**Phase:** 6 of 12  
-**Estimated Duration:** 2 months  
+**Version:** 1.1
+**Phase:** 6 of 12
+**Estimated Duration:** 2 months
 **Prerequisites:** Phase 1, Phase 2, Phase 3, and Phase 4 completed (Phase 5 optional but recommended)
+
+> **Status (April 2026):** This original Phase 6 spec was the initial scoping. The E2B(R3) XML emission slice — and only that slice — was re-specified separately in [`SUSAR_IND_Feature_Spec.md`](SUSAR_IND_Feature_Spec.md) and shipped via PR #2 plus follow-up commits. Some success criteria below are checked off accordingly; others remain open. See §1.3 for a delivery map and `docs/architecture/04_Implementation_Status.md` §2.2F for the implementation index.
 
 ---
 
@@ -17,17 +19,36 @@ Add support for premarketing safety reports including Investigational New Drug (
 
 ### 1.2 Success Criteria
 
-- [ ] IND safety reports can be created with all required fields
-- [ ] Study/protocol configuration with sites and investigators
-- [ ] Blinding status tracked with unblinding workflow
-- [ ] Expectedness assessment against Investigator Brochure
-- [ ] Causality assessment (investigator and sponsor)
-- [ ] 7-day and 15-day expedited timelines enforced
-- [ ] IND-exempt BA/BE study reports supported
-- [ ] Form FDA 3500A PDF generation
-- [ ] E2B(R3) XML generation with IND-specific elements
-- [ ] IND Annual Safety Report data aggregation
-- [ ] Protocol deviation tracking linked to cases
+- [x] IND safety reports can be created with all required fields *(via JSON import + Case schema; UI deferred)*
+- [x] Study/protocol configuration with sites and investigators *(DB schema + repo wiring done; full study/site management UI deferred)*
+- [ ] Blinding status tracked with unblinding workflow *(schema exists in `Case`; unblinding workflow in `indCaseService.ts` not yet wired into export path)*
+- [ ] Expectedness assessment against Investigator Brochure *(`indCaseService.ts` has the assessment APIs; not reachable from headless / import path)*
+- [ ] Causality assessment (investigator and sponsor) *(dual-causality APIs exist; not yet a gate on Submit-to-FDA)*
+- [x] 7-day and 15-day expedited timelines enforced *(auto-derived from reaction seriousness in `caseImportService.ts`; explicit value warns when it disagrees)*
+- [x] IND-exempt BA/BE study reports supported *(`caseType: 'babe'` enforces the G.k.10a.r drug-pair rule)*
+- [ ] Form FDA 3500A PDF generation *(import-only direction built via `Form3500ImportService`; export direction not yet)*
+- [x] E2B(R3) XML generation with IND-specific elements *(C.1.3=2, `<researchStudy>` block, G.k.3.1 drug approval, G.k.10a.r — per `SUSAR_IND_Feature_Spec.md` §4)*
+- [ ] IND Annual Safety Report data aggregation *(roll-up across SUSARs over a reporting window — not started)*
+- [ ] Protocol deviation tracking linked to cases *(out of scope for the SUSAR slice)*
+
+### 1.3 What landed (April 2026, via SUSAR_IND_Feature_Spec)
+
+| Component | Where |
+|---|---|
+| Data model — `IndStudyInfo` + `Case.indStudy` + `CaseDrug.indAuthorizationNumber / fdaAdditionalDrugInfo` | `src/shared/types/case.types.ts` |
+| DB migration 025 — IND columns on `cases` and `case_drugs` | `src/main/database/connection.ts` |
+| Import schema — `case.caseType`, `indStudy`, drug-level IND fields | `src/shared/types/caseImport.types.ts` |
+| XML emission — researchStudy block, drug approval, G.k.10a.r, C.1.3=2 | `src/main/services/xmlGeneratorService.ts` |
+| Routing — Premarket → `ZZFDA_PREMKT` / `CDER_IND` | `BATCH_RECEIVERS` + `MESSAGE_RECEIVERS` in `case.types.ts` |
+| Validator — Pass 3 IND structural checks; Passes 1/4/5 skipped pending IND golden | `src/main/services/fivePassValidatorService.ts` |
+| Empirical policy — `IND_POLICY` (all entries `untested`) | `src/main/services/faersEmpiricalPolicy.ts` |
+| ACK parser — `reportContext` tagging | `src/main/services/ackParserService.ts` |
+| Headless CLI — auto-routes IND cases through Premarket | `src/main/headless/cli.ts` |
+| Test catalog — IND-T01 through IND-T07 example JSONs | `test/test_submission/examples/cases/` |
+
+### 1.4 What remains for the original Phase 6 vision
+
+The items still unchecked in §1.2 — primarily the Phase-6 workflow layer (causality, expectedness, unblinding, annual reports) and the GUI surface. These are deliberately deferred until the first live `ZZFDA_PREMKT` acceptance proves the E2B emission shape; doing the workflow plumbing first would risk rework if the emission shape needs adjustment.
 
 ### 1.3 Out of Scope for Phase 6
 
