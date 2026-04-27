@@ -110,30 +110,39 @@ export function allPolicyFields(): FieldPolicy[] {
 // ────────────────────────────────────────────────────────────────────────────
 //  IND / SUSAR empirical policy
 //
-//  Every IND field starts as `untested` — the app has never successfully
-//  round-tripped a ZZFDA_PREMKT submission, so there is no evidence yet that
-//  any specific value is accepted or rejected. Promote rows to
-//  `proven_safe` / `proven_rejected` as real ACK3s come back, following the
-//  same protocol we used for FAERS_POLICY (see §7 of FAERS_Test_Case_Catalog
-//  and §5.5 of SUSAR_IND_Feature_Spec). Fields here are informational for
-//  UI reporting; the 5-pass validator skips IND comparisons entirely until
-//  a dedicated IND golden XML exists.
+//  GAP-IND-001 (2026-04-27) provided the first real ACK3 evidence on the
+//  Premarket pathway. The IND-T01 submission was rejected (CR + AR) with
+//  the FDA error "File sent with AS2 header 'CDER_IND' must have
+//  N.1.4 = 'ZZFDATST_PREMKT'". That promotes `batchReceiver` from
+//  `untested` to a known wrong value (recorded as the rejection evidence
+//  on the entry itself) and leaves the new correct value `ZZFDATST_PREMKT`
+//  awaiting confirmation from the next round-trip. CDER_IND drew no
+//  rejection in the same ACK so msgReceiver stays untested-but-uncontested.
+//
+//  Promote remaining rows to `proven_safe` / `proven_rejected` as real
+//  ACK3s arrive. See `docs/gaps/GAP-IND-001-batch-receiver-premkt.md`
+//  for the full incident record and §5.5 of SUSAR_IND_Feature_Spec for
+//  the promotion protocol.
 // ────────────────────────────────────────────────────────────────────────────
 
 export interface IndPolicyEntry {
-  /** Value we expect to emit for this field, e.g. `'1'` or `'ZZFDA_PREMKT'`. */
+  /** Value we expect to emit for this field, e.g. `'1'` or `'ZZFDATST_PREMKT'`. */
   value: string;
   verdict: PolicyVerdict;
   evidence?: string;
 }
 
 export const IND_POLICY: Record<string, IndPolicyEntry> = {
-  indNumber:     { value: '<required>',    verdict: 'untested' },
-  studyType:     { value: '1',             verdict: 'untested' },
-  typeOfReport:  { value: '2',             verdict: 'untested' },
-  drugRoleTest:  { value: '1',             verdict: 'untested' },
-  drugRoleRef:   { value: '2',             verdict: 'untested' },
-  drugRoleNa:    { value: 'nullFlavor=NA', verdict: 'untested' },
-  batchReceiver: { value: 'ZZFDA_PREMKT',  verdict: 'untested' },
-  msgReceiver:   { value: 'CDER_IND',      verdict: 'untested' }
+  indNumber:     { value: '<required>',     verdict: 'untested' },
+  studyType:     { value: '1',              verdict: 'untested' },
+  typeOfReport:  { value: '2',              verdict: 'untested' },
+  drugRoleTest:  { value: '1',              verdict: 'untested' },
+  drugRoleRef:   { value: '2',              verdict: 'untested' },
+  drugRoleNa:    { value: 'nullFlavor=NA',  verdict: 'untested' },
+  batchReceiver: {
+    value: 'ZZFDATST_PREMKT',
+    verdict: 'untested',
+    evidence: 'ZZFDA_PREMKT proven_rejected by IND-T01 ACK3 2026-04-27 (GAP-IND-001); ZZFDATST_PREMKT is the FDA-required value for Test environment and awaits its own round-trip confirmation'
+  },
+  msgReceiver:   { value: 'CDER_IND',       verdict: 'untested' }
 };

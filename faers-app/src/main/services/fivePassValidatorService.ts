@@ -749,7 +749,7 @@ export interface FivePassOptions {
    * golden XML (1, 4, 5) are skipped with a reason rather than run — v37
    * is Scenario-7-shaped and does not model the SUSAR `<researchStudy>`
    * block or IND routing. Pass 2/3 still run. A dedicated IND golden
-   * XML + empirical policy table land once the first ZZFDA_PREMKT ACK3
+   * XML + empirical policy table land once the first ZZFDATST_PREMKT ACK3
    * confirms an accepted baseline.
    */
   caseType?: 'postmarket' | 'ind' | 'babe';

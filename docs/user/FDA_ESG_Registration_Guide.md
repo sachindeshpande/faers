@@ -671,10 +671,12 @@ When uploading files to the FDA ESG NextGen portal, you must select a **Submissi
 
 | Environment                       | Batch Receiver (N.1.4) | Message Receiver (N.2.r.3) |
 | --------------------------------- | ---------------------- | -------------------------- |
-| **Test - Postmarket**       | `ZZFDA`              | CDER or CBER               |
-| **Test - Premarket**        | `ZZFDA_PREMKT`       | CDER_IND or CBER_IND       |
-| **Production - Postmarket** | `FDA_AERS`           | CDER or CBER               |
-| **Production - Premarket**  | (production values)    | CDER_IND or CBER_IND       |
+| **Test - Postmarket**       | `ZZFDATST`           | CDER or CBER               |
+| **Test - Premarket**        | `ZZFDATST_PREMKT`    | CDER_IND or CBER_IND       |
+| **Production - Postmarket** | `ZZFDA`              | CDER or CBER               |
+| **Production - Premarket**  | `ZZFDA_PREMKT`       | CDER_IND or CBER_IND       |
+
+(Premarket Test value confirmed by FDA ACK3 on 2026-04-27, see `docs/gaps/GAP-IND-001-batch-receiver-premkt.md`. Postmarket Test value confirmed by the v37 + 2L8T accepted submissions.)
 
 **Test Submission Workflow:**
 

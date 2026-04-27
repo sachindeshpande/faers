@@ -214,12 +214,12 @@ ICSR batches with non-approved sender identifiers will be rejected.
 
 | Report Type | Environment | Batch Receiver (N.1.4) | Message Receiver (N.2.r.3) |
 |-------------|-------------|------------------------|---------------------------|
-| **Postmarket** | Test | `ZZFDA` | `CDER` or `CBER` |
+| **Postmarket** | Test | `ZZFDATST` | `CDER` or `CBER` |
 | **Postmarket** | Production | `ZZFDA` | `CDER` or `CBER` |
-| **Premarket (IND)** | Test | `ZZFDA_PREMKT` | `CDER_IND` or `CBER_IND` |
+| **Premarket (IND)** | Test | `ZZFDATST_PREMKT` | `CDER_IND` or `CBER_IND` |
 | **Premarket (IND)** | Production | `ZZFDA_PREMKT` | `CDER_IND` or `CBER_IND` |
 
-**Note:** For USP and API submissions, the same identifiers are used for both test and production. The submission type (test vs production) is selected in the portal/API, not in the XML.
+**Note:** Both pathways follow the same `_TST` suffix convention for the test environment. The Premarket Test value `ZZFDATST_PREMKT` was confirmed by FDA ACK3 on IND-T01 (2026-04-27, see `docs/gaps/GAP-IND-001-batch-receiver-premkt.md`); a prior pre-submission gap analysis incorrectly claimed Test and Production share the same Premarket value.
 
 #### For AS2 (Legacy System-to-System):
 

@@ -229,7 +229,7 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({
             </Radio.Group>
           </Form.Item>
           <Text type="secondary" style={{ display: 'block', marginTop: -8, marginBottom: 16 }}>
-            Postmarket uses ZZFDA routing, Premarket uses ZZFDA_PREMKT
+            Postmarket uses ZZFDA routing (test: ZZFDATST). Premarket uses ZZFDA_PREMKT (test: ZZFDATST_PREMKT).
           </Text>
 
           <Form.Item

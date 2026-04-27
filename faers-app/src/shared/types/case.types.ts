@@ -663,17 +663,26 @@ export const SENDER_OID_DEFAULT = '2.16.840.1.113883.3.989.2.1.3.13';
 // OID for DUNS number (Dun & Bradstreet Data Universal Numbering System)
 export const SENDER_OID_DUNS = '1.3.6.1.4.1.519.1';
 
-// Batch receiver identifiers for FDA ESG. Test and Production use the same
-// premarket value; the test/production split happens at the network endpoint
-// level, not in the receiver ID. Confirmed by the IND SUSAR gap analysis
-// (test/test_submission/IND-SUSAR-XML-Gap-Analysis.docx, Apr 2026): the
-// `ZZFDATST_PREMKT` identifier we briefly used in this codebase is not
-// recognised by any FDA gateway. Postmarket follows the standard `_TST`
-// suffix convention because that path has a real test variant.
+// Batch receiver identifiers (N.1.4) for the FDA ESG NextGen gateway.
+// Both pathways follow the same `_TST` suffix convention for the test
+// environment.
+//
+// Empirical history (read this before changing any of these values):
+//   v1: codebase had Test.Premarket = 'ZZFDATST_PREMKT' (correct).
+//   v2: a pre-submission gap analysis (IND-SUSAR-XML-Gap-Analysis.docx,
+//       Apr 24 2026) asserted that test and production share the same
+//       Premarket value; we flipped to 'ZZFDA_PREMKT' in commit 26df8f0.
+//   v3: real FDA ACK3 on IND-T01 (2026-04-27, GAP-IND-001) returned CR+AR
+//       with the error "File sent with AS2 header 'CDER_IND' must have
+//       N.1.4 = 'ZZFDATST_PREMKT'". The pre-submission gap analysis was
+//       wrong; v1 was right; this is back to that.
+// Lesson: don't change values like these on the basis of a non-empirical
+// gap analysis. Wait for an ACK3 — the empirical policy is the source
+// of truth, not the spec interpretation.
 export const BATCH_RECEIVERS: Record<SubmissionEnvironment, Record<SubmissionReportType, string>> = {
   Test: {
     Postmarket: 'ZZFDATST',
-    Premarket: 'ZZFDA_PREMKT'
+    Premarket: 'ZZFDATST_PREMKT'
   },
   Production: {
     Postmarket: 'ZZFDA',

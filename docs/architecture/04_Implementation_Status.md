@@ -2,7 +2,7 @@
 
 **Last Updated:** April 25, 2026
 **Phase:** 5 (Enhanced Data Management) + Phase 2B (ESG NextGen API) + Empirical Validator Stack + **JSON Import / Headless CLI** + **SUSAR / IND Safety Reports (E2B emission)**
-**Status:** All phases above are code-complete. Postmarket has live ZZFDATST evidence (v37 + 2L8T = CA+AA). IND has the full code path but no live ZZFDA_PREMKT submission yet — every `IND_POLICY` entry is `untested`.
+**Status:** All phases above are code-complete. Postmarket has live ZZFDATST evidence (v37 + 2L8T = CA+AA). IND has its first live ACK3 — IND-T01 was rejected (CR+AR) on 2026-04-27 with a wrong-receiver error (GAP-IND-001), now fixed; the next round-trip is pending. `IND_POLICY` entries remain `untested` apart from the rejected `ZZFDA_PREMKT` value recorded as evidence.
 
 > The most current narrative for "where the project is right now" lives in **[`docs/handoffs/2026-04-25_session_handoff.md`](../handoffs/2026-04-25_session_handoff.md)**. This file is the architectural map; that file is the operational pickup point.
 
@@ -132,7 +132,7 @@ Implements the scope of [`docs/requirements/SUSAR_IND_Feature_Spec.md`](../requi
 | **`<researchStudy>` block** | Complete | Emitted under `primaryRole/subjectOf1` with C.5.3 sponsor study, C.5.4 study type, C.5.2 title, C.5.1.r.1 NCT, FDA.C.5.5a IND number, repeating FDA.C.5.6.r cross-refs |
 | **G.k.3.1 drug approval** | Complete | `<asManufacturedProduct>/subjectOf/approval>` block per suspect IND drug |
 | **G.k.10a.r FDAAddDrugInformation** | Complete | TEST / REFERENCE / nullFlavor=NA emission; required for `caseType: 'babe'` (BA/BE drug-pair enforced) |
-| **Premarket routing** | Complete | `BATCH_RECEIVERS.{Test,Production}.Premarket = 'ZZFDA_PREMKT'`; `MESSAGE_RECEIVERS.Premarket.{CDER,CBER}` = `'CDER_IND'` / `'CBER_IND'` |
+| **Premarket routing** | Complete | `BATCH_RECEIVERS.Test.Premarket = 'ZZFDATST_PREMKT'`, `Production.Premarket = 'ZZFDA_PREMKT'` (FDA ACK3 confirmed 2026-04-27, GAP-IND-001); `MESSAGE_RECEIVERS.Premarket.{CDER,CBER}` = `'CDER_IND'` / `'CBER_IND'` |
 | **`IND_POLICY` empirical table** | Complete (all `untested`) | `faersEmpiricalPolicy.ts` — promotes to `proven_safe`/`proven_rejected` only after live ZZFDA_PREMKT ACK3s |
 | **Pass 3 IND structural checks** | Complete | C.1.3=2, C.5.4=1, G.k.10a.r ∈ {1, 2, NA} verified per case |
 | **ACK parser report-context** | Complete | `ParsedAck.reportContext` (postmarket / ind / babe) supplied by caller, derives from `caseId` via case repo when not explicit |

@@ -43,7 +43,7 @@ Each TC variant is a **minimal patch over `2L8T-baseline.json`** — the reporte
 
 ### Premarket — IND / SUSAR (no live ACK3 yet — every value is `IND_POLICY.untested`)
 
-All seven IND examples set `case.caseType = "ind"` (or `"babe"` for T06), which auto-routes via `ZZFDA_PREMKT` / `CDER_IND` and emits the `<researchStudy>` block per [`SUSAR_IND_Feature_Spec.md`](../../../../docs/requirements/SUSAR_IND_Feature_Spec.md). Run order: T01 → T02 (FDA's two-positive-ACK rule), then T03/T04 (low-risk variants), then T05/T06/T07 (higher risk).
+All seven IND examples set `case.caseType = "ind"` (or `"babe"` for T06), which auto-routes via `ZZFDATST_PREMKT` (Test) or `ZZFDA_PREMKT` (Production) and the `CDER_IND` inner receiver, and emits the `<researchStudy>` block per [`SUSAR_IND_Feature_Spec.md`](../../../../docs/requirements/SUSAR_IND_Feature_Spec.md). Run order: T01 → T02 (FDA's two-positive-ACK rule), then T03/T04 (low-risk variants), then T05/T06/T07 (higher risk).
 
 | File | Test-catalog ID | What it exercises |
 |---|---|---|

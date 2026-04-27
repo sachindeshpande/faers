@@ -385,7 +385,7 @@ async function processOneFile(args: ProcessArgs): Promise<HeadlessFileResult> {
   // ── Stage 6: 55-check lint ────────────────────────────────────────────
   // Skip for IND + BA/BE — the 55-check Python lint hard-codes the
   // postmarket v37 receiver set (ZZFDATST / CDER) and would always fail
-  // for a Premarket XML (ZZFDA_PREMKT / CDER_IND). A future Premarket-
+  // for a Premarket XML (ZZFDATST_PREMKT / CDER_IND). A future Premarket-
   // specific lint catalogue can replace this skip.
   if (isStudyCase) {
     stages.push({ stage: 'lint', ok: true, detail: `skipped: ${caseTypeForGates?.toUpperCase()} case (postmarket lint N/A)` });
