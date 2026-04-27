@@ -879,15 +879,17 @@ export class XMLGeneratorService {
     lines.push('                    </organizer>');
     lines.push('                  </subjectOf2>');
 
-    // Death (B.1.9)
+    // Death (B.1.9). HL7 v3 observation child sequence requires
+    // effectiveTime BEFORE value — out-of-order produced a SAX schema parse
+    // error (cvc-complex-type.2.4.a) on IND-T05 ACK3 2026-04-27 (GAP-IND-003).
     if (caseData.patientDeath) {
       lines.push('                  <subjectOf2 typeCode="SBJ">');
       lines.push('                    <observation classCode="OBS" moodCode="EVN">');
       lines.push('                      <code code="C28554" codeSystem="2.16.840.1.113883.3.26.1.1" displayName="Death"/>');
-      lines.push('                      <value xsi:type="BL" value="true"/>');
       if (caseData.deathDate) {
         lines.push(`                      <effectiveTime value="${this.formatDate(caseData.deathDate)}"/>`);
       }
+      lines.push('                      <value xsi:type="BL" value="true"/>');
       lines.push('                    </observation>');
       lines.push('                  </subjectOf2>');
     }

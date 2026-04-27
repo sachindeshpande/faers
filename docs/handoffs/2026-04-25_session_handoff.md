@@ -51,17 +51,17 @@ In rough commit order on `main`:
 None of these are caused by this session's work. Don't try to fix them as part of any IND-related task.
 
 ### IND XML packages ready for manual submission
-Sitting at `test/test_submission/from_app/ind/`. **History:** the v3 packages were rejected on 2026-04-27 by GAP-IND-001 (`ZZFDA_PREMKT` instead of `ZZFDATST_PREMKT`); the v4 packages reached the 2.18 business-rule layer and were rejected by GAP-IND-002 (missing `FDA.C.5.6.r`, boolean instead of `nullFlavor="NI"` on `FDA.E.i.3.2h requiredIntervention`). The v5 packages (current files on disk) carry both fixes and are awaiting the next round-trip:
-- `IND-T01-susar-baseline.xml` — basic SUSAR, 15-day, full study block, one cross-reported IND
+Sitting at `test/test_submission/from_app/ind/`. **History:** v3 was rejected by GAP-IND-001 (`ZZFDA_PREMKT` for Test); v4 was rejected by GAP-IND-002 (missing `FDA.C.5.6.r`, boolean on `FDA.E.i.3.2h`); **v5 of IND-T01 returned CA+AE on 2026-04-27** — case loaded successfully with a single AE warning that exposes a documented FDA rules contradiction for `FDA.C.5.6.r` on `CDER_IND` (mandatory if absent → CR+AR; "invalid for center" if present → CA+AE). v5 of IND-T05 (fatal/7-day) hit GAP-IND-003 (schema parse error: `effectiveTime` after `value` in the death observation). v6 carries the GAP-IND-003 fix and is awaiting the next round-trip for the remaining cases:
+- `IND-T01-susar-baseline.xml` — **submitted, CA+AE confirmed (v5 = v6, no body change)**
 - `IND-T02-susar-repeat.xml` — second case for the FDA "two consecutive positive ACKs" rule
-- `IND-T05-fatal-seven-day.xml` — fatal hepatic failure, 7-day expedited (auto-derived from seriousness)
+- `IND-T05-fatal-seven-day.xml` — fatal hepatic failure, 7-day expedited; v6 fixes death observation order
 - `IND-T07-followup-report.xml` — follow-up amendment, version=3
 
 These are **not committed** — same convention as postmarket `from_app/` outputs (only `test/golden/` is tracked). Regeneratable any time via `npm run headless`.
 
 ### Empirical policy state
 - `FAERS_POLICY` (postmarket): race C41260 / ethnicity C41222 / med-history "None reported" / outcomes 1+3+6 are `proven_safe`. C17998 race+ethnicity is `proven_rejected`. Source of truth: `src/main/services/faersEmpiricalPolicy.ts`.
-- `IND_POLICY`: every entry is `untested`, but several rows now carry rejection evidence from real ACK3s — `batchReceiver` (GAP-IND-001 rejected `ZZFDA_PREMKT`), `crossReportedInd` and `requiredIntervention` (GAP-IND-002 rejected absent C.5.6.r and boolean E.i.3.2h respectively). Until a live CA+AA on `ZZFDATST_PREMKT` arrives, the IND validator skips Passes 1/4/5 and the headless CLI skips the postmarket Python lint for IND/BA-BE cases — they'd produce noise without an IND-specific reference.
+- `IND_POLICY`: `batchReceiver` (`ZZFDATST_PREMKT`), `msgReceiver` (`CDER_IND`), `crossReportedInd` (present, OID `.2.3`), and `requiredIntervention` (`nullFlavor="NI"`) are `proven_safe` — IND-T01 v4 ACK3 `ci260427204838` came back CA+AE on 2026-04-27. Remaining rows (indNumber, studyType, typeOfReport, drugRoleTest/Ref/Na) are still `untested`. The IND validator skips Passes 1/4/5 and the headless CLI skips the postmarket Python lint for IND/BA-BE cases until an IND-specific reference exists.
 
 ---
 
@@ -167,7 +167,8 @@ The single switch is `case.caseType` in (`'postmarket'` | `'ind'` | `'babe'`). P
 - **The 2L8T golden has only 3 IDs in its PORR sender block** (`.3.11`, `.3.13`, `1.3.6.1.4.1.519.1`). The April 24 gap analysis claimed there's a fourth `.3.12 extension="1"` to add — there isn't. Don't add it.
 - **`ParsedAck.reportContext` is set by the caller, not the parser.** The ACK XML doesn't carry it. The IPC handler resolves it via priority: explicit `reportContext` → derive from `caseId` via case repo → undefined.
 - **`indReportType` derivation has a warning channel.** When the JSON omits it for an IND case, the importer auto-derives `7_day` (fatal/life-threatening) or `15_day` and pushes a warning into `result.warnings`. Don't treat all warnings as drift in tests — the fixture-driven test filters by `21 CFR 312.32` substring.
-- **Premarket cases need both `FDA.C.5.6.r` (cross-reported IND) and `FDA.E.i.3.2h requiredIntervention` as nullFlavor=NI.** Both are 2.18 business-rule rejections caught by IND-T01 ACK3 on 2026-04-27 (GAP-IND-002). C.5.6.r is now enforced by ValidationService (errors when `indStudy.indNumber` is set but `crossReferencedIndNumbers` is empty). The requiredIntervention NI is conditional on `submissionReportType === 'Premarket'` — postmarket still emits the boolean, per v37 lint parity.
+- **Premarket cases need both `FDA.C.5.6.r` (cross-reported IND) and `FDA.E.i.3.2h requiredIntervention` as nullFlavor=NI.** Both are 2.18 business-rule rejections caught by IND-T01 ACK3 on 2026-04-27 (GAP-IND-002). C.5.6.r is now enforced by ValidationService (errors when `indStudy.indNumber` is set but `crossReferencedIndNumbers` is empty). The requiredIntervention NI is conditional on `submissionReportType === 'Premarket'` — postmarket still emits the boolean, per v37 lint parity. The `CDER_IND` center has a documented rules contradiction: omitting C.5.6.r causes CR+AR ("mandatory when C.5.5a present") while including it causes CA+AE ("invalid for CDER_IND"). CA+AE is the best achievable outcome and is treated as `proven_safe`.
+- **HL7 v3 `observation` requires `effectiveTime` BEFORE `value`.** The death observation (B.1.9, code C28554) emitted them in the wrong order, causing a SAX schema parse error (`cvc-complex-type.2.4.a`) on IND-T05 ACK3 on 2026-04-27 (GAP-IND-003). This rule applies to every `observation` in the doc; the reaction observation already gets it right because the IVL_TS effectiveTime block precedes the MedDRA CE value.
 
 ---
 

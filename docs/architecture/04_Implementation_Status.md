@@ -2,7 +2,7 @@
 
 **Last Updated:** April 25, 2026
 **Phase:** 5 (Enhanced Data Management) + Phase 2B (ESG NextGen API) + Empirical Validator Stack + **JSON Import / Headless CLI** + **SUSAR / IND Safety Reports (E2B emission)**
-**Status:** All phases above are code-complete. Postmarket has live ZZFDATST evidence (v37 + 2L8T = CA+AA). IND has two live ACK3s — IND-T01 was rejected on 2026-04-27 first by GAP-IND-001 (wrong batch receiver) and again by GAP-IND-002 (missing FDA.C.5.6.r + boolean E.i.3.2h instead of nullFlavor=NI for premarket); both fixes have landed and the next round-trip is pending. `IND_POLICY` entries remain `untested` apart from `batchReceiver`, `crossReportedInd`, and `requiredIntervention` which now carry rejection evidence on the wrong values.
+**Status:** All phases above are code-complete. Postmarket has live ZZFDATST evidence (v37 + 2L8T = CA+AA). IND-T01 reached **CA+AE** on 2026-04-27 after GAP-IND-001 (batch receiver) and GAP-IND-002 (C.5.6.r + E.i.3.2h nullFlavor=NI) were closed; `batchReceiver`, `msgReceiver`, `crossReportedInd`, and `requiredIntervention` are now `proven_safe`. IND-T05 (fatal/7-day) hit GAP-IND-003 — schema parse error from `effectiveTime` after `value` in the death observation — fix landed; resubmit pending.
 
 > The most current narrative for "where the project is right now" lives in **[`docs/handoffs/2026-04-25_session_handoff.md`](../handoffs/2026-04-25_session_handoff.md)**. This file is the architectural map; that file is the operational pickup point.
 
@@ -133,7 +133,7 @@ Implements the scope of [`docs/requirements/SUSAR_IND_Feature_Spec.md`](../requi
 | **G.k.3.1 drug approval** | Complete | `<asManufacturedProduct>/subjectOf/approval>` block per suspect IND drug |
 | **G.k.10a.r FDAAddDrugInformation** | Complete | TEST / REFERENCE / nullFlavor=NA emission; required for `caseType: 'babe'` (BA/BE drug-pair enforced) |
 | **Premarket routing** | Complete | `BATCH_RECEIVERS.Test.Premarket = 'ZZFDATST_PREMKT'`, `Production.Premarket = 'ZZFDA_PREMKT'` (FDA ACK3 confirmed 2026-04-27, GAP-IND-001); `MESSAGE_RECEIVERS.Premarket.{CDER,CBER}` = `'CDER_IND'` / `'CBER_IND'` |
-| **`IND_POLICY` empirical table** | Complete | `faersEmpiricalPolicy.ts` — `batchReceiver` / `crossReportedInd` / `requiredIntervention` carry `proven_rejected` evidence on the wrong values (GAP-IND-001/002, 2026-04-27); rest still `untested` until live `ZZFDATST_PREMKT` ACK3s arrive |
+| **`IND_POLICY` empirical table** | Complete | `faersEmpiricalPolicy.ts` — `batchReceiver` / `msgReceiver` / `crossReportedInd` / `requiredIntervention` are `proven_safe` from IND-T01 v4 CA+AE on 2026-04-27 (GAP-IND-001/002 closed); the remaining IND fields stay `untested` until they ride a successful submission of their own |
 | **Pass 3 IND structural checks** | Complete | C.1.3=2, C.5.4=1, G.k.10a.r ∈ {1, 2, NA} verified per case |
 | **FDA.C.5.6.r cross-reported IND mandatory** | Complete | ValidationService blocks any IND/babe case with `indStudy.indNumber` and empty `crossReferencedIndNumbers` (GAP-IND-002); IND-T01..T07 examples now ship a placeholder cross-ref |
 | **FDA.E.i.3.2h requiredIntervention nullFlavor=NI for premarket** | Complete | XML generator emits `nullFlavor="NI"` when `submissionReportType === 'Premarket'`; postmarket retains boolean for v37 lint parity (GAP-IND-002) |

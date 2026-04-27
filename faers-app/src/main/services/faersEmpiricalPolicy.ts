@@ -110,29 +110,29 @@ export function allPolicyFields(): FieldPolicy[] {
 // ────────────────────────────────────────────────────────────────────────────
 //  IND / SUSAR empirical policy
 //
-//  GAP-IND-001 (2026-04-27) provided the first real ACK3 evidence on the
-//  Premarket pathway. The IND-T01 submission was rejected (CR + AR) with
-//  the FDA error "File sent with AS2 header 'CDER_IND' must have
-//  N.1.4 = 'ZZFDATST_PREMKT'". That promotes `batchReceiver` from
-//  `untested` to a known wrong value (recorded as the rejection evidence
-//  on the entry itself) and leaves the new correct value `ZZFDATST_PREMKT`
-//  awaiting confirmation from the next round-trip. CDER_IND drew no
-//  rejection in the same ACK so msgReceiver stays untested-but-uncontested.
+//  GAP-IND-001 (2026-04-27) — first real Premarket ACK3 evidence. IND-T01
+//  v2 was rejected (CR+AR) with "File sent with AS2 header 'CDER_IND'
+//  must have N.1.4 = 'ZZFDATST_PREMKT'". After fixing the receiver, the
+//  v3 round-trip on 2026-04-27 returned CA+AE — `batchReceiver` and
+//  `msgReceiver` are now `proven_safe`.
 //
-//  GAP-IND-002 (2026-04-27) — second IND-T01 submission with the corrected
-//  batch receiver reached the 2.18 business-rule layer and surfaced two
-//  new premarket rejections: `FDA.C.5.6.r` is mandatory whenever
-//  `FDA.C.5.5a` is populated, and `FDA.E.i.3.2h requiredIntervention`
-//  must carry `nullFlavor="NI"` for any premarket case (boolean values are
-//  rejected). New entries `crossReportedInd` and `requiredIntervention`
-//  capture the now-known-correct values; the boolean `value="false"` we
-//  emitted in v3 is recorded as proven_rejected.
+//  GAP-IND-002 (2026-04-27) — IND-T01 v3 reached the 2.18 business-rule
+//  layer and was rejected (CR+AR) for two premarket rules: `FDA.C.5.6.r`
+//  is mandatory whenever `FDA.C.5.5a` is populated, and
+//  `FDA.E.i.3.2h requiredIntervention` must carry `nullFlavor="NI"`
+//  (boolean values are rejected). After both fixes, IND-T01 v4 round-trip
+//  on 2026-04-27 returned CA+AE — both fields are `proven_safe`. Note:
+//  C.5.6.r exposes a direct FDA rules contradiction for `CDER_IND` —
+//  omitting it causes CR+AR ("mandatory when C.5.5a present"), including
+//  it causes CA+AE ("invalid for CDER_IND center"). CA+AE is the best
+//  achievable outcome and treated as the proven_safe state.
 //
 //  Promote remaining rows to `proven_safe` / `proven_rejected` as real
-//  ACK3s arrive. See `docs/gaps/GAP-IND-001-batch-receiver-premkt.md`
-//  and `docs/gaps/GAP-IND-002-business-rules-c56r-required-intervention.md`
-//  for the full incident records, plus §5.5 of SUSAR_IND_Feature_Spec for
-//  the promotion protocol.
+//  ACK3s arrive. See `docs/gaps/GAP-IND-001-batch-receiver-premkt.md`,
+//  `docs/gaps/GAP-IND-002-business-rules-c56r-required-intervention.md`,
+//  and `docs/gaps/GAP-IND-003-death-observation-element-order.md` for the
+//  full incident records, plus §5.5 of SUSAR_IND_Feature_Spec for the
+//  promotion protocol.
 // ────────────────────────────────────────────────────────────────────────────
 
 export interface IndPolicyEntry {
@@ -151,18 +151,22 @@ export const IND_POLICY: Record<string, IndPolicyEntry> = {
   drugRoleNa:    { value: 'nullFlavor=NA',  verdict: 'untested' },
   batchReceiver: {
     value: 'ZZFDATST_PREMKT',
-    verdict: 'untested',
-    evidence: 'ZZFDA_PREMKT proven_rejected by IND-T01 ACK3 2026-04-27 (GAP-IND-001); ZZFDATST_PREMKT is the FDA-required value for Test environment and awaits its own round-trip confirmation'
+    verdict: 'proven_safe',
+    evidence: 'IND-T01 v4 ACK3 ci260427204838 CA+AE 2026-04-27 (GAP-IND-001 closed). ZZFDA_PREMKT remains proven_rejected for the Test environment by IND-T01 v2.'
   },
-  msgReceiver:   { value: 'CDER_IND',       verdict: 'untested' },
+  msgReceiver: {
+    value: 'CDER_IND',
+    verdict: 'proven_safe',
+    evidence: 'IND-T01 v4 ACK3 ci260427204838 CA+AE 2026-04-27 — confirmed correct by ACK sender field'
+  },
   crossReportedInd: {
-    value: '<required when FDA.C.5.5a present, OID 2.16.840.1.113883.3.989.5.1.2.2.1.2.3>',
-    verdict: 'untested',
-    evidence: 'IND-T01 ACK3 2026-04-27 (GAP-IND-002) rejected absent C.5.6.r when C.5.5a populated; at-least-one cross-reported IND now emitted from the JSON DSL and awaits round-trip confirmation'
+    value: 'present (OID 2.16.840.1.113883.3.989.5.1.2.2.1.2.3)',
+    verdict: 'proven_safe',
+    evidence: 'IND-T01 v4 ACK3 CA+AE 2026-04-27 (GAP-IND-002). FDA rules contradiction for CDER_IND: omitting → CR+AR ("C.5.6.r mandatory"); including → CA+AE ("invalid for CDER_IND"). CA+AE is the best achievable outcome.'
   },
   requiredIntervention: {
     value: 'nullFlavor="NI"',
-    verdict: 'untested',
-    evidence: 'IND-T01 ACK3 2026-04-27 (GAP-IND-002) rejected boolean value="false" for premarket FDA.E.i.3.2h; nullFlavor="NI" is the FDA-mandated value and awaits round-trip confirmation'
+    verdict: 'proven_safe',
+    evidence: 'IND-T01 v4 ACK3 CA+AE 2026-04-27 (GAP-IND-002) — no rejection on this field after fix; boolean value="false" remains proven_rejected for premarket by IND-T01 v3.'
   }
 };
