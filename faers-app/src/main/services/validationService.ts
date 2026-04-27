@@ -614,6 +614,23 @@ export class ValidationService {
    * Only runs when caseType === 'ind'
    */
   private validatePremarketFields(caseData: Case, errors: ValidationError[]): void {
+    // FDA.C.5.6.r is mandatory for any study case (ind or babe) once C.5.5a
+    // is populated. Per FDA 2.18 business rule confirmed by IND-T01 ACK3
+    // 2026-04-27 (GAP-IND-002): "IND number of cross reported IND
+    // (FDA.C.5.6.r) is mandatory when IND Number where AE Occurred
+    // (FDA.C.5.5a) is not empty."
+    if ((caseData.caseType === 'ind' || caseData.caseType === 'babe')
+        && caseData.indStudy?.indNumber) {
+      const crossRefs = caseData.indStudy.crossReferencedIndNumbers ?? [];
+      if (crossRefs.length === 0) {
+        errors.push({
+          field: 'indStudy.crossReferencedIndNumbers',
+          message: 'FDA.C.5.6.r: At least one cross-referenced IND number is required when FDA.C.5.5a (IND Number where AE Occurred) is populated',
+          severity: 'error'
+        });
+      }
+    }
+
     if (caseData.caseType !== 'ind') return;
 
     if (!caseData.indReportType) {

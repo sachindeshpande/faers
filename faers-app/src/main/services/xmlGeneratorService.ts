@@ -205,7 +205,8 @@ export class XMLGeneratorService {
       const xml = this.buildXML(
         caseData, reporters, reactions, drugs,
         batchReceiver, senderOid, senderExtension,
-        messageReceiver, options.batchNumber
+        messageReceiver, options.batchNumber,
+        reportType === 'Premarket'
       );
       return {
         success: true,
@@ -239,7 +240,8 @@ export class XMLGeneratorService {
     senderOid: string,
     senderExtension: string,
     messageReceiver?: string,
-    batchNumber?: string
+    batchNumber?: string,
+    isPremarket: boolean = false
   ): string {
     const batchUuid = batchNumber || `DeepQuenceTest-${this.formatDate(new Date().toISOString().slice(0, 10))}-${uuidv4()}`;
     // FDA ACK ci260412060025: real-time PDT clock converts to future UTC when
@@ -270,7 +272,8 @@ export class XMLGeneratorService {
     // PORR message — emitted BEFORE wrapper receiver/sender per v37 rule #6
     lines.push(this.buildPorrMessage(
       caseData, reporters, reactions, drugs,
-      senderExtension, effectiveMessageReceiver, creationTimeWithTz
+      senderExtension, effectiveMessageReceiver, creationTimeWithTz,
+      isPremarket
     ));
 
     // Wrapper receiver (N.1.4) — AFTER PORR
@@ -309,7 +312,8 @@ export class XMLGeneratorService {
     drugs: CaseDrug[],
     senderExtension: string,
     messageReceiver: string,
-    creationTimeWithTz: string
+    creationTimeWithTz: string,
+    isPremarket: boolean
   ): string {
     const messageId = uuidv4();
     const lines: string[] = [];
@@ -342,7 +346,7 @@ export class XMLGeneratorService {
     lines.push('      <code code="PORR_TE049016UV" codeSystem="2.16.840.1.113883.1.18"/>');
     lines.push(`      <effectiveTime value="${creationTimeWithTz}"/>`);
     lines.push('      <subject typeCode="SUBJ">');
-    lines.push(this.buildSafetyReport(caseData, reporters, reactions, drugs));
+    lines.push(this.buildSafetyReport(caseData, reporters, reactions, drugs, isPremarket));
     lines.push('      </subject>');
     lines.push('    </controlActProcess>');
     lines.push('  </PORR_IN049016UV>');
@@ -368,9 +372,14 @@ export class XMLGeneratorService {
     const drugs = this.drugRepo.findByCaseId(caseId);
     const creationTimeWithTz = this.formatDateTimeWithTz(new Date());
 
+    // Without an explicit override, derive premarket from caseType so batch
+    // wrappers for IND/babe cases still emit the FDA.E.i.3.2h nullFlavor=NI
+    // (GAP-IND-002).
+    const isPremarket = caseData.caseType === 'ind' || caseData.caseType === 'babe';
     return this.buildPorrMessage(
       caseData, reporters, reactions, drugs,
-      senderExtension, messageReceiver, creationTimeWithTz
+      senderExtension, messageReceiver, creationTimeWithTz,
+      isPremarket
     );
   }
 
@@ -391,7 +400,8 @@ export class XMLGeneratorService {
     caseData: Case,
     reporters: CaseReporter[],
     reactions: CaseReaction[],
-    drugs: CaseDrug[]
+    drugs: CaseDrug[],
+    isPremarket: boolean
   ): string {
     const lines: string[] = [];
 
@@ -444,7 +454,7 @@ export class XMLGeneratorService {
     // ── COMPONENT 1: Patient + reactions + drugs ───────────────────────
     lines.push('          <component typeCode="COMP">');
     lines.push('            <adverseEventAssessment classCode="INVSTG" moodCode="EVN">');
-    lines.push(this.buildPatient(caseData, reactions, drugs));
+    lines.push(this.buildPatient(caseData, reactions, drugs, isPremarket));
     lines.push('            </adverseEventAssessment>');
     lines.push('          </component>');
 
@@ -721,7 +731,7 @@ export class XMLGeneratorService {
     return lines.join('\n');
   }
 
-  private buildPatient(caseData: Case, reactions: CaseReaction[], drugs: CaseDrug[]): string {
+  private buildPatient(caseData: Case, reactions: CaseReaction[], drugs: CaseDrug[], isPremarket: boolean): string {
     const lines: string[] = [];
 
     lines.push('              <subject1 typeCode="SBJ">');
@@ -884,7 +894,7 @@ export class XMLGeneratorService {
 
     // Reactions (B.2)
     for (const reaction of reactions) {
-      lines.push(this.buildReaction(reaction));
+      lines.push(this.buildReaction(reaction, isPremarket));
     }
 
     // Drugs (B.4)
@@ -910,7 +920,7 @@ export class XMLGeneratorService {
    * Per v37 template, each seriousness criterion is its own
    * outboundRelationship2/observation (not a comma-separated CE).
    */
-  private buildReaction(reaction: CaseReaction): string {
+  private buildReaction(reaction: CaseReaction, isPremarket: boolean): string {
     const lines: string[] = [];
 
     lines.push('                  <subjectOf2 typeCode="SBJ">');
@@ -957,11 +967,19 @@ export class XMLGeneratorService {
       lines.push('                      </outboundRelationship2>');
     }
 
-    // requiredIntervention (code=7) — v37 parity
+    // requiredIntervention (code=7) — v37 parity. FDA 2.18 business rules
+    // mandate nullFlavor="NI" for premarket cases (IND-T01 ACK3 2026-04-27,
+    // GAP-IND-002): "Required Intervention (FDA.E.i.3.2h) must always
+    // contain nullFlavour 'NI' for a pre-market case." Postmarket retains
+    // the boolean form per v37 lint parity.
     lines.push('                      <outboundRelationship2 typeCode="PERT">');
     lines.push('                        <observation classCode="OBS" moodCode="EVN">');
     lines.push('                          <code code="7" codeSystem="2.16.840.1.113883.3.989.5.1.2.2.1.3" displayName="requiredIntervention"/>');
-    lines.push('                          <value xsi:type="BL" value="false"/>');
+    if (isPremarket) {
+      lines.push('                          <value xsi:type="BL" nullFlavor="NI"/>');
+    } else {
+      lines.push('                          <value xsi:type="BL" value="false"/>');
+    }
     lines.push('                        </observation>');
     lines.push('                      </outboundRelationship2>');
 

@@ -23,7 +23,8 @@
     "indNumber": "999999",
     "sponsorStudyNumber": "BA-BE-2026-001",
     "studyName": "Bioequivalence Study of Testdrug vs Reference",
-    "studyRegistrationNumber": "NCT99999999"
+    "studyRegistrationNumber": "NCT99999999",
+    "crossReferencedIndNumbers": ["888888"]
   },
   "patient": {
     "initials": "V.H.",

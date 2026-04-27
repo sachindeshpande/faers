@@ -3,13 +3,13 @@
                    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                    ITSVersion="XML_1.0"
                    xsi:schemaLocation="urn:hl7-org:v3 MCCI_IN200100UV01.xsd">
-  <id root="2.16.840.1.113883.3.989.2.1.3.22" extension="DeepQuenceTest-20260427-47899d30-a43b-4587-9766-418fd7c1f95e"/>
+  <id root="2.16.840.1.113883.3.989.2.1.3.22" extension="DeepQuenceTest-20260427-43b8322a-5e94-4efc-a1dd-81cd27615984"/>
   <creationTime value="20260315070000-0700"/>
   <responseModeCode code="D"/>
   <interactionId root="2.16.840.1.113883.1.6" extension="MCCI_IN200100UV01"/>
   <name code="1" displayName="ichicsr" codeSystem="2.16.840.1.113883.3.989.2.1.1.1"/>
   <PORR_IN049016UV>
-    <id root="2.16.840.1.113883.3.989.2.1.3.1" extension="09d201cd-82e6-4ce8-88b3-fae511fa05f6"/>
+    <id root="2.16.840.1.113883.3.989.2.1.3.1" extension="0a05663d-1eba-47b8-b51f-e078df25f982"/>
     <creationTime value="20260315070000-0700"/>
     <interactionId root="2.16.840.1.113883.1.6" extension="PORR_IN049016UV"/>
     <processingCode code="P"/>
@@ -33,7 +33,7 @@
       <subject typeCode="SUBJ">
         <investigationEvent classCode="INVSTG" moodCode="EVN">
           <id root="2.16.840.1.113883.3.989.2.1.3.1" extension="SR-CASE-EXAMPLE-INDT01"/>
-          <id root="2.16.840.1.113883.3.989.2.1.3.2" extension="CASE-20260427-W4LW"/>
+          <id root="2.16.840.1.113883.3.989.2.1.3.2" extension="CASE-20260427-M9XM"/>
           <id root="2.16.840.1.113883.3.989.2.1.3.4" extension="2"/>
           <code code="PAT_ADV_EVNT" codeSystem="2.16.840.1.113883.5.4"/>
           <text>Case Narrative Including Clinical Course, Therapeutic Measures, Outcome and Additional Relevant Information</text>
@@ -64,6 +64,11 @@
                       <authorization typeCode="AUTH">
                         <studyRegistration classCode="ACT" moodCode="EVN">
                           <id extension="123456" root="2.16.840.1.113883.3.989.5.1.2.2.1.2.1"/>
+                        </studyRegistration>
+                      </authorization>
+                      <authorization typeCode="AUTH">
+                        <studyRegistration classCode="ACT" moodCode="EVN">
+                          <id extension="654321" root="2.16.840.1.113883.3.989.5.1.2.2.1.2.3"/>
                         </studyRegistration>
                       </authorization>
                     </researchStudy>
@@ -117,7 +122,7 @@
                   </subjectOf2>
                   <subjectOf2 typeCode="SBJ">
                     <observation classCode="OBS" moodCode="EVN">
-                      <id root="1602ef9e-27b8-4c5f-a9b9-7d4ccd9bac7c"/>
+                      <id root="6f451b25-e20f-4a03-aa48-086aa7e8d031"/>
                       <code code="29" codeSystem="2.16.840.1.113883.3.989.2.1.1.19" displayName="reaction"/>
                       <effectiveTime xsi:type="IVL_TS">
                         <low value="20260305"/>
@@ -162,7 +167,7 @@
                       <outboundRelationship2 typeCode="PERT">
                         <observation classCode="OBS" moodCode="EVN">
                           <code code="7" codeSystem="2.16.840.1.113883.3.989.5.1.2.2.1.3" displayName="requiredIntervention"/>
-                          <value xsi:type="BL" value="false"/>
+                          <value xsi:type="BL" nullFlavor="NI"/>
                         </observation>
                       </outboundRelationship2>
                       <outboundRelationship2 typeCode="PERT">

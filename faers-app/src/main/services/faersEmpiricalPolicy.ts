@@ -119,9 +119,19 @@ export function allPolicyFields(): FieldPolicy[] {
 //  awaiting confirmation from the next round-trip. CDER_IND drew no
 //  rejection in the same ACK so msgReceiver stays untested-but-uncontested.
 //
+//  GAP-IND-002 (2026-04-27) — second IND-T01 submission with the corrected
+//  batch receiver reached the 2.18 business-rule layer and surfaced two
+//  new premarket rejections: `FDA.C.5.6.r` is mandatory whenever
+//  `FDA.C.5.5a` is populated, and `FDA.E.i.3.2h requiredIntervention`
+//  must carry `nullFlavor="NI"` for any premarket case (boolean values are
+//  rejected). New entries `crossReportedInd` and `requiredIntervention`
+//  capture the now-known-correct values; the boolean `value="false"` we
+//  emitted in v3 is recorded as proven_rejected.
+//
 //  Promote remaining rows to `proven_safe` / `proven_rejected` as real
 //  ACK3s arrive. See `docs/gaps/GAP-IND-001-batch-receiver-premkt.md`
-//  for the full incident record and §5.5 of SUSAR_IND_Feature_Spec for
+//  and `docs/gaps/GAP-IND-002-business-rules-c56r-required-intervention.md`
+//  for the full incident records, plus §5.5 of SUSAR_IND_Feature_Spec for
 //  the promotion protocol.
 // ────────────────────────────────────────────────────────────────────────────
 
@@ -144,5 +154,15 @@ export const IND_POLICY: Record<string, IndPolicyEntry> = {
     verdict: 'untested',
     evidence: 'ZZFDA_PREMKT proven_rejected by IND-T01 ACK3 2026-04-27 (GAP-IND-001); ZZFDATST_PREMKT is the FDA-required value for Test environment and awaits its own round-trip confirmation'
   },
-  msgReceiver:   { value: 'CDER_IND',       verdict: 'untested' }
+  msgReceiver:   { value: 'CDER_IND',       verdict: 'untested' },
+  crossReportedInd: {
+    value: '<required when FDA.C.5.5a present, OID 2.16.840.1.113883.3.989.5.1.2.2.1.2.3>',
+    verdict: 'untested',
+    evidence: 'IND-T01 ACK3 2026-04-27 (GAP-IND-002) rejected absent C.5.6.r when C.5.5a populated; at-least-one cross-reported IND now emitted from the JSON DSL and awaits round-trip confirmation'
+  },
+  requiredIntervention: {
+    value: 'nullFlavor="NI"',
+    verdict: 'untested',
+    evidence: 'IND-T01 ACK3 2026-04-27 (GAP-IND-002) rejected boolean value="false" for premarket FDA.E.i.3.2h; nullFlavor="NI" is the FDA-mandated value and awaits round-trip confirmation'
+  }
 };

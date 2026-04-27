@@ -24,7 +24,7 @@
     "sponsorStudyNumber": "CT-00-01",
     "studyName": "Phase II Study of Testdrugimab in Rheumatoid Arthritis",
     "studyRegistrationNumber": "NCT00000001",
-    "crossReferencedIndNumbers": []
+    "crossReferencedIndNumbers": ["654321"]
   },
   "patient": {
     "initials": "R.K.",
