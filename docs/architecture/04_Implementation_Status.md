@@ -2,7 +2,7 @@
 
 **Last Updated:** April 25, 2026
 **Phase:** 5 (Enhanced Data Management) + Phase 2B (ESG NextGen API) + Empirical Validator Stack + **JSON Import / Headless CLI** + **SUSAR / IND Safety Reports (E2B emission)**
-**Status:** All phases above are code-complete. Postmarket has live ZZFDATST evidence (v37 + 2L8T = CA+AA). IND-T01 reached **CA+AE** on 2026-04-27 after GAP-IND-001 (batch receiver) and GAP-IND-002 (C.5.6.r + E.i.3.2h nullFlavor=NI) were closed; `batchReceiver`, `msgReceiver`, `crossReportedInd`, and `requiredIntervention` are now `proven_safe`. IND-T05 (fatal/7-day) hit GAP-IND-003 — schema parse error from `effectiveTime` after `value` in the death observation — fix landed; resubmit pending.
+**Status:** All phases above are code-complete. Postmarket has live ZZFDATST evidence (v37 + 2L8T = CA+AA). IND-T01 reached **CA+AE** on 2026-04-27 after GAP-IND-001 (batch receiver) and GAP-IND-002 (C.5.6.r + E.i.3.2h nullFlavor=NI) were closed; `batchReceiver`, `msgReceiver`, `crossReportedInd`, and `requiredIntervention` are now `proven_safe`. IND-T05 (fatal/7-day) cleared GAP-IND-003 (death-observation order) on ACK4 and exposed GAP-IND-004 — three premarket business rules: `FDA.C.1.7.1` 7-Day must be code `6` (not `7`), `D.9.1` requires `<deceasedTime>` on `player1`, `D.9.3` requires an autopsy observation whenever D.9.1 is present. All three fixes are implemented; resubmit pending.
 
 > The most current narrative for "where the project is right now" lives in **[`docs/handoffs/2026-04-25_session_handoff.md`](../handoffs/2026-04-25_session_handoff.md)**. This file is the architectural map; that file is the operational pickup point.
 

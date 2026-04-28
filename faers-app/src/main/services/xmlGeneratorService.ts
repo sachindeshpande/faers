@@ -481,10 +481,10 @@ export class XMLGeneratorService {
     lines.push('            </observationEvent>');
     lines.push('          </component>');
 
-    // C.1.7 localCriteriaReportType (code 1 = 15-Day, 7 = 7-Day).
-    // Lint requires code 1 or 7; default to 15-Day when unset.
-    const reportTypeCode = caseData.localReportTypeCode === 7 ? '7' : '1';
-    const reportTypeDisplay = reportTypeCode === '7' ? '7-Day' : '15-Day';
+    // C.1.7 localCriteriaReportType (code 1 = 15-Day, 6 = 7-Day).
+    // Lint requires code 1 or 6 (FDA premarket codelist — GAP-IND-004); default to 15-Day when unset.
+    const reportTypeCode = caseData.localReportTypeCode === 7 ? '6' : '1';
+    const reportTypeDisplay = reportTypeCode === '6' ? '7-Day' : '15-Day';
 
     // C.1.7 localCriteriaForExpedited — must be logically consistent with the
     // report type. A 15-Day or 7-Day report by definition meets expedited
@@ -492,7 +492,7 @@ export class XMLGeneratorService {
     // report type to avoid the F-7 contradiction.
     const isExpedited = caseData.expeditedReport === true
       || reportTypeCode === '1'
-      || reportTypeCode === '7';
+      || reportTypeCode === '6';
     lines.push('          <component typeCode="COMP">');
     lines.push('            <observationEvent classCode="OBS" moodCode="EVN">');
     lines.push('              <code code="23" codeSystem="2.16.840.1.113883.3.989.2.1.1.19" displayName="localCriteriaForExpedited"/>');
@@ -751,6 +751,10 @@ export class XMLGeneratorService {
     if (caseData.patientBirthdate) {
       lines.push(`                    <birthTime value="${this.formatDate(caseData.patientBirthdate)}"/>`);
     }
+    // D.9.1: Date of Death — required for fatal pre-market ICSRs (GAP-IND-004)
+    if (caseData.patientDeath && caseData.deathDate) {
+      lines.push(`                    <deceasedTime value="${this.formatDate(caseData.deathDate)}"/>`);
+    }
     lines.push('                  </player1>');
 
     // SUSAR / IND + IND-Exempt BA/BE — researchStudy block. Sits between
@@ -890,6 +894,14 @@ export class XMLGeneratorService {
         lines.push(`                      <effectiveTime value="${this.formatDate(caseData.deathDate)}"/>`);
       }
       lines.push('                      <value xsi:type="BL" value="true"/>');
+      lines.push('                    </observation>');
+      lines.push('                  </subjectOf2>');
+      // D.9.3: Was Autopsy Done? — required when D.9.1 is present (GAP-IND-004)
+      const autopsyDone = (caseData as any).autopsyDone ?? false;
+      lines.push('                  <subjectOf2 typeCode="SBJ">');
+      lines.push('                    <observation classCode="OBS" moodCode="EVN">');
+      lines.push('                      <code code="5" codeSystem="2.16.840.1.113883.3.989.2.1.1.19" displayName="autopsy"/>');
+      lines.push(`                      <value xsi:type="BL" value="${autopsyDone}"/>`);
       lines.push('                    </observation>');
       lines.push('                  </subjectOf2>');
     }
