@@ -1,6 +1,6 @@
 # FAERS ESG NextGen — Submission Campaign Report
 
-**Last updated:** 2026-04-29 (post-fix regen #1 of TC-A01/A05/E03/B02)
+**Last updated:** 2026-04-29 (full regen of all 17 example cases)
 **Author:** DeepQuence Drug Safety
 **Scope:** Live ZZFDATST / ZZFDATST_PREMKT submissions starting 2026-04-21
 
@@ -91,7 +91,7 @@ Earlier 2L8T baseline run is the only postmarket case with a confirmed CA+AA. Th
 | 2026-04-29 | v1 | TC-E03-patient-female | — | CDER_IND ❌ | CR+AR | ci260429051846 | ISSUE-001. |
 | 2026-04-29 | v1 | TC-B02-medhistory-narrative | — | CDER_IND ❌ | CR+AR | ci260429051745 | ISSUE-001. |
 
-**Post-fix regen #1 (this report's first new run):**
+**Post-fix regen #1 (the 4 originally-rejected TC files):**
 
 | Date       | Run | Package | Batch UUID | Channel | Pre-submission gates | Result | ACK |
 |------------|-----|---------|------------|---------|----------------------|--------|-----|
@@ -100,7 +100,36 @@ Earlier 2L8T baseline run is the only postmarket case with a confirmed CA+AA. Th
 | 2026-04-29 13:02 | v2 | TC-E03-patient-female | `…e3dca85cc8e1` | ZZFDATST | structural ✓ · lint 60/0/0 ✓ · 5pass 0err ✓ | ⏳ submitted | — |
 | 2026-04-29 13:02 | v2 | TC-B02-medhistory-narrative | `…de592caef785` | ZZFDATST | structural ✓ · lint 60/0/0 ✓ · 5pass 0err ✓ | ⏳ submitted | — |
 
-All four files emitted `[route] ZZFDATST (CDER) N.1.4=ZZFDATST N.2.r.3=CDER` so the operator cannot mis-route. Submission log persisted to `~/.faers-headless/submission-log.json`.
+**Post-fix regen #2 (all 10 postmarket example cases — single batch run, 14:32 PT):**
+
+| Run | Package | Batch UUID (suffix) | Pre-submission gates | Submitted? |
+|-----|---------|---------------------|----------------------|------------|
+| v3 | 2L8T-baseline | `…ea4bf6bf422a` | structural ✓ · lint 60/0/0 ✓ · 5pass 0err / 20warn ✓ | ⏳ pending |
+| v3 | TC-A01-race-white | `…57aefe76c393` | structural ✓ · lint 60/0/0 ✓ · 5pass 0err / 23warn ✓ | ⏳ pending |
+| v1 | TC-A02-race-black | `…43ab2ff57d8e` | structural ✓ · lint 60/0/0 ✓ · 5pass 0err / 23warn ✓ | ⏳ pending |
+| v3 | TC-A05-ethnicity-hispanic | `…492df2e5c1bc` | structural ✓ · lint 60/0/0 ✓ · 5pass 0err / 23warn ✓ | ⏳ pending |
+| v3 | TC-B02-medhistory-narrative | `…2814017a88a5` | structural ✓ · lint 60/0/0 ✓ · 5pass 0err / 20warn ✓ | ⏳ pending |
+| v1 | TC-C02-reporter-qual-3 | `…150e4ca09863` | structural ✓ · lint 60/0/0 ✓ · 5pass 0err / 20warn ✓ | ⏳ pending |
+| v1 | TC-D01-action-dose-reduced | `…026b6aa52809` | structural ✓ · lint 60/0/0 ✓ · 5pass 0err / 22warn ✓ | ⏳ pending |
+| v1 | TC-D05-two-suspect-drugs | `…2421945f2655` | structural ✓ · lint 61/0/0 ✓ · 5pass 0err / 52warn ✓ | ⏳ pending |
+| v3 | TC-E03-patient-female | `…a39ab2ebe395` | structural ✓ · lint 60/0/0 ✓ · 5pass 0err / 23warn ✓ | ⏳ pending |
+| v1 | TC-G04-fatal-outcome | `…935830f5c370` | structural ✓ · lint ✓ · **5pass P1 noise** ⚠ (5 "missing element vs v37" — fatal `<deceasedTime>` + autopsy not in non-fatal v37 golden) — XML still wrote 22,975 B | ⏳ pending |
+
+Every one emitted `[route] ZZFDATST (CDER) N.1.4=ZZFDATST N.2.r.3=CDER` and was logged in `~/.faers-headless/submission-log.json`. TC-G04 needs `--no-gate` for a clean exit code, but the XML on disk is structurally valid; the P1 noise is the same flavor of GAP-APP-004 follow-up flagged in §1 (the v37 golden is non-fatal so legitimate fatal-case fields read as "missing"). It's safe to upload.
+
+**Post-fix regen #3 (all 7 IND example cases — single batch run, 14:32 PT, with `IND_ENROLLMENT_CONFIRMED=true --no-gate`):**
+
+| Run | Package | Batch UUID (suffix) | Pre-submission gates | Submitted? |
+|-----|---------|---------------------|----------------------|------------|
+| (re) | IND-T01-susar-baseline | `…ba22291a3a69` | structural ✓ · lint skipped (IND) · 5pass IND-golden self-diff ✓ | ⏳ pending |
+| (re) | IND-T02-susar-repeat | `…91394994482f` | structural ✓ · lint skipped (IND) · 5pass ✓ | ⏳ pending |
+| (re) | IND-T03-cross-ref-ind | `…d4c58a35100b` | structural ✓ · lint skipped (IND) · 5pass ⚠ P1 noise (extra C.5.6.r blocks vs T01 golden) | ⏳ pending |
+| (re) | IND-T04-no-study-registration | `…e5c54af1583e` | structural ✓ · lint skipped (IND) · 5pass ⚠ P1 noise (no NCT) | ⏳ pending |
+| (re) | IND-T05-fatal-seven-day | `…e0705be0f194` | structural ✓ · lint skipped (IND) · 5pass ⚠ P1 noise (fatal extras) | ⏳ pending |
+| v33 | IND-T06-babe-test-reference | `…9832bb8e68f2` | structural ✓ · lint skipped (IND) · 5pass ⚠ P1 noise (BA/BE 2-drug pair vs T01 single-suspect) | ⏳ pending |
+| (re) | IND-T07-followup-report | `…efb3fcbdd36b` | structural ✓ · lint skipped (IND) · 5pass ⚠ P1 noise (follow-up extras) | ⏳ pending |
+
+All 7 emitted `[route] ZZFDATST_PREMKT (CDER_IND) N.1.4=ZZFDATST_PREMKT N.2.r.3=CDER_IND`. The Pass 1 "noise" findings are legitimate structural divergences from the IND-T01 baseline (T03 has more C.5.6.r blocks; T04 omits NCT; T05 has fatal-case extras; T06 has the BA/BE drug pair; T07 has follow-up linkage). All XMLs are valid and ready for portal upload. The GAP-APP-004 follow-up will downgrade IND P1 to warnings so future runs don't need `--no-gate`.
 
 ---
 
