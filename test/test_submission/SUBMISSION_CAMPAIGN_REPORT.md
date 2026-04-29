@@ -1,6 +1,6 @@
 # FAERS ESG NextGen — Submission Campaign Report
 
-**Last updated:** 2026-04-29 (full regen of all 17 example cases)
+**Last updated:** 2026-04-29 (full regen of 17 example cases + refresh of `from_app/headless/` operator dir)
 **Author:** DeepQuence Drug Safety
 **Scope:** Live ZZFDATST / ZZFDATST_PREMKT submissions starting 2026-04-21
 
@@ -131,6 +131,19 @@ Every one emitted `[route] ZZFDATST (CDER) N.1.4=ZZFDATST N.2.r.3=CDER` and was 
 
 All 7 emitted `[route] ZZFDATST_PREMKT (CDER_IND) N.1.4=ZZFDATST_PREMKT N.2.r.3=CDER_IND`. The Pass 1 "noise" findings are legitimate structural divergences from the IND-T01 baseline (T03 has more C.5.6.r blocks; T04 omits NCT; T05 has fatal-case extras; T06 has the BA/BE drug pair; T07 has follow-up linkage). All XMLs are valid and ready for portal upload. The GAP-APP-004 follow-up will downgrade IND P1 to warnings so future runs don't need `--no-gate`.
 
+**Post-fix regen #4 (`from_app/headless/` operator dir refresh, 15:24 PT):**
+
+The 4 originally-rejected TC files lived in `test/test_submission/from_app/headless/` with their pre-fix batch UUIDs (mtime 04-28 22:02). Refreshed in-place to match the post-GAP-SUB pipeline so the operator directory is consistent with `from_app/`:
+
+| Run | Package | Batch UUID (suffix) |
+|-----|---------|---------------------|
+| v3 | TC-A01-race-white | `…d1665431b0f0` |
+| v3 | TC-A05-ethnicity-hispanic | `…605bd78f8bd6` |
+| v3 | TC-B02-medhistory-narrative | `…86a0a3097a90` |
+| v3 | TC-E03-patient-female | `…5c06943de804` |
+
+These are **distinct UUIDs** from the regen #2 copies in `from_app/` — both directories now hold separately-generated, fresh-UUID, post-fix XMLs. Either pair is uploadable; just pick one and submit it (uploading the same UUID twice triggers the duplicate-detect rejection per ISSUE-003).
+
 ---
 
 ## 4. Outstanding External Actions
@@ -203,6 +216,8 @@ Upload through the ESG portal **ZZFDATST_PREMKT** channel. Same `--record-ack` f
 ## 6. Logging Future Runs
 
 When you submit a new run, append a row to §3.1 (IND) or §3.2 (postmarket). Required columns: date, run label, package, batch UUID suffix (last 12 chars), channel, gates summary, result, ACK file id. Bump "Last updated" at the top of the file.
+
+**Output directory convention.** `from_app/` is the canonical output location written by the standard run procedure (§5). `from_app/headless/` is a sibling operator directory used historically to stage submissions; if you regenerate into one, treat the other as stale unless you explicitly refresh it. Don't upload the same XML from both — each XML carries one `batchUuid`, FDA registers it on first contact (even on CR), and a second upload triggers ISSUE-003 (`Message No and Sender Combination already Exists`).
 
 For new gap discoveries from a future ACK, follow the existing pattern:
 1. Drop the ACK in `test/test_submission/acks/`.
