@@ -186,3 +186,90 @@ describe('Pass 3 — IND structural checks', () => {
     expect(indErrs).toEqual([]);
   });
 });
+
+describe('Pass 3 — D.9.1/D.9.3 fatal co-dependency (GAP-IND-004 / GAP-XML-001)', () => {
+  // ISSUE-005 (closed): IND-T05 ACK ci260428001004 returned CR+AR with
+  // "Date of Death D.9.1 has a value, the element Was Autopsy Done? D.9.3
+  // must contain a value." This regression test locks in the validator
+  // rule that was added in GAP-IND-004.
+  //
+  // Minimal IND fragment with a fatal reaction (resultsInDeath=34
+  // observation with value="true"). The structural checks fire only when
+  // a fatal observation is present.
+  function fatalIndXml(opts: {
+    deceasedTime?: boolean;
+    autopsy?: boolean;
+  } = {}): string {
+    const deceased = opts.deceasedTime
+      ? '<deceasedTime value="20260312"/>'
+      : '';
+    const autopsy = opts.autopsy
+      ? '<subjectOf2><observation><code code="5" codeSystem="2.16.840.1.113883.3.989.2.1.1.19" displayName="autopsy"/><value xsi:type="BL" value="false"/></observation></subjectOf2>'
+      : '';
+    return `<?xml version="1.0"?>
+<root>
+  <subjectOf2><investigationCharacteristic><code code="1" codeSystem="2.16.840.1.113883.3.989.2.1.1.23"/><value xsi:type="CE" code="2" codeSystem="2.16.840.1.113883.3.989.2.1.1.2"/></investigationCharacteristic></subjectOf2>
+  <researchStudy classCode="CLNTRL" moodCode="EVN"><code code="1" codeSystem="2.16.840.1.113883.3.989.2.1.1.8"/></researchStudy>
+  <subject1>
+    <primaryRole>
+      <player1 classCode="PSN" determinerCode="INSTANCE">${deceased}</player1>
+      <subjectOf2>
+        <observation>
+          <code code="34" codeSystem="2.16.840.1.113883.3.989.2.1.1.19" displayName="resultsInDeath"/>
+          <value xsi:type="BL" value="true"/>
+        </observation>
+      </subjectOf2>
+      ${autopsy}
+    </primaryRole>
+  </subject1>
+</root>`;
+  }
+
+  it('flags a fatal IND case missing <deceasedTime> on player1 (D.9.1)', () => {
+    const r = runFivePassValidation(fatalIndXml({ deceasedTime: false, autopsy: true }), {
+      caseType: 'ind',
+      v37Path: null
+    });
+    const errs = r.findings.filter((f) => f.pass === 3 && f.severity === 'error');
+    expect(errs.some((e) => e.label.includes('deceasedTime'))).toBe(true);
+  });
+
+  it('flags a fatal IND case missing the autopsy observation (D.9.3)', () => {
+    const r = runFivePassValidation(fatalIndXml({ deceasedTime: true, autopsy: false }), {
+      caseType: 'ind',
+      v37Path: null
+    });
+    const errs = r.findings.filter((f) => f.pass === 3 && f.severity === 'error');
+    expect(errs.some((e) => e.label.includes('autopsy'))).toBe(true);
+  });
+
+  it('passes when both <deceasedTime> and the autopsy observation are present', () => {
+    const r = runFivePassValidation(fatalIndXml({ deceasedTime: true, autopsy: true }), {
+      caseType: 'ind',
+      v37Path: null
+    });
+    const fatalErrs = r.findings.filter(
+      (f) =>
+        f.pass === 3 &&
+        f.severity === 'error' &&
+        (f.label.includes('deceasedTime') || f.label.includes('autopsy'))
+    );
+    expect(fatalErrs).toEqual([]);
+  });
+
+  it('does not require deceasedTime/autopsy when no fatal observation is present', () => {
+    // Strip the resultsInDeath block — the rule should be silent.
+    const xml = fatalIndXml({ deceasedTime: false, autopsy: false }).replace(
+      /<observation>\s*<code code="34"[\s\S]*?<\/observation>/,
+      ''
+    );
+    const r = runFivePassValidation(xml, { caseType: 'ind', v37Path: null });
+    const fatalErrs = r.findings.filter(
+      (f) =>
+        f.pass === 3 &&
+        f.severity === 'error' &&
+        (f.label.includes('deceasedTime') || f.label.includes('autopsy'))
+    );
+    expect(fatalErrs).toEqual([]);
+  });
+});

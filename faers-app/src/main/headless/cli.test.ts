@@ -63,6 +63,51 @@ describe('parseArgs', () => {
     expect(parseArgs(['-h']).help).toBe(true);
     expect(parseArgs(['--help']).help).toBe(true);
   });
+
+  // ── GAP-SUB-002 / GAP-SUB-003 / GAP-CLI-001 flag wiring ───────────────
+  it('captures --allow-duplicate and --skip-ind-enrollment booleans', () => {
+    const r = parseArgs(['--allow-duplicate', '--skip-ind-enrollment', 'x.json']);
+    expect(r.allowDuplicate).toBe(true);
+    expect(r.skipIndEnrollment).toBe(true);
+    expect(r.usageError).toBeUndefined();
+  });
+
+  it('parses the --record-ack subcommand with all required values', () => {
+    const r = parseArgs([
+      '--record-ack', 'DeepQuenceTest-20260429-abc-def',
+      '--ack-id', 'ci260429052038',
+      '--outcome', 'CA+AE'
+    ]);
+    expect(r.recordAck).toEqual({
+      batchUuid: 'DeepQuenceTest-20260429-abc-def',
+      ackId: 'ci260429052038',
+      outcome: 'CA+AE'
+    });
+    expect(r.usageError).toBeUndefined();
+  });
+
+  it('--record-ack defaults --outcome to CA when omitted', () => {
+    const r = parseArgs([
+      '--record-ack', 'uuid-1',
+      '--ack-id', 'ci260429052038'
+    ]);
+    expect(r.recordAck?.outcome).toBe('CA');
+    expect(r.usageError).toBeUndefined();
+  });
+
+  it('--record-ack flags an invalid outcome', () => {
+    const r = parseArgs([
+      '--record-ack', 'uuid-1',
+      '--ack-id', 'ci',
+      '--outcome', 'PARTIAL'
+    ]);
+    expect(r.usageError).toMatch(/--outcome must be one of/);
+  });
+
+  it('--record-ack requires --ack-id', () => {
+    const r = parseArgs(['--record-ack', 'uuid-1']);
+    expect(r.usageError).toMatch(/--record-ack requires --ack-id/);
+  });
 });
 
 describe('runHeadless — guard paths', () => {

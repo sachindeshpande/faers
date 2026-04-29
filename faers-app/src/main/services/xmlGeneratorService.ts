@@ -48,6 +48,8 @@ export interface XMLGenerationResult {
   errors: string[];
   warnings: string[];
   batchReceiver?: string; // The batch receiver used in the generated XML
+  batchUuid?: string;     // The batch UUID embedded in the wrapper <id .3.22>
+  msgReceiver?: string;   // PORR receiver (CDER / CDER_IND), mirrors what's in the XML
 }
 
 /**
@@ -202,11 +204,19 @@ export class XMLGeneratorService {
     // (e.g. the MedDRA auto-resolver flagging drugs with unresolved indications).
     this.buildWarnings = [];
 
+    // Resolve the batch UUID up here so we can return it on the result for
+    // the headless CLI's submission log + checklist (GAP-SUB-001/002). Same
+    // shape as what `buildXML` would have generated when no `batchNumber` is
+    // supplied.
+    const batchUuid =
+      options.batchNumber ||
+      `DeepQuenceTest-${this.formatDate(new Date().toISOString().slice(0, 10))}-${uuidv4()}`;
+
     try {
       const xml = this.buildXML(
         caseData, reporters, reactions, drugs,
         batchReceiver, senderOid, senderExtension,
-        messageReceiver, options.batchNumber,
+        messageReceiver, batchUuid,
         reportType === 'Premarket'
       );
       return {
@@ -214,7 +224,9 @@ export class XMLGeneratorService {
         xml,
         errors: [],
         warnings: [...warnings, ...this.buildWarnings],
-        batchReceiver
+        batchReceiver,
+        batchUuid,
+        msgReceiver: messageReceiver
       };
     } catch (error) {
       return {
@@ -244,7 +256,10 @@ export class XMLGeneratorService {
     batchNumber?: string,
     isPremarket: boolean = false
   ): string {
-    const batchUuid = batchNumber || `DeepQuenceTest-${this.formatDate(new Date().toISOString().slice(0, 10))}-${uuidv4()}`;
+    // batchNumber is now always supplied by `generate()`; the fallback
+    // remains for direct buildXML callers in tests / generateCaseMessageWrapper.
+    const batchUuid =
+      batchNumber || `DeepQuenceTest-${this.formatDate(new Date().toISOString().slice(0, 10))}-${uuidv4()}`;
     // FDA ACK ci260412060025: real-time PDT clock converts to future UTC when
     // FDA processes overnight at ~06:00 UTC. Use the case receipt date
     // (safely in the past) for ALL timestamp fields to avoid future-date

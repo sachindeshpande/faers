@@ -34,6 +34,12 @@ import { ValidationService } from '../services/validationService';
 import { lintE2bXml } from '../services/xmlLintService';
 import { runFivePassValidation } from '../services/fivePassValidatorService';
 import { StatusTransitionService } from '../services/statusTransitionService';
+import {
+  hasBeenSubmitted,
+  recordSubmission,
+  resolveLogPath,
+  updateAckOutcome
+} from '../services/submissionLogService';
 import type {
   SubmissionEnvironment,
   SubmissionReportType,
@@ -80,6 +86,28 @@ export interface HeadlessOptions {
   strict?: boolean;
   /** Suppress per-stage log lines. Final summary still prints. */
   quiet?: boolean;
+  /**
+   * Skip the duplicate-batch-UUID guard from `submissionLogService`. The
+   * generator emits a fresh UUID per call, so the guard rarely fires in
+   * normal use; the flag exists for tests that inject a known UUID.
+   */
+  allowDuplicate?: boolean;
+  /**
+   * Skip the IND enrollment pre-flight (GAP-SUB-003). For offline
+   * regeneration or testing only — never set in CI / production.
+   */
+  skipIndEnrollment?: boolean;
+}
+
+/**
+ * Subcommand options for `--record-ack` — closes the loop after a
+ * portal submission by attaching the FDA ACK outcome to an existing
+ * record in the submission log. Mutually exclusive with `inputs`.
+ */
+export interface RecordAckOptions {
+  batchUuid: string;
+  ackId: string;
+  outcome: 'CA' | 'CR' | 'AE' | 'AR' | 'CA+AE' | 'CR+AR';
 }
 
 export interface HeadlessFileResult {
@@ -92,6 +120,16 @@ export interface HeadlessFileResult {
   import?: CaseImportResult;
   lint?: LintResult;
   fivePass?: FivePassResult;
+  /** ESG routing — populated after Stage 4 (write). Drives the checklist. */
+  routing?: {
+    channel: 'ZZFDATST' | 'ZZFDATST_PREMKT';
+    portalLabel: string;        // e.g. 'ZZFDATST (CDER)'
+    batchReceiver: string;      // N.1.4 — must equal `channel`
+    msgReceiver: string;        // N.2.r.3 — 'CDER' | 'CDER_IND' | 'CBER' | 'CBER_IND'
+    batchUuid: string;          // for the submission log + duplicate detection
+    caseType: 'postmarket' | 'ind' | 'babe' | undefined;
+    isDuplicate?: boolean;      // set when the batch UUID was already in the log
+  };
 }
 
 export interface HeadlessResult {
@@ -153,6 +191,8 @@ export async function runHeadless(opts: HeadlessOptions): Promise<HeadlessResult
       targetCenter,
       report: opts.report,
       noGate: opts.noGate,
+      allowDuplicate: opts.allowDuplicate,
+      skipIndEnrollment: opts.skipIndEnrollment,
       log,
       importSvc,
       xmlSvc,
@@ -172,6 +212,13 @@ export async function runHeadless(opts: HeadlessOptions): Promise<HeadlessResult
     console.log(`  ${mark} ${basename(r.input)}${r.output ? ` → ${r.output}` : ''}${r.error ? ` — ${r.error}` : ''}`);
   }
 
+  // Submission checklist (GAP-CLI-001) — group by ESG channel so any
+  // cross-channel mistake in a single batch is impossible to miss.
+  // Suppressed under --quiet since it's purely operator-facing.
+  if (!opts.quiet) {
+    printSubmissionChecklist(results);
+  }
+
   // Cleanup
   closeDatabase();
   if (prevEnv === undefined) delete process.env.FAERS_DB_PATH;
@@ -181,6 +228,45 @@ export async function runHeadless(opts: HeadlessOptions): Promise<HeadlessResult
   }
 
   return { results, exitCode: failCount > 0 ? 1 : 0 };
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+//  Submission checklist (GAP-CLI-001)
+// ────────────────────────────────────────────────────────────────────────────
+
+const CHANNEL_HINT: Record<string, string> = {
+  ZZFDATST: 'Submit via the ESG portal ZZFDATST (postmarket) channel only',
+  ZZFDATST_PREMKT: 'Submit via the ESG portal ZZFDATST_PREMKT (CDER_IND) channel only',
+  ZZFDA: 'PRODUCTION postmarket — submit via the ZZFDA channel only',
+  ZZFDA_PREMKT: 'PRODUCTION premarket — submit via the ZZFDA_PREMKT channel only'
+};
+
+function printSubmissionChecklist(results: HeadlessFileResult[]): void {
+  const routed = results.filter((r) => r.routing && r.output);
+  if (routed.length === 0) return;
+
+  // Group by channel so cross-channel mistakes are visible at a glance.
+  const byChannel = new Map<string, HeadlessFileResult[]>();
+  for (const r of routed) {
+    const ch = r.routing!.batchReceiver;
+    const list = byChannel.get(ch) ?? [];
+    list.push(r);
+    byChannel.set(ch, list);
+  }
+
+  console.log('');
+  console.log('=== SUBMISSION CHECKLIST ===');
+  for (const [channel, files] of byChannel) {
+    const portal = files[0].routing!.portalLabel;
+    console.log(`\nChannel: ${portal}`);
+    console.log(`  ${CHANNEL_HINT[channel] ?? `Submit via the ESG portal ${channel} channel`}`);
+    for (const r of files) {
+      const dupe = r.routing!.isDuplicate ? '  *** DUPLICATE — REGENERATE ***' : '';
+      const shortUuid = r.routing!.batchUuid.slice(-12) || '(none)';
+      console.log(`    ${basename(r.input)}  [${shortUuid}]${dupe}`);
+    }
+  }
+  console.log('============================');
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -202,6 +288,10 @@ interface ProcessArgs {
   targetCenter: TargetCenter;
   report?: boolean;
   noGate?: boolean;
+  /** Skip the duplicate-batch-UUID guard (GAP-SUB-002). */
+  allowDuplicate?: boolean;
+  /** Skip the IND enrollment pre-flight (GAP-SUB-003). */
+  skipIndEnrollment?: boolean;
   log: (msg: string) => void;
   importSvc: CaseImportService;
   xmlSvc: XMLGeneratorService;
@@ -306,6 +396,30 @@ async function processOneFile(args: ProcessArgs): Promise<HeadlessFileResult> {
   // 5-pass validator all need it.
   const persistedCaseForRouting = args.caseRepo.findById(importRes.caseId);
 
+  // ── Stage 2b: IND enrollment pre-flight (GAP-SUB-003) ──────────────────
+  // ISSUE-004 (T02 portal decline 2026-04-29): IND/babe submissions need
+  // a separate AEMSESUB enrollment that the XML alone can't satisfy. The
+  // ICSR ACK comes back CA+AE but the portal admin-declines the file
+  // until enrollment is on record. Refuse to generate IND/babe XMLs when
+  // the operator hasn't acknowledged this with `IND_ENROLLMENT_CONFIRMED=true`.
+  // Per-file failure (not process.exit) keeps `--strict` semantics intact
+  // and lets postmarket files in the same batch still process.
+  const caseTypeForEnrollment = persistedCaseForRouting?.caseType;
+  if (
+    (caseTypeForEnrollment === 'ind' || caseTypeForEnrollment === 'babe') &&
+    process.env.IND_ENROLLMENT_CONFIRMED !== 'true' &&
+    !args.skipIndEnrollment
+  ) {
+    const detail =
+      'IND_ENROLLMENT_CONFIRMED=true required for IND/BA-BE generation. ' +
+      'Email AEMSESUB@fda.hhs.gov to confirm enrollment then re-run with the env var set, ' +
+      'or pass --skip-ind-enrollment for offline regeneration only.';
+    result.error = detail;
+    stages.push({ stage: 'ind-enrollment', ok: false, detail });
+    log(`  [ind-enrollment] FAIL — ${detail}`);
+    return result;
+  }
+
   // Resolve the effective submission report type for this file. Without a
   // CLI flag, caseType="ind" auto-routes to Premarket; postmarket
   // remains the default otherwise. A flag → caseType mismatch is kept
@@ -340,6 +454,30 @@ async function processOneFile(args: ProcessArgs): Promise<HeadlessFileResult> {
   stages.push({ stage: 'generate', ok: true, detail: `${xmlRes.xml.length} bytes` });
   log(`  [generate] OK ${xmlRes.xml.length} bytes`);
 
+  // ── Stage 3b: duplicate batch UUID guard (GAP-SUB-002) ─────────────────
+  // The generator emits a fresh UUID per call, so this guard is rarely
+  // tripped in normal use; it exists to catch cases where someone hand-
+  // edits a JSON to inject a fixed `batchNumber`, or to surface a corrupt
+  // log state. The submission log row is written below, post-write.
+  let isDuplicate = false;
+  if (xmlRes.batchUuid && hasBeenSubmitted(xmlRes.batchUuid)) {
+    isDuplicate = true;
+    if (args.allowDuplicate) {
+      stages.push({
+        stage: 'duplicate-check',
+        ok: true,
+        detail: `WARN: batch UUID ${xmlRes.batchUuid} already in submission log; --allow-duplicate set`
+      });
+      log(`  [duplicate-check] WARN — batch UUID ${xmlRes.batchUuid} already in log (--allow-duplicate)`);
+    } else {
+      const detail = `batch UUID ${xmlRes.batchUuid} already in submission log; rerun without --batch-number or pass --allow-duplicate to override`;
+      result.error = detail;
+      stages.push({ stage: 'duplicate-check', ok: false, detail });
+      log(`  [duplicate-check] FAIL — ${detail}`);
+      return result;
+    }
+  }
+
   // ── Stage 4: write XML ────────────────────────────────────────────────
   // Write early so the user can inspect the output even when later gates
   // fail. Gates only affect exit code + the markExported transition.
@@ -354,6 +492,64 @@ async function processOneFile(args: ProcessArgs): Promise<HeadlessFileResult> {
     stages.push({ stage: 'write', ok: false, detail });
     log(`  [write] FAIL — ${detail}`);
     return result;
+  }
+
+  // ── Stage 4b: ESG channel routing directive (GAP-SUB-001) ─────────────
+  // Print the portal channel + N.1.4 / N.2.r.3 values right after the
+  // write so the operator never has to inspect the XML to know where to
+  // upload it. The values come from the generator's actual output —
+  // never re-derive them from caseType to avoid drift.
+  const caseTypeForRouting = persistedCaseForRouting?.caseType as
+    | 'postmarket'
+    | 'ind'
+    | 'babe'
+    | undefined;
+  const isStudyForRouting =
+    caseTypeForRouting === 'ind' || caseTypeForRouting === 'babe';
+  const channel: 'ZZFDATST' | 'ZZFDATST_PREMKT' = isStudyForRouting
+    ? 'ZZFDATST_PREMKT'
+    : 'ZZFDATST';
+  const portalLabel = isStudyForRouting
+    ? 'ZZFDATST_PREMKT (CDER_IND)'
+    : 'ZZFDATST (CDER)';
+  const routedBatchReceiver = xmlRes.batchReceiver ?? channel;
+  const routedMsgReceiver = xmlRes.msgReceiver ?? (isStudyForRouting ? 'CDER_IND' : 'CDER');
+  const routedBatchUuid = xmlRes.batchUuid ?? '';
+  result.routing = {
+    channel,
+    portalLabel,
+    batchReceiver: routedBatchReceiver,
+    msgReceiver: routedMsgReceiver,
+    batchUuid: routedBatchUuid,
+    caseType: caseTypeForRouting,
+    isDuplicate
+  };
+  stages.push({
+    stage: 'route-portal',
+    ok: true,
+    detail: `${portalLabel}  N.1.4=${routedBatchReceiver}  N.2.r.3=${routedMsgReceiver}`
+  });
+  log(`  [route] ${portalLabel}  N.1.4=${routedBatchReceiver}  N.2.r.3=${routedMsgReceiver}`);
+
+  // ── Stage 4c: persist submission record (GAP-SUB-002) ──────────────────
+  // The log is the source of truth for "what UUIDs has this operator
+  // already generated". Writing here (post-write, post-route) means a
+  // failed write doesn't pollute the log. Outcome is left undefined
+  // until the operator runs `--record-ack`.
+  if (routedBatchUuid) {
+    try {
+      recordSubmission({
+        batchUuid: routedBatchUuid,
+        caseId: importRes.caseId,
+        channel: routedBatchReceiver,
+        msgReceiver: routedMsgReceiver,
+        outputPath: outPath,
+        timestamp: new Date().toISOString()
+      });
+    } catch (e) {
+      // Don't fail the whole run for a log-write hiccup; surface as warning.
+      log(`  [submission-log] WARN — could not persist log entry: ${(e as Error).message}`);
+    }
   }
 
   // ── Stage 5: structural validation ────────────────────────────────────
@@ -530,6 +726,14 @@ function resolveDbPath(opts: HeadlessOptions): { dbFile: string; tempDir?: strin
 interface ParsedArgs extends HeadlessOptions {
   help?: boolean;
   usageError?: string;
+  /** When set, the run ignores `inputs` and updates the submission log only. */
+  recordAck?: RecordAckOptions;
+}
+
+const VALID_OUTCOMES = ['CA', 'CR', 'AE', 'AR', 'CA+AE', 'CR+AR'] as const;
+type ValidOutcome = (typeof VALID_OUTCOMES)[number];
+function isValidOutcome(v: string): v is ValidOutcome {
+  return (VALID_OUTCOMES as readonly string[]).includes(v);
 }
 
 export function parseArgs(argv: string[]): ParsedArgs {
@@ -603,6 +807,37 @@ export function parseArgs(argv: string[]): ParsedArgs {
       case '-q':
         out.quiet = true;
         break;
+      case '--allow-duplicate':
+        out.allowDuplicate = true;
+        break;
+      case '--skip-ind-enrollment':
+        out.skipIndEnrollment = true;
+        break;
+      case '--record-ack': {
+        const uuid = read(a);
+        if (!uuid) break;
+        out.recordAck = { batchUuid: uuid, ackId: '', outcome: 'CA' };
+        break;
+      }
+      case '--ack-id': {
+        const id = read(a);
+        if (!id) break;
+        if (!out.recordAck) out.recordAck = { batchUuid: '', ackId: id, outcome: 'CA' };
+        else out.recordAck.ackId = id;
+        break;
+      }
+      case '--outcome': {
+        const v = read(a);
+        if (!v) break;
+        if (!isValidOutcome(v)) {
+          out.usageError = `--outcome must be one of ${VALID_OUTCOMES.join(', ')} (got "${v}")`;
+        } else if (!out.recordAck) {
+          out.recordAck = { batchUuid: '', ackId: '', outcome: v };
+        } else {
+          out.recordAck.outcome = v;
+        }
+        break;
+      }
       default:
         if (a.startsWith('-')) {
           out.usageError = `Unknown flag: ${a}`;
@@ -611,6 +846,17 @@ export function parseArgs(argv: string[]): ParsedArgs {
         }
     }
     i++;
+  }
+  // Subcommand sanity: --record-ack requires both --ack-id and --outcome.
+  if (out.recordAck && !out.usageError) {
+    if (!out.recordAck.batchUuid) {
+      out.usageError = '--record-ack requires a batch UUID';
+    } else if (!out.recordAck.ackId) {
+      out.usageError = '--record-ack requires --ack-id <id>';
+    }
+    // Outcome defaults to 'CA' when --outcome is omitted; that's permissive
+    // by design for the common "I just got a CA+AE" workflow — the operator
+    // can pass --outcome explicitly if they want a different value.
   }
   return out;
 }
@@ -637,8 +883,32 @@ OPTIONS
       --report            Also emit <base>.report.json for each input
       --no-gate           Emit XML even when lint/5-pass report errors
       --strict            Stop at the first failing input
+      --allow-duplicate   Skip the duplicate batch UUID guard (testing only)
+      --skip-ind-enrollment
+                          Skip the IND enrollment pre-flight (offline only).
+                          Normal IND/BA-BE runs require env var
+                          IND_ENROLLMENT_CONFIRMED=true; without it the
+                          generator refuses with the AEMSESUB@fda.hhs.gov
+                          enrollment instructions (GAP-SUB-003).
   -q, --quiet             Suppress per-stage log lines
   -h, --help              Show this help
+
+SUBCOMMANDS
+  --record-ack <uuid> --ack-id <ackId> --outcome <CA|CR|AE|AR|CA+AE|CR+AR>
+        Update the submission log entry for <uuid> with the FDA ACK
+        outcome. Run after the operator submits via the ESG portal and
+        receives an ACK3. Mutually exclusive with input file arguments.
+        --outcome defaults to 'CA' when omitted.
+
+ENVIRONMENT VARIABLES
+  IND_ENROLLMENT_CONFIRMED
+        Must equal 'true' before IND/BA-BE cases will generate.
+        Resolves the ISSUE-004 portal decline (email AEMSESUB@fda.hhs.gov
+        to confirm enrollment). Use --skip-ind-enrollment to bypass.
+  FAERS_SUBMISSION_LOG
+        Override the default submission-log.json path
+        (default: <userData>/submission-log.json or
+        ~/.faers-headless/submission-log.json).
 
 EXIT CODES
   0   all inputs succeeded all gates
@@ -658,6 +928,27 @@ async function main(): Promise<void> {
     console.error(HELP_TEXT);
     process.exit(2);
   }
+
+  // ── Subcommand: --record-ack (no DB, no XML generation) ────────────────
+  if (parsed.recordAck) {
+    if (parsed.inputs.length > 0) {
+      console.error('Error: --record-ack does not accept input files.');
+      process.exit(2);
+    }
+    const ok = updateAckOutcome(
+      parsed.recordAck.batchUuid,
+      parsed.recordAck.ackId,
+      parsed.recordAck.outcome
+    );
+    if (!ok) {
+      console.error(`Error: no submission log entry for batch UUID ${parsed.recordAck.batchUuid}`);
+      console.error(`Log path: ${resolveLogPath()}`);
+      process.exit(1);
+    }
+    console.log(`Recorded ACK ${parsed.recordAck.ackId} (${parsed.recordAck.outcome}) on batch ${parsed.recordAck.batchUuid}`);
+    process.exit(0);
+  }
+
   if (parsed.inputs.length === 0) {
     console.error('Error: provide at least one input JSON file.');
     console.error(HELP_TEXT);
