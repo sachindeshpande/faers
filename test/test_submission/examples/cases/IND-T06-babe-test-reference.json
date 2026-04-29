@@ -20,11 +20,11 @@
     "caseNarrative": "BA/BE study comparing Testdrug-Generic (test) against Testdrug-Reference (reference) in healthy volunteers. Subject developed nausea after administration of the test product. Concomitant acetaminophen taken for unrelated headache."
   },
   "indStudy": {
-    "indNumber": "999999",
+    "indNumber": "123456",
     "sponsorStudyNumber": "BA-BE-2026-001",
     "studyName": "Bioequivalence Study of Testdrug vs Reference",
     "studyRegistrationNumber": "NCT99999999",
-    "crossReferencedIndNumbers": ["888888"]
+    "crossReferencedIndNumbers": ["654321"]
   },
   "patient": {
     "initials": "V.H.",
@@ -76,7 +76,7 @@
       "startDate": "2026-03-05", "endDate": "2026-03-05",
       "actionTakenCode": 6, "dechallengeCode": 3, "rechallengeCode": 3,
       "manufacturerName": "DeepQuence",
-      "indAuthorizationNumber": "IND999999",
+      "indAuthorizationNumber": "IND123456",
       "fdaAdditionalDrugInfo": "TEST"
     },
     {

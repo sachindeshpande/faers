@@ -1,10 +1,20 @@
 #!/usr/bin/env python3
 """
 FAERS / AERS USP E2B(R3) XML Lint + Golden Checklist
-DeepQuence — updated through v37
+DeepQuence — updated 2026-04-28 (IND T06 root-cause session)
 
 Usage:  python3 faers_xml_lint.py path/to/CASE-XXXXX.xml
 Exit:   0 = all pass/warn   |   1 = one or more FAIL
+
+SECTIONS 18–19 added 2026-04-28 (GAP-IND-007):
+  Sec 6:   PORR receiver now accepts 'CDER' (postmarket) OR 'CDER_IND' (IND track)
+  Sec 18:  C.5.5a must be '123456' for ZZFDATST_PREMKT test environment.
+           Root cause of T06 triple-rejection: IND number '999999' is not registered
+           in the FDA test IND registry.  The error "FDA.C.5.5a is invalid for the
+           Center" is a CONTENT/REGISTRY rejection, not a schema or structure issue.
+           Evidence: T06 v29/v30/v31 all CR+AR; T01–T05/T07 all CA+AE with 123456.
+  Sec 19:  C.5.5a numeric value must match the drug approval IND (after stripping
+           the 'IND' prefix) — internal cross-consistency check.
 
 CRITICAL SCHEMA FINDING (v36 ACK ci260410182936):
   CDER PORR schema does NOT allow <author> as a direct child of
@@ -128,8 +138,10 @@ def run(xml_path):
     w_rcv_ids = [(ga(i,"root"),ga(i,"extension"))
                  for r in qna(root,"receiver")
                  for d in qna(r,"device") for i in qna(d,"id")]
-    chk("Wrapper receiver = ZZFDATST (TEST routing)",
-        any(e=="ZZFDATST" for _,e in w_rcv_ids), f"found: {w_rcv_ids}")
+    # ZZFDATST = postmarket test gateway; ZZFDATST_PREMKT = premarket/IND test gateway
+    chk("Wrapper receiver = ZZFDATST or ZZFDATST_PREMKT (TEST routing)",
+        any(e in ("ZZFDATST", "ZZFDATST_PREMKT") for _,e in w_rcv_ids),
+        f"found: {w_rcv_ids}")
     w_snd_ids = [(ga(i,"root"),ga(i,"extension"))
                  for s in qna(root,"sender")
                  for d in qna(s,"device") for i in qna(d,"id")]
@@ -148,8 +160,8 @@ def run(xml_path):
         p_rcv = [(ga(i,"root"),ga(i,"extension"))
                  for r in qna(porr,"receiver")
                  for d in qna(r,"device") for i in qna(d,"id")]
-        chk("PORR receiver: single id extension='CDER'",
-            len(p_rcv)==1 and p_rcv[0][1]=="CDER", f"found: {p_rcv}")
+        chk("PORR receiver: extension is 'CDER' (postmarket) or 'CDER_IND' (premarket/IND)",
+            len(p_rcv)==1 and p_rcv[0][1] in ("CDER", "CDER_IND"), f"found: {p_rcv}")
         p_snd = [(ga(i,"root"),ga(i,"extension"))
                  for s in qna(porr,"sender")
                  for d in qna(s,"device") for i in qna(d,"id")]
@@ -247,6 +259,37 @@ def run(xml_path):
         obs_codes = {ga(qn(o,"code"),"code") for o in pr_invsbj.iter(Q("observation"))}
         chk("Race observation (C17049)",    "C17049" in obs_codes)
         chk("Ethnicity observation (C16564)","C16564" in obs_codes)
+
+        # Fatal-case conditional checks (GAP-IND-004)
+        # If any reaction has resultsInDeath=true, patient block must have:
+        #   (a) <deceasedTime> on player1
+        #   (b) an autopsy observation (code="5") as a subjectOf2
+        death_obs = [
+            o for o in root.iter(Q("observation"))
+            if ga(qn(o,"code"),"code") == "34"   # resultsInDeath
+        ]
+        any_fatal = any(
+            ga(qn(o,"value"),"value") == "true"
+            for o in death_obs
+        )
+        if any_fatal:
+            player1 = next(
+                (e for e in pr_invsbj.iter(Q("player1")) if ga(e,"classCode")=="PSN"), None)
+            has_deceased_time = (
+                player1 is not None and
+                player1.find(Q("deceasedTime")) is not None
+            )
+            chk("D.9.1 deceasedTime present on player1 when resultsInDeath=true [GAP-IND-004]",
+                has_deceased_time,
+                "missing <deceasedTime> on player1 — required for fatal pre-market ICSRs")
+
+            autopsy_obs = [
+                o for o in pr_invsbj.iter(Q("observation"))
+                if ga(qn(o,"code"),"code") == "5"  # autopsy (D.9.3)
+            ]
+            chk("D.9.3 autopsy observation (code=5) present when resultsInDeath=true [GAP-IND-004]",
+                len(autopsy_obs) > 0,
+                "missing autopsy subjectOf2 — required when Date of Death is present")
 
     # ── 10. Drug indication coding ───────────────────────────────────────────
     print("\n[ SECTION 10: Drug indication CE values ]")
@@ -382,9 +425,9 @@ def run(xml_path):
     if lcrt_obs:
         val = qn(lcrt_obs[0],"value")
         rt_code = ga(val,"code") if val is not None else None
-        chk("C.1.7 reportType code is 1 (15-Day) or 7 (7-Day)",
-            rt_code in ("1","7"),
-            f"code={rt_code!r}")
+        chk("C.1.7 reportType code is 1 (15-Day) or 6 (7-Day) [FDA premarket codelist — GAP-IND-004]",
+            rt_code in ("1","6"),
+            f"code={rt_code!r} — expected '1' (15-Day) or '6' (7-Day); '7' is not in FDA premarket codelist")
 
     # ── 15. Uncoded CE values (warnings) ────────────────────────────────────
     print("\n[ SECTION 15: Uncoded CE values ]")
@@ -402,6 +445,196 @@ def run(xml_path):
             warn(f"CE with displayName only (no code/codeSystem/nullFlavor): {u}")
     else:
         chk("No uncoded CE values", True)
+
+    # ── 16. Follow-up report structure (GAP-IND-005) ────────────────────────
+    print("\n[ SECTION 16: Follow-up report structure ]")
+    # Detect follow-up by version id extension >= 3.
+    # NOTE: the followUpReport outboundRelationship was removed per GAP-IND-005 because
+    # code="2" on OID .1.22 collides with sourceReport code="2".  Follow-up is now
+    # identified solely by investigationEvent/id[@root='.3.4'] extension >= 3.
+    all_rel_inv = [
+        ri for or_ in root.iter(Q("outboundRelationship"))
+        for ri in or_.iter(Q("relatedInvestigation"))
+    ]
+    rel_inv_codes = [ga(qn(ri,"code"),"displayName") or ga(qn(ri,"code"),"code") or ""
+                     for ri in all_rel_inv]
+    _ie_for_ver = root.find(f".//{Q('investigationEvent')}")
+    _ver_id = None
+    if _ie_for_ver is not None:
+        for _vid in _ie_for_ver.findall(Q("id")):
+            if ga(_vid, "root") == "2.16.840.1.113883.3.989.2.1.3.4":
+                _ver_id = _vid
+                break
+    _ver_ext = int(ga(_ver_id, "extension") or 0)
+    is_followup = _ver_ext >= 3
+
+    if is_followup:
+        # C.1.8.2: must have an initialReport outboundRelationship (First Sender)
+        has_initial_report = "initialReport" in rel_inv_codes
+        chk("Follow-up: initialReport outboundRelationship present (C.1.8.2) [GAP-IND-005]",
+            has_initial_report,
+            "missing outboundRelationship/relatedInvestigation/code='initialReport' — required for follow-ups")
+
+        # C.2.r.5: must have a sourceReport outboundRelationship with priorityNumber
+        has_source_report = "sourceReport" in rel_inv_codes
+        chk("Follow-up: sourceReport outboundRelationship present (C.2.r.5) [GAP-IND-005]",
+            has_source_report,
+            "missing outboundRelationship/relatedInvestigation/code='sourceReport' — required for follow-ups")
+
+        if has_source_report:
+            # C.2.r.5: priorityNumber value="1" on the sourceReport outboundRelationship
+            source_or = next(
+                (or_ for or_ in root.iter(Q("outboundRelationship"))
+                 for ri in or_.iter(Q("relatedInvestigation"))
+                 if (ga(qn(ri,"code"),"displayName") or ga(qn(ri,"code"),"code")) == "sourceReport"),
+                None
+            )
+            has_priority = (
+                source_or is not None and
+                source_or.find(Q("priorityNumber")) is not None and
+                ga(source_or.find(Q("priorityNumber")), "value") == "1"
+            )
+            chk("Follow-up: priorityNumber value='1' on sourceReport (C.2.r.5) [GAP-IND-005]",
+                has_priority,
+                "missing <priorityNumber value='1'> on sourceReport outboundRelationship")
+
+            # FDA.C.2.r.2.8: reporter email must be present in the sourceReport block
+            source_telecoms = []
+            if source_or is not None:
+                source_telecoms = [
+                    ga(t,"value") or "" for t in source_or.iter(Q("telecom"))
+                ]
+            has_email = any(t.startswith("mailto:") for t in source_telecoms)
+            chk("Follow-up: reporter email (mailto:) in sourceReport (FDA.C.2.r.2.8) [GAP-IND-005]",
+                has_email,
+                f"no mailto: telecom in sourceReport block — telecoms found: {source_telecoms}")
+    else:
+        chk("Initial report (no follow-up checks required)", True)
+
+    # OID+code uniqueness: no two relatedInvestigation/code elements in outboundRelationship
+    # may share the same (codeSystem, code) pair — would cause FDA validator to read the wrong block
+    from collections import Counter as _Counter
+    # Clark notation {ns}tag is valid in ElementTree XPath without a namespace dict
+    _all_orb = root.findall(f".//{Q('outboundRelationship')}")
+    _oid_code_pairs = []
+    for _orb in _all_orb:
+        for _ri in _orb.findall(Q('relatedInvestigation')):
+            _c = _ri.find(Q('code'))
+            if _c is not None:
+                _oid_code_pairs.append((ga(_c,'codeSystem'), ga(_c,'code')))
+    _dupes = [p for p, cnt in _Counter(_oid_code_pairs).items() if cnt > 1]
+    chk("No duplicate OID+code in outboundRelationship/relatedInvestigation/code [GAP-IND-005]",
+        len(_dupes) == 0,
+        f"duplicate OID+code pairs: {_dupes}")
+
+    # ── 17. FDAAddDrugInformation absent for CDER_IND (GAP-IND-006) ─────────
+    print("\n[ SECTION 17: FDAAddDrugInformation absent for CDER_IND (GAP-IND-006) ]")
+    # Detect whether the PORR receiver is CDER_IND (same logic as Section 6).
+    PORR_RECV_OID = "2.16.840.1.113883.3.989.2.1.3.12"
+    _porr_for_s17 = qn(root, "PORR_IN049016UV")
+    _porr_rcv_exts = [
+        ga(i, "extension")
+        for r in qna(_porr_for_s17, "receiver")
+        for d in qna(r, "device")
+        for i in qna(d, "id")
+        if ga(i, "root") == PORR_RECV_OID
+    ]
+    is_cder_ind = any(e == "CDER_IND" for e in _porr_rcv_exts)
+    if is_cder_ind:
+        # FDAAddDrugInformation: observation with code="9" on OID .3.989.2.1.1.19
+        FDA_ADD_DRUG_OID = "2.16.840.1.113883.3.989.2.1.1.19"
+        fda_add_drug_obs = [
+            o for o in root.iter(Q("observation"))
+            if ga(qn(o, "code"), "code") == "9"
+            and ga(qn(o, "code"), "codeSystem") == FDA_ADD_DRUG_OID
+        ]
+        chk(
+            "GAP-IND-006: FDAAddDrugInformation (code=9, OID .3.989.2.1.1.19) absent for CDER_IND",
+            len(fda_add_drug_obs) == 0,
+            f"found {len(fda_add_drug_obs)} FDAAddDrugInformation observation(s) — "
+            "FDA.C.5.5a is invalid for CDER_IND center (N.2.r.3); field must be omitted for IND submissions"
+        )
+    else:
+        chk("GAP-IND-006: FDAAddDrugInformation check skipped (receiver is not CDER_IND)", True,
+            f"PORR receiver extensions found: {_porr_rcv_exts}")
+
+    # ── 18. C.5.5a registered test IND value (GAP-IND-007) ─────────────────
+    print("\n[ SECTION 18: C.5.5a IND number — registered test value (GAP-IND-007) ]")
+    # ROOT CAUSE discovered 2026-04-28:
+    # The FDA ZZFDATST_PREMKT test gateway validates C.5.5a against a registry of
+    # registered test INDs.  The only confirmed registered test IND is "123456".
+    # T06 used "999999" — not registered — and rejected with "FDA.C.5.5a is invalid
+    # for the Center specified in N.2.r.3" across three consecutive submissions (v29,
+    # v30, v31) even though every structural element was correct.  All other IND test
+    # cases (T01–T05, T07) use "123456" and receive CA+AE.
+    # FDA reference Scenario 3 (FAERS2022Scenario3.xml) also uses "123456".
+    # RULE: for any new IND test submission, C.5.5a MUST be "123456" unless this test
+    # is specifically probing a different registered IND.
+    KNOWN_TEST_IND = "123456"
+    C55A_OID  = "2.16.840.1.113883.3.989.5.1.2.2.1.2.1"
+    c55a_regs = [
+        sr for sr in root.findall(f".//{Q('studyRegistration')}")
+        if ga(sr.find(Q("id")), "root") == C55A_OID
+    ]
+    if is_cder_ind:
+        if c55a_regs:
+            for sr in c55a_regs:
+                id_el = sr.find(Q("id"))
+                val   = ga(id_el, "extension")
+                _detail_18 = (
+                    "" if val == KNOWN_TEST_IND else
+                    f"C.5.5a='{val}' is NOT the confirmed registered test IND. "
+                    f"ONLY '{KNOWN_TEST_IND}' is proven to pass ZZFDATST registry validation. "
+                    "Evidence: T06 v29/v30/v31 all CR+AR with 999999 ('FDA.C.5.5a is invalid "
+                    "for the Center'); T01–T05/T07 all CA+AE with 123456."
+                )
+                chk(
+                    f"GAP-IND-007: C.5.5a='{val}' is the registered ZZFDATST test IND ('{KNOWN_TEST_IND}')",
+                    val == KNOWN_TEST_IND,
+                    _detail_18
+                )
+        else:
+            warn("GAP-IND-007: No C.5.5a studyRegistration found for CDER_IND submission — "
+                 "expected OID 2.16.840.1.113883.3.989.5.1.2.2.1.2.1")
+    else:
+        chk("GAP-IND-007: C.5.5a registry check skipped (not a CDER_IND submission)", True)
+
+    # ── 19. Drug IND approval ↔ C.5.5a cross-consistency (GAP-IND-007) ──────
+    print("\n[ SECTION 19: Drug IND approval ↔ C.5.5a cross-consistency ]")
+    # The numeric part of each drug's asManufacturedProduct/approval/id[@root='.3.4']
+    # extension (stripping any "IND" prefix) should match C.5.5a.
+    # Evidence: T01 drug=IND123456 → strip → 123456 == C.5.5a=123456 ✓
+    #           T06 drug=IND999999 → strip → 999999 == C.5.5a=999999 ✓ (consistent, but 999999 unregistered)
+    # A mismatch here means the submission is internally inconsistent regardless of registry.
+    DRUG_APPROVAL_OID = "2.16.840.1.113883.3.989.2.1.3.4"
+    drug_ind_numerics = set()
+    for _appr in root.iter(Q("approval")):
+        _aid = _appr.find(Q("id"))
+        if _aid is not None and ga(_aid, "root") == DRUG_APPROVAL_OID:
+            ext = ga(_aid, "extension") or ""
+            # Strip "IND" prefix (case-insensitive)
+            numeric = ext[3:] if ext.upper().startswith("IND") else ext
+            if numeric:
+                drug_ind_numerics.add(numeric)
+    if c55a_regs and drug_ind_numerics:
+        c55a_vals = {ga(sr.find(Q("id")), "extension") for sr in c55a_regs}
+        overlap   = c55a_vals & drug_ind_numerics
+        _detail_19 = (
+            "" if len(overlap) > 0 else
+            f"C.5.5a={sorted(c55a_vals)}  drug approval INDs (numeric)={sorted(drug_ind_numerics)}  "
+            "No overlap — C.5.5a must equal the numeric part of the primary suspect drug's IND approval"
+        )
+        chk(
+            "C.5.5a matches at least one drug approval IND (numeric part after 'IND' prefix strip)",
+            len(overlap) > 0,
+            _detail_19
+        )
+    elif c55a_regs and not drug_ind_numerics:
+        warn("C.5.5a present but no drug approval IND block found — "
+             "cannot verify cross-consistency; ensure suspect drug has approval/id with root "
+             "2.16.840.1.113883.3.989.2.1.3.4")
+    else:
+        chk("C.5.5a / drug IND cross-consistency: no C.5.5a present, skip", True)
 
     # ── Summary ──────────────────────────────────────────────────────────────
     fails  = [r for r in _results if r[0]==FAIL]

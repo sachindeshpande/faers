@@ -247,7 +247,7 @@ describe('XMLGeneratorService v37 lint conformance', () => {
     });
 
     expect(result.success).toBe(true);
-    expect(result.xml).toMatch(/displayName="localCriteriaReportType"\/>\s*<value xsi:type="CE" code="7"[^>]*displayName="7-Day"/);
+    expect(result.xml).toMatch(/displayName="localCriteriaReportType"\/>\s*<value xsi:type="CE" code="6"[^>]*displayName="7-Day"/);
     runLint(result.xml!, '7day');
   }, 15_000);
 });

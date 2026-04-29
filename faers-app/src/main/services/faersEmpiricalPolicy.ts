@@ -140,10 +140,34 @@ export interface IndPolicyEntry {
   value: string;
   verdict: PolicyVerdict;
   evidence?: string;
+  /**
+   * Per-value verdicts, mirroring `FieldPolicy.entries`. Set when a single
+   * field has both a proven_safe and proven_rejected value (e.g. C.5.5a's
+   * registry has 123456 proven_safe and 999999 proven_rejected per
+   * GAP-IND-007). Used by xmlGeneratorService and Pass 3 of the validator
+   * to block emission of proven_rejected values.
+   */
+  entries?: Array<{ value: string; verdict: Exclude<PolicyVerdict, 'untested'>; evidence: string }>;
 }
 
 export const IND_POLICY: Record<string, IndPolicyEntry> = {
-  indNumber:     { value: '<required>',     verdict: 'untested' },
+  indNumber: {
+    value: '123456',
+    verdict: 'proven_safe',
+    evidence: 'T01–T05/T07 all CA+AE; T06 v32 CA+AE ci260429010301 (GAP-IND-007). Only 123456 is registered in the ZZFDATST_PREMKT test registry.',
+    entries: [
+      {
+        value: '123456',
+        verdict: 'proven_safe',
+        evidence: 'T01–T05/T07 all CA+AE; T06 v32 CA+AE ci260429010301 (GAP-IND-007)'
+      },
+      {
+        value: '999999',
+        verdict: 'proven_rejected',
+        evidence: 'T06 v29/v30/v31 CR+AR ci260428181215/ci260428205348/ci260428224649 — "FDA.C.5.5a is invalid for the Center" (GAP-IND-007)'
+      }
+    ]
+  },
   studyType:     { value: '1',              verdict: 'untested' },
   typeOfReport:  { value: '2',              verdict: 'untested' },
   drugRoleTest:  { value: '1',              verdict: 'untested' },

@@ -31,6 +31,7 @@ import {
   SENDER_OID_DUNS
 } from '../../shared/types/case.types';
 import type { SenderIdentifierType, TargetCenter } from '../../shared/types/case.types';
+import { IND_POLICY } from './faersEmpiricalPolicy';
 
 export interface XMLGenerationOptions {
   submissionEnvironment?: SubmissionEnvironment;
@@ -515,22 +516,102 @@ export class XMLGeneratorService {
     lines.push('          </component>');
 
     // ── OUTBOUND RELATIONSHIP: initial vs. follow-up classification ────
-    const initialReportCode = caseData.initialOrFollowup === 2 ? '2' : '1';
-    const initialReportDisplay = initialReportCode === '2' ? 'followUpReport' : 'initialReport';
-    lines.push('          <outboundRelationship typeCode="SPRT">');
-    lines.push('            <relatedInvestigation classCode="INVSTG" moodCode="EVN">');
-    lines.push(`              <code code="${initialReportCode}" codeSystem="2.16.840.1.113883.3.989.2.1.1.22" displayName="${initialReportDisplay}"/>`);
-    lines.push('              <subjectOf2 typeCode="SUBJ">');
-    lines.push('                <controlActEvent classCode="CACT" moodCode="EVN">');
-    lines.push('                  <author typeCode="AUT">');
-    lines.push('                    <assignedEntity classCode="ASSIGNED">');
-    lines.push('                      <code code="1" displayName="regulator" codeSystem="2.16.840.1.113883.3.989.2.1.1.3"/>');
-    lines.push('                    </assignedEntity>');
-    lines.push('                  </author>');
-    lines.push('                </controlActEvent>');
-    lines.push('              </subjectOf2>');
-    lines.push('            </relatedInvestigation>');
-    lines.push('          </outboundRelationship>');
+    if (caseData.initialOrFollowup === 2) {
+      // Follow-up report: emit initialReport (C.1.8.2) + sourceReport (C.2.r.5) blocks.
+      // NOTE: followUpReport outboundRelationship intentionally omitted — would collide with
+      // sourceReport code="2" on OID .1.22. Follow-up is indicated by version id extension="3".
+      const primaryReporter = reporters[0];
+      const reporterStreet = primaryReporter?.address || '';
+      const reporterCity = primaryReporter?.city || '';
+      const reporterState = primaryReporter?.state || '';
+      const reporterPostalCode = primaryReporter?.postcode || '';
+      const reporterCountry = primaryReporter?.country || 'US';
+      const reporterPhone = primaryReporter?.phone || '+10000000000';
+      const reporterEmail = primaryReporter?.email || '';
+      const reporterTitle = primaryReporter?.title
+        || (primaryReporter?.qualification === 1 || primaryReporter?.qualification === 2 ? 'Dr' : 'Mr');
+      const reporterGiven = primaryReporter?.givenName || '';
+      const reporterFamily = primaryReporter?.familyName || '';
+      const reporterQualCode = String(primaryReporter?.qualification ?? 1);
+      const reporterQualCodeMap: Record<string, string> = {
+        '1': 'Physician', '2': 'Pharmacist', '3': 'Other Health Professional',
+        '4': 'Lawyer', '5': 'Consumer or non-health professional'
+      };
+      const reporterQualDisplay = reporterQualCodeMap[reporterQualCode] || 'Physician';
+      const reporterCountryCode = primaryReporter?.country || 'US';
+
+      // C.1.8.2: First Sender of This Case — required for follow-up reports
+      lines.push('          <outboundRelationship typeCode="SPRT">');
+      lines.push('            <relatedInvestigation classCode="INVSTG" moodCode="EVN">');
+      lines.push('              <code code="1" codeSystem="2.16.840.1.113883.3.989.2.1.1.22" displayName="initialReport"/>');
+      lines.push('              <subjectOf2 typeCode="SUBJ">');
+      lines.push('                <controlActEvent classCode="CACT" moodCode="EVN">');
+      lines.push('                  <author typeCode="AUT">');
+      lines.push('                    <assignedEntity classCode="ASSIGNED">');
+      lines.push('                      <code code="1" displayName="regulator" codeSystem="2.16.840.1.113883.3.989.2.1.1.3"/>');
+      lines.push('                    </assignedEntity>');
+      lines.push('                  </author>');
+      lines.push('                </controlActEvent>');
+      lines.push('              </subjectOf2>');
+      lines.push('            </relatedInvestigation>');
+      lines.push('          </outboundRelationship>');
+
+      // C.2.r.5 Primary Source + FDA.C.2.r.2.8 Reporter Email + C.2.r.4 Qualification
+      lines.push('          <outboundRelationship typeCode="SPRT">');
+      lines.push('            <priorityNumber value="1"/>');
+      lines.push('            <relatedInvestigation classCode="INVSTG" moodCode="EVN">');
+      lines.push('              <code code="2" codeSystem="2.16.840.1.113883.3.989.2.1.1.22" displayName="sourceReport"/>');
+      lines.push('              <subjectOf2 typeCode="SUBJ">');
+      lines.push('                <controlActEvent classCode="CACT" moodCode="EVN">');
+      lines.push('                  <author typeCode="AUT">');
+      lines.push('                    <assignedEntity classCode="ASSIGNED">');
+      lines.push('                      <addr>');
+      lines.push(`                        <streetAddressLine>${this.escapeXml(reporterStreet)}</streetAddressLine>`);
+      lines.push(`                        <city>${this.escapeXml(reporterCity)}</city>`);
+      lines.push(`                        <state>${this.escapeXml(reporterState)}</state>`);
+      lines.push(`                        <postalCode>${this.escapeXml(reporterPostalCode)}</postalCode>`);
+      lines.push(`                        <country>${this.escapeXml(reporterCountry)}</country>`);
+      lines.push('                      </addr>');
+      lines.push(`                      <telecom value="tel:${reporterPhone}"/>`);
+      lines.push(`                      <telecom value="mailto:${reporterEmail}"/>`);
+      lines.push('                      <assignedPerson classCode="PSN" determinerCode="INSTANCE">');
+      lines.push('                        <name>');
+      lines.push(`                          <prefix>${this.escapeXml(reporterTitle)}</prefix>`);
+      lines.push(`                          <given>${this.escapeXml(reporterGiven)}</given>`);
+      lines.push(`                          <family>${this.escapeXml(reporterFamily)}</family>`);
+      lines.push('                        </name>');
+      lines.push('                        <asQualifiedEntity classCode="QUAL">');
+      lines.push(`                          <code code="${reporterQualCode}" displayName="${reporterQualDisplay}" codeSystem="2.16.840.1.113883.3.989.2.1.1.6"/>`);
+      lines.push('                        </asQualifiedEntity>');
+      lines.push('                        <asLocatedEntity classCode="LOCE">');
+      lines.push('                          <location classCode="COUNTRY" determinerCode="INSTANCE">');
+      lines.push(`                            <code code="${this.escapeXml(reporterCountryCode)}" codeSystem="1.0.3166.1.2.2"/>`);
+      lines.push('                          </location>');
+      lines.push('                        </asLocatedEntity>');
+      lines.push('                      </assignedPerson>');
+      lines.push('                    </assignedEntity>');
+      lines.push('                  </author>');
+      lines.push('                </controlActEvent>');
+      lines.push('              </subjectOf2>');
+      lines.push('            </relatedInvestigation>');
+      lines.push('          </outboundRelationship>');
+    } else {
+      // Initial report: single initialReport outboundRelationship
+      lines.push('          <outboundRelationship typeCode="SPRT">');
+      lines.push('            <relatedInvestigation classCode="INVSTG" moodCode="EVN">');
+      lines.push('              <code code="1" codeSystem="2.16.840.1.113883.3.989.2.1.1.22" displayName="initialReport"/>');
+      lines.push('              <subjectOf2 typeCode="SUBJ">');
+      lines.push('                <controlActEvent classCode="CACT" moodCode="EVN">');
+      lines.push('                  <author typeCode="AUT">');
+      lines.push('                    <assignedEntity classCode="ASSIGNED">');
+      lines.push('                      <code code="1" displayName="regulator" codeSystem="2.16.840.1.113883.3.989.2.1.1.3"/>');
+      lines.push('                    </assignedEntity>');
+      lines.push('                  </author>');
+      lines.push('                </controlActEvent>');
+      lines.push('              </subjectOf2>');
+      lines.push('            </relatedInvestigation>');
+      lines.push('          </outboundRelationship>');
+    }
 
     // ── SUBJECT OF 1: Reporter block (C.2/C.3) ─────────────────────────
     // v37 rule #1: MUST be inside subjectOf1/controlActEvent/author,
@@ -710,7 +791,24 @@ export class XMLGeneratorService {
       lines.push('                      </authorization>');
     }
 
-    // FDA.C.5.5a — IND Number where AE Occurred (REQUIRED)
+    // FDA.C.5.5a — IND Number where AE Occurred (REQUIRED). Registry guard
+    // per GAP-IND-007 / GAP-APP-003: the ZZFDATST_PREMKT test gateway
+    // validates this against a registry of registered test INDs. Block
+    // emission of any value known to be proven_rejected; surface untested
+    // values as a build warning so they're visible in submission logs.
+    const indEntry = IND_POLICY.indNumber.entries?.find((e) => e.value === ind.indNumber);
+    if (indEntry?.verdict === 'proven_rejected') {
+      throw new Error(
+        `IND number "${ind.indNumber}" is proven_rejected by the ZZFDATST test registry. ` +
+          `Use 123456 (proven_safe). Evidence: ${indEntry.evidence}`
+      );
+    }
+    if (!indEntry) {
+      this.buildWarnings.push(
+        `IND number "${ind.indNumber}" is untested in the ZZFDATST test registry. ` +
+          `Only 123456 is proven_safe (GAP-IND-007). Submission may CR+AR.`
+      );
+    }
     lines.push('                      <authorization typeCode="AUTH">');
     lines.push('                        <studyRegistration classCode="ACT" moodCode="EVN">');
     lines.push(`                          <id extension="${this.escapeXml(ind.indNumber)}" root="2.16.840.1.113883.3.989.5.1.2.2.1.2.1"/>`);
@@ -913,7 +1011,7 @@ export class XMLGeneratorService {
 
     // Drugs (B.4)
     for (const drug of drugs) {
-      lines.push(this.buildDrug(drug));
+      lines.push(this.buildDrug(drug, isPremarket));
     }
 
     lines.push('                </primaryRole>');
@@ -1072,7 +1170,7 @@ export class XMLGeneratorService {
   /**
    * Build drug section (B.4)
    */
-  private buildDrug(drug: CaseDrug): string {
+  private buildDrug(drug: CaseDrug, isPremarket: boolean = false): string {
     const lines: string[] = [];
 
     lines.push('            <subjectOf2 typeCode="SBJ">');
@@ -1207,11 +1305,14 @@ export class XMLGeneratorService {
     lines.push('                      </observation>');
     lines.push('                    </outboundRelationship2>');
 
+    // GAP-IND-006: FDAAddDrugInformation (C.5.5a) is invalid for CDER_IND — omit for IND submissions
     // SUSAR / IND — G.k.10a.r FDA additional drug information (BA/BE only).
     // Per spec §4.6: Test/Reference drugs get the coded CE value; all other
     // drugs in a BA/BE study get nullFlavor="NA". For non-BA/BE IND cases
     // the field is absent on the drug record and we skip emission.
-    if (drug.fdaAdditionalDrugInfo) {
+    // The field is only valid for postmarket NDA/ANDA submissions; CDER_IND
+    // rejects it with "FDA.C.5.5a is invalid for the Center specified in N.2.r.3".
+    if (drug.fdaAdditionalDrugInfo && !isPremarket) {
       lines.push('                    <outboundRelationship2 typeCode="COMP">');
       lines.push('                      <observation classCode="OBS" moodCode="EVN">');
       lines.push('                        <code code="9" codeSystem="2.16.840.1.113883.3.989.2.1.1.19" codeSystemVersion="1.1" displayName="FDAAddDrugInformation"/>');

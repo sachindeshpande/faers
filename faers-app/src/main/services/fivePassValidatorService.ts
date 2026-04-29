@@ -25,6 +25,7 @@ import { join } from 'node:path';
 import { app } from 'electron';
 import {
   FAERS_POLICY,
+  IND_POLICY,
   classifyValue,
   type FieldPolicy,
   type PolicyVerdict
@@ -45,8 +46,9 @@ export type Severity = ValidatorSeverity;
 // ────────────────────────────────────────────────────────────────────────────
 
 const V37_FILENAME = 'CASE-20260331-EMJQ_fixed_v37_patch.xml';
+const IND_GOLDEN_FILENAME = 'IND-T01-susar-baseline.xml';
 
-export function resolveGoldenV37Path(): string | null {
+function resolveGoldenPath(filename: string, subdirs: string[][]): string | null {
   const candidates: string[] = [];
   // `app` is undefined in standalone-node / headless-CLI contexts. Guard
   // every access so the cwd fallbacks still work.
@@ -54,9 +56,11 @@ export function resolveGoldenV37Path(): string | null {
 
   try {
     if (electronApp?.isPackaged) {
-      candidates.push(join(process.resourcesPath, 'lint', V37_FILENAME));
-      candidates.push(join(process.resourcesPath, V37_FILENAME));
-      candidates.push(join(process.resourcesPath, 'test', 'test_submission', 'package', V37_FILENAME));
+      candidates.push(join(process.resourcesPath, 'lint', filename));
+      candidates.push(join(process.resourcesPath, filename));
+      for (const sub of subdirs) {
+        candidates.push(join(process.resourcesPath, ...sub, filename));
+      }
     }
   } catch {
     // app may be unavailable (test context)
@@ -65,20 +69,42 @@ export function resolveGoldenV37Path(): string | null {
   try {
     const appPath = electronApp?.getAppPath?.();
     if (appPath) {
-      candidates.push(join(appPath, '..', 'test', 'test_submission', 'package', V37_FILENAME));
-      candidates.push(join(appPath, '..', '..', 'test', 'test_submission', 'package', V37_FILENAME));
+      for (const sub of subdirs) {
+        candidates.push(join(appPath, '..', ...sub, filename));
+        candidates.push(join(appPath, '..', '..', ...sub, filename));
+      }
     }
   } catch {
     // outside Electron
   }
 
-  candidates.push(join(process.cwd(), 'test', 'test_submission', 'package', V37_FILENAME));
-  candidates.push(join(process.cwd(), '..', 'test', 'test_submission', 'package', V37_FILENAME));
+  for (const sub of subdirs) {
+    candidates.push(join(process.cwd(), ...sub, filename));
+    candidates.push(join(process.cwd(), '..', ...sub, filename));
+  }
 
   for (const c of candidates) {
     if (existsSync(c)) return c;
   }
   return null;
+}
+
+export function resolveGoldenV37Path(): string | null {
+  return resolveGoldenPath(V37_FILENAME, [['test', 'test_submission', 'package']]);
+}
+
+/**
+ * Locate the IND structural baseline (`IND-T01-susar-baseline.xml`) for
+ * passes 1/4/5 of an IND/babe submission. Per GAP-APP-004, this is the
+ * confirmed CA+AE T01 package at `test/test_submission/from_app/ind/`.
+ * Returns `null` when not found, in which case passes 1/4/5 fall back to
+ * the historical "no golden reference" skip.
+ */
+export function resolveGoldenIndPath(): string | null {
+  return resolveGoldenPath(IND_GOLDEN_FILENAME, [
+    ['test', 'test_submission', 'from_app', 'ind'],
+    ['test', 'test_submission', 'package']
+  ]);
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -515,6 +541,218 @@ function indStructuralChecks(root: XmlNode): ValidatorFinding[] {
     }
   }
 
+  // ── Fatal case checks (GAP-IND-004) ──────────────────────────────────────
+  // If any resultsInDeath observation (code=34) has value=true, require:
+  //   (a) <deceasedTime> on player1 (D.9.1)
+  //   (b) autopsy observation code=5 (D.9.3)
+  const deathObservations = findObservations(root, '34');
+  const isFatal = deathObservations.some(
+    (o) => o.children.find((c) => c.name === 'value')?.attrs.value === 'true'
+  );
+
+  if (isFatal) {
+    // (a) deceasedTime on player1
+    let hasDeceasedTime = false;
+    walk(root, (n) => {
+      if (n.name === 'player1' && n.attrs.classCode === 'PSN') {
+        if (n.children.some((c) => c.name === 'deceasedTime')) {
+          hasDeceasedTime = true;
+        }
+      }
+    });
+    if (!hasDeceasedTime) {
+      findings.push({
+        pass: 3,
+        severity: 'error',
+        label: 'IND fatal: missing <deceasedTime> on player1 (D.9.1) — GAP-IND-004',
+        detail: 'deceasedTime required on player1 when resultsInDeath=true'
+      });
+    }
+
+    // (b) autopsy observation (code=5, D.9.3)
+    const autopsyObs = findObservations(root, '5').filter((o) => {
+      const code = o.children.find((c) => c.name === 'code');
+      return code?.attrs.codeSystem === '2.16.840.1.113883.3.989.2.1.1.19';
+    });
+    if (autopsyObs.length === 0) {
+      findings.push({
+        pass: 3,
+        severity: 'error',
+        label: 'IND fatal: missing autopsy observation (D.9.3, code=5) — GAP-IND-004',
+        detail: 'autopsy subjectOf2 required when resultsInDeath=true'
+      });
+    }
+  }
+
+  // ── C.1.7.1 localCriteriaReportType code validation (GAP-IND-004) ────────
+  // FDA premarket codelist: 1=15-Day, 6=7-Day. Code "7" is NOT valid.
+  let reportTypeWalk: XmlNode | null = null;
+  walk(root, (n) => {
+    if (reportTypeWalk) return;
+    if (n.name === 'observationEvent' || n.name === 'observation') {
+      const code = n.children.find((c) => c.name === 'code');
+      if (code?.attrs.code === 'C54588') reportTypeWalk = n;
+    }
+  });
+  if (reportTypeWalk) {
+    const val = (reportTypeWalk as XmlNode).children.find((c) => c.name === 'value');
+    const rtCode = val?.attrs.code;
+    if (rtCode && !['1', '6'].includes(rtCode)) {
+      findings.push({
+        pass: 3,
+        severity: 'error',
+        label: `IND: C.1.7.1 localCriteriaReportType code="${rtCode}" is not in FDA premarket codelist — GAP-IND-004`,
+        detail: 'allowed values: "1" (15-Day) or "6" (7-Day). Code "7" is invalid.'
+      });
+    }
+  }
+
+  // ── Follow-up report structure checks (GAP-IND-005) ──────────────────────
+  // Detect follow-up: outboundRelationship/relatedInvestigation with displayName="followUpReport"
+  const relatedInvestigations: Array<{ code: XmlNode | undefined; parent: XmlNode }> = [];
+  walk(root, (n) => {
+    if (n.name === 'outboundRelationship') {
+      n.children
+        .filter((c) => c.name === 'relatedInvestigation')
+        .forEach((ri) => {
+          relatedInvestigations.push({
+            code: ri.children.find((c) => c.name === 'code'),
+            parent: n
+          });
+        });
+    }
+  });
+
+  const riDisplayNames = relatedInvestigations.map(
+    (r) => r.code?.attrs.displayName ?? r.code?.attrs.code ?? ''
+  );
+  const isFollowUp = riDisplayNames.includes('followUpReport');
+
+  if (isFollowUp) {
+    // C.1.8.2: initialReport block required
+    if (!riDisplayNames.includes('initialReport')) {
+      findings.push({
+        pass: 3,
+        severity: 'error',
+        label: 'IND follow-up: missing initialReport outboundRelationship (C.1.8.2) — GAP-IND-005',
+        detail: 'follow-up reports require outboundRelationship/relatedInvestigation/code="initialReport"'
+      });
+    }
+
+    // C.2.r.5: sourceReport block with priorityNumber required
+    const sourceReportEntry = relatedInvestigations.find(
+      (r) => (r.code?.attrs.displayName ?? r.code?.attrs.code) === 'sourceReport'
+    );
+    if (!sourceReportEntry) {
+      findings.push({
+        pass: 3,
+        severity: 'error',
+        label: 'IND follow-up: missing sourceReport outboundRelationship (C.2.r.5) — GAP-IND-005',
+        detail: 'follow-up reports require outboundRelationship/relatedInvestigation/code="sourceReport" with priorityNumber'
+      });
+    } else {
+      const priorityNumber = sourceReportEntry.parent.children.find(
+        (c) => c.name === 'priorityNumber'
+      );
+      if (!priorityNumber || priorityNumber.attrs.value !== '1') {
+        findings.push({
+          pass: 3,
+          severity: 'error',
+          label: 'IND follow-up: missing <priorityNumber value="1"> on sourceReport (C.2.r.5) — GAP-IND-005'
+        });
+      }
+
+      // FDA.C.2.r.2.8: reporter email (mailto:) in sourceReport block
+      const sourceTelecoms: string[] = [];
+      walk(sourceReportEntry.parent, (n) => {
+        if (n.name === 'telecom') sourceTelecoms.push(n.attrs.value ?? '');
+      });
+      if (!sourceTelecoms.some((t) => t.startsWith('mailto:'))) {
+        findings.push({
+          pass: 3,
+          severity: 'error',
+          label: 'IND follow-up: missing reporter email (mailto:) in sourceReport (FDA.C.2.r.2.8) — GAP-IND-005',
+          detail: `telecoms found in sourceReport: ${JSON.stringify(sourceTelecoms)}`
+        });
+      }
+    }
+  }
+
+  // GAP-IND-005: OID+code uniqueness — no two outboundRelationship/relatedInvestigation/code
+  // elements may share the same (codeSystem, code) pair
+  const orbOidCodePairs: string[] = [];
+  walk(root, (n) => {
+    if (n.name === 'outboundRelationship') {
+      n.children
+        .filter((c) => c.name === 'relatedInvestigation')
+        .forEach((ri) => {
+          const codeEl = ri.children.find((c) => c.name === 'code');
+          if (codeEl) {
+            orbOidCodePairs.push(`${codeEl.attrs.codeSystem ?? ''}|${codeEl.attrs.code ?? ''}`);
+          }
+        });
+    }
+  });
+  const orbDuplicates = orbOidCodePairs.filter((v, i) => orbOidCodePairs.indexOf(v) !== i);
+  if (orbDuplicates.length > 0) {
+    findings.push({
+      pass: 3,
+      severity: 'error',
+      label: `[GAP-IND-005] Duplicate OID+code in outboundRelationship blocks: ${orbDuplicates.join(', ')} — FDA validator will read the wrong block`,
+      detail: 'Each (codeSystem, code) pair in outboundRelationship/relatedInvestigation/code must be unique'
+    });
+  }
+
+  // ── IND_POLICY sweep (GAP-APP-001) ───────────────────────────────────────
+  // After the structural checks above, inspect the actual values emitted in
+  // the XML against the empirical IND policy. The first field with per-value
+  // entries is `indNumber` (FDA.C.5.5a); the registry guard in
+  // xmlGeneratorService is the primary block, but a second pass here is the
+  // belt-and-suspenders gate that also catches files generated outside the
+  // app (e.g. hand-edited test cases) before they reach FDA.
+  findings.push(...indPolicySweep(root));
+
+  return findings;
+}
+
+/**
+ * Sweep the generated IND XML against `IND_POLICY` per-value entries and
+ * emit error findings for any value flagged `proven_rejected`. Mirrors how
+ * `runPass3` consumes `FAERS_POLICY` for postmarket fields. Only fields
+ * with an `entries[]` array are evaluated — single-value entries are
+ * already validated by the structural checks above.
+ *
+ * Currently the only IND policy field with per-value verdicts is `indNumber`
+ * (FDA.C.5.5a, OID `2.16.840.1.113883.3.989.5.1.2.2.1.2.1`). New fields can
+ * be added by extending IND_POLICY and the field→OID map below.
+ */
+const IND_POLICY_OID: Record<string, string> = {
+  indNumber: '2.16.840.1.113883.3.989.5.1.2.2.1.2.1'
+};
+
+function indPolicySweep(root: XmlNode): ValidatorFinding[] {
+  const findings: ValidatorFinding[] = [];
+  for (const [fieldKey, entry] of Object.entries(IND_POLICY)) {
+    if (!entry.entries || entry.entries.length === 0) continue;
+    const oid = IND_POLICY_OID[fieldKey];
+    if (!oid) continue;
+
+    walk(root, (n) => {
+      if (n.name !== 'id' || n.attrs.root !== oid) return;
+      const ext = n.attrs.extension;
+      if (!ext) return;
+      const verdict = entry.entries!.find((e) => e.value === ext);
+      if (verdict?.verdict === 'proven_rejected') {
+        findings.push({
+          pass: 3,
+          severity: 'error',
+          label: `[GAP-APP-001] IND_POLICY.${fieldKey}="${ext}" is proven_rejected — FDA will return CR+AR`,
+          detail: verdict.evidence,
+          path: n.path
+        });
+      }
+    });
+  }
   return findings;
 }
 
@@ -760,15 +998,26 @@ export function runFivePassValidation(xml: string, opts: FivePassOptions = {}): 
     return emptyResult('Empty generated XML');
   }
 
-  // Load v37 reference (null if not available — passes 1/4/5 skip).
+  // Load reference XML (null if not available — passes 1/4/5 skip).
   // `v37Path: null` means "explicitly skip the reference" (used by tests),
   // which is distinct from the field being absent (use the resolver).
+  // Per GAP-APP-004, IND/babe cases prefer the IND golden
+  // (IND-T01-susar-baseline.xml) over the postmarket v37 reference; the
+  // explicit `v37Xml` / `v37Path` opts still win so tests stay deterministic.
+  const isPremarketCase = opts.caseType === 'ind' || opts.caseType === 'babe';
   let goldenXml: string | null = null;
   if (opts.v37Xml) {
     goldenXml = opts.v37Xml;
   } else {
     const pathExplicit = 'v37Path' in opts;
-    const path = pathExplicit ? opts.v37Path : resolveGoldenV37Path();
+    let path: string | null | undefined;
+    if (pathExplicit) {
+      path = opts.v37Path;
+    } else if (isPremarketCase) {
+      path = resolveGoldenIndPath();
+    } else {
+      path = resolveGoldenV37Path();
+    }
     if (path && existsSync(path)) {
       try {
         goldenXml = readFileSync(path, 'utf-8');
@@ -794,14 +1043,14 @@ export function runFivePassValidation(xml: string, opts: FivePassOptions = {}): 
     }
   }
 
-  // Premarket cases (both IND SUSAR and IND-Exempt BA/BE) can't be
-  // compared against the v37 Scenario-7 golden — the researchStudy block
-  // + different C.1.3 value legitimately change the element tree. Until
-  // we have a confirmed-accepted IND / BA/BE baseline in test/golden/,
-  // passes 1/4/5 are skipped with an explicit reason.
-  const isPremarketCase = opts.caseType === 'ind' || opts.caseType === 'babe';
-  const indSkip = isPremarketCase
-    ? `${opts.caseType?.toUpperCase()} case — no golden reference yet (postmarket v37 diff would be noise)`
+  // Premarket cases (both IND SUSAR and IND-Exempt BA/BE) historically
+  // skipped passes 1/4/5 because the postmarket v37 golden's element tree
+  // diverges legitimately (researchStudy block, different C.1.3). Per
+  // GAP-APP-004, when the IND golden (IND-T01-susar-baseline.xml) is
+  // available, we now run all five passes against it. The skip remains
+  // for the case where neither golden is present.
+  const indSkip = isPremarketCase && !golden
+    ? `${opts.caseType?.toUpperCase()} case — IND golden (${IND_GOLDEN_FILENAME}) not found; passes 1/4/5 skipped`
     : null;
   const p1 = indSkip
     ? { summary: { ran: false, skipReason: indSkip, errors: 0, warnings: 0 }, findings: [] as ValidatorFinding[] }
