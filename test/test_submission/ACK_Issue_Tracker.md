@@ -1,6 +1,6 @@
 # FAERS ESG Test Submission — ACK Issue Tracker
 
-**Last updated:** 2026-04-29 (ci260429051745 + portal decline emails)  
+**Last updated:** 2026-04-30 (ci260430004355 — IND-T07 regen #3 CA+AE — **ALL 11 CASES ACCEPTED** ✅)  
 **Gateway:** ZZFDATST (postmarket) / ZZFDATST_PREMKT (premarket/IND)  
 **Environment:** TEST
 
@@ -25,11 +25,15 @@
 
 | Package | Case ID | ACK File | Result | Rejection / Warning | Potential Fix | Status |
 |---|---|---|---|---|---|---|
-| TC-A01-race-white.xml | SR-CASE-EXAMPLE-TCA01 | ci260429050800 | ❌ CR+AR | Submitted via **CDER_IND** AS2 channel; XML declares `N.1.4=ZZFDATST`, `N.2.r.3=CDER` — channel mismatch | Re-submit via **ZZFDATST** postmarket channel; no XML changes needed | Re-submit required |
-| TC-A05-ethnicity-hispanic.xml | SR-CASE-EXAMPLE-TCA05 | ci260429050943 (CDER_IND channel) | ❌ CR+AR | Submitted via CDER_IND — channel mismatch (ISSUE-001) | See ISSUE-003 below — **regenerate via headless before re-submitting** | Regenerate required |
-| TC-A05-ethnicity-hispanic.xml *(same batch 134c8711)* | SR-CASE-EXAMPLE-TCA05 | ci260429051614 (ZZFDATST channel) | ❌ CR+AR | "Case Rejected as Message No and Sender Combination already Exists" — duplicate detection after prior submission registered the case ID | Regenerate XML via headless (new UUID + new SR ID); submit via ZZFDATST | Regenerate required |
-| TC-E03-patient-female.xml | SR-CASE-EXAMPLE-TCE03 | ci260429051846 | ❌ CR+AR | CDER_IND channel mismatch (ISSUE-001) | **Regenerate** via headless (new UUID); submit via ZZFDATST only | Regenerate required |
-| TC-B02-medhistory-narrative.xml | SR-CASE-EXAMPLE-TCB02 | ci260429051745 | ❌ CR+AR | CDER_IND channel mismatch (ISSUE-001) | **Regenerate** via headless (new UUID); submit via ZZFDATST only | Regenerate required |
+| TC-A01-race-white.xml | SR-CASE-EXAMPLE-TCA01 | ci260429050800 | ❌ CR+AR | Submitted via CDER_IND — channel mismatch (ISSUE-001) | Regenerated (regen #4) + submitted via AERS | Superseded |
+| TC-A01-race-white.xml *(regen #4, UUID …d1665431b0f0)* | SR-CASE-EXAMPLE-TCA01 | ci260429225353 | ✅ **CA+AA** | "Report Loaded Successfully" — **no warnings** | — | ✅ Accepted |
+| TC-A05-ethnicity-hispanic.xml | SR-CASE-EXAMPLE-TCA05 | ci260429050943 (CDER_IND channel) | ❌ CR+AR | CDER_IND channel mismatch (ISSUE-001) | Regenerated (regen #4) + submitted via AERS | Superseded |
+| TC-A05-ethnicity-hispanic.xml *(same batch 134c8711)* | SR-CASE-EXAMPLE-TCA05 | ci260429051614 (ZZFDATST channel) | ❌ CR+AR | Duplicate Message ID (ISSUE-003) | Regenerated (regen #4) + submitted via AERS | Superseded |
+| TC-A05-ethnicity-hispanic.xml *(regen #4, UUID …605bd78f8bd6)* | SR-CASE-EXAMPLE-TCA05 | ci260429225534 | ✅ **CA+AA** | "Report Loaded Successfully" — **no warnings** | — | ✅ Accepted |
+| TC-E03-patient-female.xml | SR-CASE-EXAMPLE-TCE03 | ci260429051846 | ❌ CR+AR | CDER_IND channel mismatch (ISSUE-001) | Regenerated (regen #4) + submitted via AERS | Superseded |
+| TC-E03-patient-female.xml *(regen #4, UUID …5c06943de804)* | SR-CASE-EXAMPLE-TCE03 | ci260429225656 | ✅ **CA+AA** | "Report Loaded Successfully" — **no warnings** | — | ✅ Accepted |
+| TC-B02-medhistory-narrative.xml | SR-CASE-EXAMPLE-TCB02 | ci260429051745 | ❌ CR+AR | CDER_IND channel mismatch (ISSUE-001) | Regenerated (regen #4) + submitted via AERS | Superseded |
+| TC-B02-medhistory-narrative.xml *(regen #4, UUID …86a0a3097a90)* | SR-CASE-EXAMPLE-TCB02 | ci260429225614 | ✅ **CA+AA** | "Report Loaded Successfully" — **no warnings** | — | ✅ Accepted |
 
 ---
 
@@ -37,14 +41,19 @@
 
 | Package | Case ID | ACK File | Result | Warning | Notes | Status |
 |---|---|---|---|---|---|---|
-| IND-T01-susar-baseline.xml | SR-CASE-EXAMPLE-INDT01 | ci260429044441 | ✅ CA+AE ⚠️ | `FDA.C.5.6.r is invalid for the Center specified in N.2.r.3` | Boilerplate informational warning; C.5.6.r not present in T01; no action needed | Accepted |
-| IND-T02-susar-repeat.xml | SR-CASE-EXAMPLE-INDT02 | ci260429052038 | ✅ CA+AE ⚠️ + ⚠️ Portal decline | ICSR ACK: C.5.6.r boilerplate only. Portal email: "please email AEMSESUB@fda.hhs.gov" (ISSUE-004) | Email AEMSESUB@fda.hhs.gov; ICSR content is technically accepted | ICSR accepted; portal action required |
-| IND-T03-cross-ref-ind.xml | SR-CASE-EXAMPLE-INDT03 | — | ⏳ | — | Exercises `FDA.C.5.6.r` cross-reference IND numbers | Pending |
-| IND-T04-no-study-registration.xml | SR-CASE-EXAMPLE-INDT04 | — | ⏳ | — | Omits NCT number — tests C.5.1.r.1 optional | Pending |
+| IND-T01-susar-baseline.xml *(pre-regen)* | SR-CASE-EXAMPLE-INDT01 | ci260429044441 | ✅ CA+AE ⚠️ | C.5.6.r boilerplate — no action | — | Accepted |
+| IND-T01-susar-baseline.xml *(regen #3, UUID …ba22291a3a69)* | SR-CASE-EXAMPLE-INDT01 | ci260430003632 | ✅ CA+AE ⚠️ | C.5.6.r boilerplate — no action | Local msg 769811 | ✅ Accepted |
+| IND-T02-susar-repeat.xml *(pre-regen)* | SR-CASE-EXAMPLE-INDT02 | ci260429052038 | ✅ CA+AE ⚠️ + ⚠️ Portal decline | C.5.6.r boilerplate; portal admin decline (ISSUE-004) | Email AEMSESUB@fda.hhs.gov | ICSR accepted; portal action required |
+| IND-T02-susar-repeat.xml *(regen #3, UUID …91394994482f)* | SR-CASE-EXAMPLE-INDT02 | ci260430003735 | ✅ CA+AE ⚠️ | C.5.6.r boilerplate — no action | Two-positive-ACK rule confirmed on regen #3 files | ✅ Accepted |
+| IND-T03-cross-ref-ind.xml *(regen #3, UUID …d4c58a35100b)* | SR-CASE-EXAMPLE-INDT03 | ci260430003832 | ✅ CA+AE ⚠️ | Two C.5.6.r warnings (one per cross-ref element) — no action | Dual warning confirms C.5.6.r repeating pattern accepted; local msg 769813 | ✅ Accepted |
+| IND-T04-no-study-registration.xml *(regen #3, UUID …e5c54af1583e)* | SR-CASE-EXAMPLE-INDT04 | ci260430003937 | ✅ CA+AE ⚠️ | C.5.6.r boilerplate — no action | **C.5.1.r.1 (NCT) confirmed optional** — omitting study registration number accepted by FDA | ✅ Accepted |
+| IND-T04-no-study-registration.xml *(duplicate submit, same UUID …e5c54af1583e)* | SR-CASE-EXAMPLE-INDT04 | ci260430004110 | ❌ CR+AR | Duplicate Message ID (ISSUE-003) — same UUID re-submitted after CA+AE | No action — original CA+AE (ci260430003937) is definitive | Superseded |
 | IND-T05-fatal-seven-day.xml *(early attempt)* | SR-CASE-EXAMPLE-INDT05 | ci260428001004 | ❌ CR+AR | "Date of Death D.9.1 has a value — Was Autopsy Done? D.9.3 must contain a value" (ISSUE-005) | Fixed in app before 04-29 resubmission | ✅ Superseded — closed |
-| IND-T05-fatal-seven-day.xml | SR-CASE-EXAMPLE-INDT05 | ci260429044612 | ✅ CA+AE ⚠️ | `FDA.C.5.6.r is invalid for the Center specified in N.2.r.3` | Boilerplate informational warning; validates fatal case + 7-day auto-derivation | Accepted |
-| IND-T06-babe-test-reference.xml | SR-CASE-EXAMPLE-INDT06 | ci260429034546 | ✅ CA+AE ⚠️ | `FDA.C.5.6.r is invalid for the Center specified in N.2.r.3` | Second confirmation; C.5.5a=123456 registry fix confirmed. C.5.6.r warning expected (cross-ref field present in T06) | Accepted (×2) |
-| IND-T07-followup-report.xml | SR-CASE-EXAMPLE-INDT07 | — | ⏳ | — | Tests follow-up report + C.1.9 version auto-derivation | Pending |
+| IND-T05-fatal-seven-day.xml | SR-CASE-EXAMPLE-INDT05 | ci260429044612 | ✅ CA+AE ⚠️ | `FDA.C.5.6.r is invalid for the Center specified in N.2.r.3` | Pre-regen; validates fatal case + 7-day auto-derivation | Accepted |
+| IND-T05-fatal-seven-day.xml *(regen #3, UUID …e0705be0f194)* | SR-CASE-EXAMPLE-INDT05 | ci260430004212 | ✅ CA+AE ⚠️ | C.5.6.r boilerplate — no action | Fatal case + D.9.3 autopsy fix confirmed through regen #3; local msg 769815 | ✅ Accepted |
+| IND-T06-babe-test-reference.xml | SR-CASE-EXAMPLE-INDT06 | ci260429034546 | ✅ CA+AE ⚠️ | `FDA.C.5.6.r is invalid for the Center specified in N.2.r.3` | Pre-regen; C.5.5a=123456 registry fix confirmed. C.5.6.r warning expected (cross-ref field present in T06) | Accepted |
+| IND-T06-babe-test-reference.xml *(regen #3, UUID …9832bb8e68f2)* | SR-CASE-EXAMPLE-INDT06 | ci260430004305 | ✅ CA+AE ⚠️ | C.5.6.r boilerplate — no action | C.5.5a=123456 fix confirmed through regen #3; local msg 769817 | ✅ Accepted |
+| IND-T07-followup-report.xml *(regen #3, UUID …efb3fcbdd36b)* | SR-CASE-EXAMPLE-INDT07 | ci260430004355 | ✅ CA+AE ⚠️ | C.5.6.r boilerplate — no action | Follow-up report + C.1.9 version auto-derivation confirmed by FDA; local msg 769816 | ✅ Accepted |
 
 ---
 
@@ -90,8 +99,8 @@
 
 ## Summary Counts
 
-| Category | Total | Accepted (CA+AE) | Rejected (CR/AR) | Pending |
+| Category | Unique Cases | ✅ Accepted (final) | ❌ Superseded/Duplicate events | ⏳ Pending |
 |---|---|---|---|---|
-| Postmarket (TC-*) | 4 | 0 | 4 | 0 |
-| IND/Premarket (IND-T*) | 7 | 4 | 0 | 3 |
-| **Total** | **11** | **4** | **5** | **3** |
+| Postmarket (TC-*) | 4 | 4 (CA+AA, no warnings) | 5 (wrong channel × 4 + duplicate × 1) | 0 |
+| IND/Premarket (IND-T*) | 7 | 7 (CA+AE, C.5.6.r warning only) | 2 (early T05 rejection + T04 duplicate) | 0 |
+| **Total** | **11** | **11** | **7** | **0** |

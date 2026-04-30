@@ -3,7 +3,7 @@
 **Baseline:** CASE-20260421-2L8T (`CA+AA`, ACK `ci260421211040`, April 21 2026)  
 **Golden reference:** `package/CASE-20260331-EMJQ_fixed_v37_patch.xml` (`CA+AA`, ACK `ci260410211359`, April 10 2026)  
 **Target environment:** ZZFDATST (CDER FAERS AERS TEST)  
-**Last updated:** 2026-04-21
+**Last updated:** 2026-04-29 — status updated; 4/23 cases submitted and accepted
 
 ---
 
@@ -15,7 +15,48 @@ The empirical policy is the only reliable guide for this submission environment.
 
 ---
 
-## 2. Core Rules for Test Generation
+## 2. Submission Status Summary (as of 2026-04-29)
+
+| Test ID | Description | Status | ACK | Result |
+|---------|-------------|--------|-----|--------|
+| TC-A01 | Race — White (`C41261`) | ✅ ACCEPTED | ci260429225353 | CA+AA, no warnings |
+| TC-A02 | Race — Black or African American (`C41259`) | ⏳ Not submitted | — | — |
+| TC-A03 | Race — American Indian or Alaska Native (`C41257`) | ⏳ Not submitted | — | — |
+| TC-A04 | Race — Native Hawaiian or Other Pacific Islander (`C41258`) | ⏳ Not submitted | — | — |
+| TC-A05 | Ethnicity — Hispanic or Latino (`C17459`) | ✅ ACCEPTED | ci260429225534 | CA+AA, no warnings |
+| TC-A06 | Ethnicity — nullFlavor NI | ⏳ Not submitted | — | — |
+| TC-B01 | Med History — empty string | ⏳ Not submitted | — | — |
+| TC-B02 | Med History — structured narrative text | ✅ ACCEPTED | ci260429225614 | CA+AA, no warnings |
+| TC-C01 | Reporter qualification — code 2 | ⏳ Not submitted | — | — |
+| TC-C02 | Reporter qualification — code 3 | ⏳ Not submitted | — | — |
+| TC-D01 | ActionTaken — code 2 (dose reduced) | ⏳ Not submitted | — | — |
+| TC-D02 | ActionTaken — code 3 (dose increased) | ⏳ Not submitted | — | — |
+| TC-D03 | ActionTaken — code 5 (not applicable) | ⏳ Not submitted | — | — |
+| TC-D04 | Dechallenge — code 1 (yes) | ⏳ Not submitted | — | — |
+| TC-D05 | Two suspect drugs | ⏳ Not submitted | — | — |
+| TC-D06 | Concomitant drug — ActionTaken code 6 (unknown) | ⏳ Not submitted | — | — |
+| TC-E01 | Patient weight — absent | ⏳ Not submitted | — | — |
+| TC-E02 | Patient age — nullFlavor on birthTime | ⏳ Not submitted | — | — |
+| TC-E03 | Patient sex — Female (`code=2`) | ✅ ACCEPTED | ci260429225656 | CA+AA, no warnings |
+| TC-F01 | Follow-up / amendment (version 3) | ⏳ Not submitted | — | — |
+| TC-F02 | Combination product indicator — true | ⏳ Not submitted | — | — |
+| TC-F03 | Local expedited criteria — false | ⏳ Not submitted | — | — |
+| TC-F04 | ICH report type — code 2 (study) | ⏳ Not submitted | — | — |
+| TC-G01 | Serious reaction — all seriousness BL flags false | ⏳ Not submitted | — | — |
+| TC-G02 | Reaction outcome — code 2 (recovering) | ⏳ Not submitted | — | — |
+| TC-G03 | Reaction outcome — code 4 (recovered with sequelae) | ⏳ Not submitted | — | — |
+| TC-G04 | Reaction outcome — code 5 (fatal) | ⏳ Not submitted | — | — |
+| TC-H01 | Additional documents available — true | ⏳ Not submitted | — | — |
+| TC-H02 | asLocatedEntity absent | ⏳ Not submitted | — | — |
+| TC-H03 | Outer org name changed | ⏳ Not submitted | — | — |
+
+**Coverage: 4 / 30 test cases submitted and accepted. 26 remaining.**
+
+> Note: The catalog was extended to 30 entries (TC-A01–TC-H03) versus the original 23 count at the bottom of this document; the original count did not include all Group D and G variants. For IND/premarket coverage, see **§8** — all 7 IND cases (T01–T07) were accepted CA+AE on 2026-04-29. IND-T05 confirmed the fatal case + D.9.3 autopsy rule; IND-T07 confirmed follow-up report (C.1.9 version=3). These findings are informative but do not substitute for TC-G04 and TC-F01 on the postmarket channel.
+
+---
+
+## 3. Core Rules for Test Generation
 
 1. **One untested change per submission.** Never change two UNTESTED fields simultaneously. If a rejection arrives, you cannot isolate the cause.
 2. **All other fields must match the 2L8T baseline exactly**, except the three always-expected updates: batch UUID (must be globally unique), `creationTime`, and `availabilityTime`.
@@ -35,9 +76,10 @@ This table is the ground truth. Do not change a field marked REJECTED without a 
 
 | Field | REJECTED values | ACCEPTED values | Evidence |
 |-------|----------------|-----------------|----------|
-| Race `C17049` / `FDA.D.11.r.1` | `nullFlavor="NI"`, `C17998` | **`C41260`** "Asian" | QTXZ(NI→reject), 26ZL(C17998→reject), v37+2L8T(C41260→accept) |
-| Ethnicity `C16564` / `FDA.D.12` | `C17998` | **`C41222`** "Not Hispanic or Latino" | 26ZL(C17998→reject), v37+2L8T(C41222→accept) |
-| Med history `code=18` / `D.7.2` | `nullFlavor="NI"` | **`"None reported"`** (text), free-text narrative | QTXZ(NI→reject), 26ZL+2L8T("None reported"→accept), v37(narrative→accept) |
+| Race `C17049` / `FDA.D.11.r.1` | `nullFlavor="NI"`, `C17998` | **`C41260`** "Asian", **`C41261`** "White" | QTXZ(NI→reject), 26ZL(C17998→reject), v37+2L8T(C41260→accept), **TC-A01(C41261→accept)** |
+| Ethnicity `C16564` / `FDA.D.12` | `C17998` | **`C41222`** "Not Hispanic or Latino", **`C17459`** "Hispanic or Latino" | 26ZL(C17998→reject), v37+2L8T(C41222→accept), **TC-A05(C17459→accept)** |
+| Med history `code=18` / `D.7.2` | `nullFlavor="NI"` | **`"None reported"`** (text), free-text narrative | QTXZ(NI→reject), 26ZL+2L8T("None reported"→accept), v37(narrative→accept), **TC-B02(structured narrative→accept)** |
+| Patient sex / `D.2` | — | **`code="1"`** (Male), **`code="2"`** (Female) | v37+2L8T(code=1→accept), **TC-E03(code=2→accept)** |
 | otherCaseIds BL | — | **`nullFlavor="NI"`** | v37+2L8T(NI→accept) |
 | Reaction outcome `code=27` | — | **`1`** (recovered), **`3`** (ongoing) | 2L8T(code=1→accept), v37(code=3→accept) |
 | Reaction hospitalization BL | — | **`true`**, **`false`** | v37(true→accept), 2L8T(false→accept) |
@@ -65,6 +107,7 @@ These are the highest-value tests since the race/ethnicity fields have the riche
 | Attribute | Value |
 |-----------|-------|
 | **Test ID** | TC-A01 |
+| **Status** | ✅ **ACCEPTED** — CA+AA, no warnings. ACK ci260429225353, regen #4, UUID …d1665431b0f0 |
 | **E2B field** | FDA.D.11.r.1 |
 | **FAERS rule** | `C17049` observation value |
 | **Baseline** | `C41260` "Asian" |
@@ -143,6 +186,7 @@ These are the highest-value tests since the race/ethnicity fields have the riche
 | Attribute | Value |
 |-----------|-------|
 | **Test ID** | TC-A05 |
+| **Status** | ✅ **ACCEPTED** — CA+AA, no warnings. ACK ci260429225534, regen #4, UUID …605bd78f8bd6 |
 | **E2B field** | FDA.D.12 |
 | **FAERS rule** | `C16564` observation value |
 | **Baseline** | `C41222` "Not Hispanic or Latino" |
@@ -212,6 +256,7 @@ These are the highest-value tests since the race/ethnicity fields have the riche
 | Attribute | Value |
 |-----------|-------|
 | **Test ID** | TC-B02 |
+| **Status** | ✅ **ACCEPTED** — CA+AA, no warnings. ACK ci260429225614, regen #4, UUID …86a0a3097a90 |
 | **E2B field** | D.7.2 |
 | **Baseline** | `"None reported"` |
 | **Test value** | `"Hypertension (ongoing, controlled with Lisinopril 10mg daily)."` |
@@ -423,6 +468,7 @@ These tests probe the OID `.1.7` sender-type value set, which is separate from t
 | Attribute | Value |
 |-----------|-------|
 | **Test ID** | TC-E03 |
+| **Status** | ✅ **ACCEPTED** — CA+AA, no warnings. ACK ci260429225656, regen #4, UUID …5c06943de804 |
 | **E2B field** | D.2 |
 | **Baseline** | `code="1"` (Male) |
 | **Test value** | `code="2"` (Female) |
@@ -745,4 +791,38 @@ If a value is rejected, add it with `verdict: 'proven_rejected'` and the case ID
 
 ---
 
-*End of catalog. Total test cases defined: 23. Estimated minimum submissions to fully characterise all high-priority fields: 15 (remaining 8 are either dependent or structural risk).*
+---
+
+## 8. IND / Premarket Test Cases (ZZFDATST_PREMKT / CDER_IND channel)
+
+All 7 IND test cases were submitted via the AERS_PREMKT_CDER portal channel and received **CA+AE** on regen #3 files (2026-04-29). The expected informational warning `FDA.C.5.6.r is invalid for the Center specified in N.2.r.3` was present on all cases and requires no action.
+
+| Test ID | Description | ACK (regen #3) | Result | Key Finding |
+|---------|-------------|----------------|--------|-------------|
+| IND-T01 | SUSAR baseline | ci260430003632 | ✅ CA+AE ⚠️ | Baseline IND/SUSAR structure confirmed accepted; local msg 769811 |
+| IND-T02 | SUSAR repeat submission | ci260430003735 | ✅ CA+AE ⚠️ | Repeat SUSAR accepted; two-positive-ACK rule confirmed; local msg 769812 |
+| IND-T03 | Cross-reference IND numbers (`FDA.C.5.6.r` ×2) | ci260430003832 | ✅ CA+AE ⚠️⚠️ | **Two C.5.6.r warnings** — one per cross-ref element; confirms repeating C.5.6.r blocks accepted; local msg 769813 |
+| IND-T04 | No study registration number (`C.5.1.r.1` absent) | ci260430003937 | ✅ CA+AE ⚠️ | **C.5.1.r.1 (NCT number) confirmed optional** — omitting study registration accepted by FDA; local msg 769814 |
+| IND-T05 | Fatal case + 7-day reporting | ci260430004212 | ✅ CA+AE ⚠️ | **Fatal outcome + D.9.3 autopsy co-dependency confirmed** (business rule 2.18); 7-day auto-derivation validated; local msg 769815 |
+| IND-T06 | BABE test reference (`C.5.5a=123456`) | ci260430004305 | ✅ CA+AE ⚠️ | Registry reference `C.5.5a=123456` confirmed accepted through regen #3; local msg 769817 |
+| IND-T07 | Follow-up report (`C.1.9` version=3) | ci260430004355 | ✅ CA+AE ⚠️ | **Follow-up report structure confirmed** — `C.1.9 extension="3"` + `relatedInvestigation` blocks accepted; local msg 769816 |
+
+### What the IND results prove for the postmarket policy
+
+| Finding | Postmarket implication | Action needed |
+|---------|----------------------|---------------|
+| Fatal outcome + D.9.3 autopsy required (T05) | Same business rule 2.18 applies on postmarket channel — D.9.1 and D.9.3 must both be present | TC-G04 still needed to confirm fatal reaction outcome (`code=5`) on ZZFDATST |
+| Follow-up report C.1.9 version=3 accepted (T07) | Follow-up mechanism works end-to-end | TC-F01 still needed to confirm on postmarket channel with a real CA+AA postmarket case as parent |
+| C.5.1.r.1 (NCT) optional (T04) | IND-only field; no postmarket equivalent | No postmarket action needed |
+| C.5.6.r cross-reference accepted (T03) | IND-only field; no postmarket equivalent | No postmarket action needed |
+| SUSAR repeat accepted (T02) | Confirms duplicate detection does not fire on same case ID with new UUID | Reinforces ISSUE-003 prevention rule |
+
+### IND channel notes
+
+- **Portal admin decline (ISSUE-004):** All 7 IND cases received valid CA+AE ICSR ACKs. However, early submissions for T02 and T05 received separate ESG portal administrative decline emails (independent of the XML ACK). This is an account enrollment issue — email **AEMSESUB@fda.hhs.gov** to resolve. The XML content is confirmed correct.
+- **C.5.6.r boilerplate warning:** Expected on all CDER_IND submissions. Informational only; no action required.
+- **Local message numbers assigned:** 769811 (T01), 769812 (T02), 769813 (T03), 769814 (T04), 769815 (T05), 769817 (T06), 769816 (T07).
+
+---
+
+*End of catalog. Total postmarket test cases defined: 30. Submitted and accepted: 4 (TC-A01, TC-A05, TC-B02, TC-E03). IND test cases defined: 7. All 7 submitted and accepted (regen #3). Combined coverage: 11/37 scenarios confirmed by live ACK.*
