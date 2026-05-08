@@ -14,8 +14,8 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { parseFdaAck, mapAckToEsgAckType } from './ackParserService';
 
-const ACCEPTED_DIR = resolve(__dirname, '../../../../test/golden/postmarket/accepted');
-const REJECTED_DIR = resolve(__dirname, '../../../../test/golden/postmarket/rejected');
+const ACCEPTED_DIR = resolve(__dirname, '../../../../test/golden/postmarket/accepted/xml');
+const REJECTED_DIR = resolve(__dirname, '../../../../test/golden/postmarket/rejected/xml');
 
 const CA_AA_FIXTURE = resolve(ACCEPTED_DIR, 'TC-A01-race-white.ack');
 const CR_AR_FIXTURE = resolve(REJECTED_DIR, 'TC-A03-race-amerindian.ack');

@@ -104,6 +104,7 @@ export function resolveGoldenV37Path(): string | null {
  */
 export function resolveGoldenIndPath(): string | null {
   return resolveGoldenPath(IND_GOLDEN_FILENAME, [
+    ['test', 'golden', 'ind', 'accepted', 'xml'],
     ['test', 'golden', 'ind', 'accepted'],
     ['test', 'test_submission', 'from_app', 'ind'],
     ['test', 'test_submission', 'package']

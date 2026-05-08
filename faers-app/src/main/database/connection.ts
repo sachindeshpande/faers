@@ -2121,9 +2121,15 @@ function seedCountries(database: DatabaseInstance): void {
     // Try to load from resources directory
     // In dev mode, app.getAppPath() returns the project root
     // In production, use process.resourcesPath for app.asar resources
-    const resourcesPath = app.isPackaged
+    // Under ELECTRON_RUN_AS_NODE (headless CLI / regression tests), `app`
+    // is undefined — the headless context has no Electron app at all.
+    // Mirror the resolveGoldenV37Path / xmlLintService guard pattern.
+    const electronApp = (app as unknown as typeof app | undefined);
+    const resourcesPath = electronApp?.isPackaged
       ? join(process.resourcesPath, 'data', 'countries.json')
-      : join(app.getAppPath(), 'resources', 'data', 'countries.json');
+      : electronApp?.getAppPath
+        ? join(electronApp.getAppPath(), 'resources', 'data', 'countries.json')
+        : join(process.cwd(), 'resources', 'data', 'countries.json');
 
     if (existsSync(resourcesPath)) {
       const countriesJson = readFileSync(resourcesPath, 'utf-8');

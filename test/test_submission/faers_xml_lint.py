@@ -425,9 +425,13 @@ def run(xml_path):
     if lcrt_obs:
         val = qn(lcrt_obs[0],"value")
         rt_code = ga(val,"code") if val is not None else None
-        chk("C.1.7 reportType code is 1 (15-Day) or 6 (7-Day) [FDA premarket codelist — GAP-IND-004]",
-            rt_code in ("1","6"),
-            f"code={rt_code!r} — expected '1' (15-Day) or '6' (7-Day); '7' is not in FDA premarket codelist")
+        # FIX-P01 (2026-05-01): generator now emits code='2' for non-expedited
+        # cases (CDER 2.18 rule: when C.1.7=false, FDA.C.1.7.1 must be
+        # "Non Expedited AE / Periodic"). Accept '2' alongside the expedited
+        # codes '1' (15-Day) and '6' (7-Day). '7' remains out of the codelist.
+        chk("C.1.7 reportType code is 1 (15-Day), 2 (Non-Expedited), or 6 (7-Day) [FDA codelist — GAP-IND-004 + FIX-P01]",
+            rt_code in ("1","2","6"),
+            f"code={rt_code!r} — expected '1' (15-Day), '2' (Non-Expedited AE), or '6' (7-Day); '7' is not in the FDA codelist")
 
     # ── 15. Uncoded CE values (warnings) ────────────────────────────────────
     print("\n[ SECTION 15: Uncoded CE values ]")
