@@ -1,6 +1,6 @@
 # FAERS ESG NextGen — Submission Campaign Report
 
-**Last updated:** 2026-04-29 (full regen of 17 example cases + refresh of `from_app/headless/` operator dir)
+**Last updated:** 2026-05-07 (OPEN-01 surgery — strip C.5.6.r OID …2.1.2.3 from 6 IND files, swap to …2.1.2.1 on T03; reporter address all-five validator rule active)
 **Author:** DeepQuence Drug Safety
 **Scope:** Live ZZFDATST / ZZFDATST_PREMKT submissions starting 2026-04-21
 
@@ -145,6 +145,28 @@ The 4 originally-rejected TC files lived in `test/test_submission/from_app/headl
 These are **distinct UUIDs** from the regen #2 copies in `from_app/` — both directories now hold separately-generated, fresh-UUID, post-fix XMLs. Either pair is uploadable; just pick one and submit it (uploading the same UUID twice triggers the duplicate-detect rejection per ISSUE-003).
 
 ---
+
+### 3.3 OPEN-01 surgery (IND_May7 batch, 2026-05-07)
+
+Closes the only remaining item in `FAERS_Workflow_XML_Gap_Analysis_v2.docx` §8. All 7 IND files patched in place: OID `…2.1.2.3` (FDA.C.5.6.r — postmarket FAERS report-number, invalid for CDER_IND) stripped from 6 files; on T03 the two `…2.1.2.3` instances swapped to `…2.1.2.1` (FDA.C.5.4.r.1) so the two cross-referenced INDs (`222222`, `333333`) are preserved on a CDER_IND-valid OID. Each file received a fresh batch UUID + ICSR UUID and a `creationTime` of `20260507120000-0700` to dodge the FIX-X03/X04 future-date rule.
+
+| Run | Package | Batch UUID (suffix) | Group | Notes |
+|-----|---------|---------------------|-------|-------|
+| v5 | IND-T01-susar-baseline | `…99d4ab11f9fa` | A (strip) | OID …2.1.2.3 / `654321` removed |
+| v5 | IND-T02-susar-repeat | `…291d6a0daf34` | A (strip) | OID …2.1.2.3 / `654321` removed |
+| v5 | IND-T03-cross-ref-ind | `…7ad0e5ff1328` | B (swap) | `222222`+`333333` moved to OID …2.1.2.1 |
+| v5 | IND-T04-no-study-registration | `…0e7579e4d578` | A (strip) | OID …2.1.2.3 / `654321` removed |
+| v5 | IND-T05-fatal-seven-day | `…de9f5d5ee8a8` | A (strip) | OID …2.1.2.3 / `654321` removed |
+| v5 | IND-T06-babe-test-reference | `…f61e56edeb3f` | A (strip) | OID …2.1.2.3 / `654321` removed |
+| v5 | IND-T07-followup-report | `…3ecdb40e968a` | A (strip) | OID …2.1.2.3 / `654321` removed |
+
+Verification (per the v2 gap doc §10 checklist):
+- `grep '989\.5\.1\.2\.2\.1\.2\.3'` returns 0 hits across all 7 files
+- T03 has 3 distinct `…2.1.2.1` extensions (`123456` for the primary IND + `222222`, `333333` for the cross-refs)
+- All 7 retain `N.1.4=ZZFDATST_PREMKT`, `N.2.r.3=CDER_IND`, `creationTime=20260507120000-0700`
+- 7 distinct fresh batch UUIDs + ICSR UUIDs (logged in `~/.faers-headless/submission-log.json`)
+
+Also closed in this commit: P04 follow-up — `validateReporterInformation` in `validationService.ts` now actively rejects country-only reporters with C.3.4.1–C.3.4.4 errors (CDER 2.18 rule; doc §6 FIX-P04 was claiming "Generator updated with validation enforcement" but the rule was a docstring only).
 
 ## 4. Outstanding External Actions
 

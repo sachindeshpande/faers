@@ -32,7 +32,13 @@ const mockReporters = [
     qualification: '1', // Physician
     given_name: 'Jane',
     family_name: 'Doe',
-    is_primary: 1
+    is_primary: 1,
+    // CDER 2.18 requires all five C.3.4.x sub-fields (TC-H02 ACK ci260501235624)
+    address: '100 Main St',
+    city: 'Anytown',
+    state: 'CA',
+    postcode: '94085',
+    country: 'US'
   }
 ];
 
@@ -282,6 +288,42 @@ describe('ValidationService', () => {
 
       expect(result.valid).toBe(false);
       expect(result.errors.some(e => e.field === 'receiveDate')).toBe(true);
+    });
+  });
+
+  describe('Reporter address all-five rule (TC-H02 / CDER 2.18)', () => {
+    it('emits C.3.4.1-4 errors when only country is populated', () => {
+      mockDb = createMockDb({
+        reporters: [{
+          id: 1,
+          case_id: 'CASE-001',
+          qualification: '1',
+          given_name: 'Jane',
+          family_name: 'Doe',
+          is_primary: 1,
+          country: 'US'
+          // address / city / state / postcode intentionally omitted
+        }]
+      });
+      validationService = new ValidationService(mockDb);
+
+      const result = validationService.validate('CASE-001');
+      const tags = result.errors
+        .filter((e) => e.severity === 'error')
+        .map((e) => e.message);
+
+      expect(tags.some((m) => m.includes('C.3.4.1'))).toBe(true);
+      expect(tags.some((m) => m.includes('C.3.4.2'))).toBe(true);
+      expect(tags.some((m) => m.includes('C.3.4.3'))).toBe(true);
+      expect(tags.some((m) => m.includes('C.3.4.4'))).toBe(true);
+    });
+
+    it('passes when all five address sub-fields are populated', () => {
+      const result = validationService.validate('CASE-001');
+      const c34errs = result.errors.filter(
+        (e) => e.severity === 'error' && /C\.3\.4\.[1-4]/.test(e.message)
+      );
+      expect(c34errs).toEqual([]);
     });
   });
 

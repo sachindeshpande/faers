@@ -260,6 +260,31 @@ export class ValidationService {
       });
     }
 
+    // C.3.4.1–C.3.4.5 — CDER 2.18 requires ALL five reporter address sub-fields
+    // when ANY of them is populated, not country-only. TC-H02 three-round
+    // rejection campaign (2026-05-01, ACK ci260501235624) confirmed:
+    //   v1 CR+AR — asLocatedEntity missing → "Data value required for tag C.3.4.5"
+    //   v2 CR+AR — asLocatedEntity outside <assignedPerson> → SAXParseException
+    //   v3 CR+AR — street/city/state/postal absent → "Data value required for C.3.4.1/2/3/4"
+    // See REPORTER_ADDRESS_ALL_FIELDS_REQUIRED in faersEmpiricalPolicy.ts.
+    if (primaryReporter) {
+      const requiredAddrFields: Array<[keyof CaseReporter, string, string]> = [
+        ['address',  'C.3.4.1', 'Reporter Street Address'],
+        ['city',     'C.3.4.2', 'Reporter City'],
+        ['state',    'C.3.4.3', 'Reporter State'],
+        ['postcode', 'C.3.4.4', 'Reporter Postal Code']
+      ];
+      for (const [field, tag, label] of requiredAddrFields) {
+        if (!primaryReporter[field]) {
+          errors.push({
+            field: `reporters[primary].${String(field)}`,
+            message: `${label} is required for the primary reporter (${tag}) — CDER 2.18 rejects country-only reporters`,
+            severity: 'error'
+          });
+        }
+      }
+    }
+
     // A.2.1.4 - Reporter Qualification (required for primary)
     reporters.forEach((reporter, index) => {
       if (reporter.isPrimary && !reporter.qualification) {

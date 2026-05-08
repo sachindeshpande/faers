@@ -43,8 +43,10 @@ export const FAERS_POLICY: Record<string, FieldPolicy> = {
     observationCode: 'C17049',
     rejectsNullFlavorNI: true,
     entries: [
-      { value: 'C41260', verdict: 'proven_safe', evidence: 'v37, 2L8T ACK3' },
-      { value: 'C17998', verdict: 'proven_rejected', evidence: '26ZL ACK3' },
+      { value: 'C41260', verdict: 'proven_safe',     evidence: 'v37, 2L8T ACK3' },
+      { value: 'C17998', verdict: 'proven_rejected',  evidence: '26ZL ACK3' },
+      { value: 'C41257', verdict: 'proven_rejected',  evidence: 'TC-A03 ci260501170657 — "Element value not allowed for tag FDA.D.11.r.1"' },
+      { value: 'C41258', verdict: 'proven_rejected',  evidence: 'TC-A04 ci260501170706 — "Element value not allowed for tag FDA.D.11.r.1"' },
       // nullFlavor NI is rejected (QTXZ, 2GZK) — captured structurally above.
     ]
   },
@@ -52,9 +54,12 @@ export const FAERS_POLICY: Record<string, FieldPolicy> = {
     label: 'Patient Ethnicity',
     tag: 'FDA.D.12',
     observationCode: 'C16564',
-    rejectsNullFlavorNI: false, // untested directly for this field
+    // nullFlavor="NI" on the <value> element triggers SAXParseException:
+    // "cvc-type.2: The type definition cannot be abstract for element value."
+    // Confirmed CR+AR: TC-A06 ci260501170715 (2026-05-01).
+    rejectsNullFlavorNI: true,
     entries: [
-      { value: 'C41222', verdict: 'proven_safe', evidence: 'v37, 2L8T ACK3' },
+      { value: 'C41222', verdict: 'proven_safe',    evidence: 'v37, 2L8T ACK3' },
       { value: 'C17998', verdict: 'proven_rejected', evidence: '26ZL ACK3' }
     ]
   },
@@ -106,6 +111,28 @@ export function classifyValue(field: FieldPolicy, value: string): PolicyVerdict 
 export function allPolicyFields(): FieldPolicy[] {
   return Object.values(FAERS_POLICY);
 }
+
+// ────────────────────────────────────────────────────────────────────────────
+//  Structural / presence rules confirmed empirically (not coded-value checks)
+// ────────────────────────────────────────────────────────────────────────────
+
+/**
+ * CDER 2.18 requires ALL five reporter address sub-fields to be present.
+ * Confirmed by TC-H02 three-round rejection campaign (2026-05-01):
+ *   v1 CR+AR — C.3.4.5 (asLocatedEntity) missing → "Data value required for tag C.3.4.5"
+ *   v2 CR+AR — asLocatedEntity outside <assignedPerson> → SAXParseException (element order)
+ *   v3 CR+AR — street/city/state/postal absent → "Data value required for C.3.4.1/2/3/4"
+ *
+ * The generator must ALWAYS emit a reporter address with all five fields:
+ *   C.3.4.1  <streetAddressLine>  — in <addr>
+ *   C.3.4.2  <city>               — in <addr>
+ *   C.3.4.3  <state>              — in <addr>
+ *   C.3.4.4  <postalCode>         — in <addr>
+ *   C.3.4.5  <asLocatedEntity>    — INSIDE <assignedPerson>, NOT after </assignedPerson>
+ *
+ * A reporter with only a country code (no street address) is not accepted by FAERS 2.18.
+ */
+export const REPORTER_ADDRESS_ALL_FIELDS_REQUIRED = true;
 
 // ────────────────────────────────────────────────────────────────────────────
 //  IND / SUSAR empirical policy
@@ -184,9 +211,17 @@ export const IND_POLICY: Record<string, IndPolicyEntry> = {
     evidence: 'IND-T01 v4 ACK3 ci260427204838 CA+AE 2026-04-27 — confirmed correct by ACK sender field'
   },
   crossReportedInd: {
-    value: 'present (OID 2.16.840.1.113883.3.989.5.1.2.2.1.2.3)',
-    verdict: 'proven_safe',
-    evidence: 'IND-T01 v4 ACK3 CA+AE 2026-04-27 (GAP-IND-002). FDA rules contradiction for CDER_IND: omitting → CR+AR ("C.5.6.r mandatory"); including → CA+AE ("invalid for CDER_IND"). CA+AE is the best achievable outcome.'
+    // OPEN-01 update (2026-05-07): the FDA.C.5.6.r warning ("invalid for the
+    // Center specified in N.2.r.3") is fired by every IND submission that
+    // emits OID 2.16.840.1.113883.3.989.5.1.2.2.1.2.3 — the postmarket FAERS
+    // report-number OID, which is invalid for CDER_IND. Per the v2 gap doc
+    // §8 risk assessment, the IND_May7 batch was rebuilt with this OID
+    // stripped from T01/T02/T04/T05/T06/T07 and swapped to OID
+    // ...2.1.2.1 (FDA.C.5.4.r.1, IND application number) for T03's two
+    // cross-referenced INDs. Round-trip confirmation pending.
+    value: 'absent (OID …2.1.2.3 stripped); cross-references go on …2.1.2.1',
+    verdict: 'untested',
+    evidence: 'OPEN-01 surgery 2026-05-07: T01/T02/T04-T07 stripped, T03 OID swapped …2.1.2.3 → …2.1.2.1; awaiting CA+AE round-trip. Prior CA+AE on present-with-warning state (IND-T01 v4 ACK ci260427204838) remains the fallback if the warning-free emission round-trips badly.'
   },
   requiredIntervention: {
     value: 'nullFlavor="NI"',

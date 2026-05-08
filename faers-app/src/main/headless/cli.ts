@@ -662,7 +662,7 @@ async function processOneFile(args: ProcessArgs): Promise<HeadlessFileResult> {
     filename: `${baseName}.xml`,
     filePath: outPath,
     submissionEnvironment: args.submissionEnvironment,
-    submissionReportType: args.submissionReportType
+    submissionReportType: reportTypeRes.value
   });
   if (exported.success) {
     args.caseRepo.update(importRes.caseId, {
