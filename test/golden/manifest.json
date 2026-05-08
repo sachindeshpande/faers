@@ -1,0 +1,326 @@
+[
+  {
+    "scenario": "TC-A01-race-white",
+    "category": "postmarket/accepted",
+    "ack_result": "CA+AA",
+    "core_id": "ci260508041215.9fd2bfa59eb642568bc07fc78f182898",
+    "sha256_xml": "4fd21f24cec6b9e3809a23db0c07d68952c86f829bcd9d92ed8856bf13e3e1a4",
+    "xml_src": "from_app/headless/TC-A01-race-white-fresh.xml",
+    "ack_src": "May7/ci260508041215.9fd2bfa59eb642568bc07fc78f182898.ack"
+  },
+  {
+    "scenario": "TC-A02-race-black",
+    "category": "postmarket/accepted",
+    "ack_result": "CA+AA",
+    "core_id": "ci260501173418.2f4965e887c8411698dcfd27f9f7c0bc",
+    "sha256_xml": "15841661ec2587964c5dd0f0484549379d19d403b416d043da7b180f6c522b61",
+    "xml_src": "from_app/TC-A02-race-black.xml",
+    "ack_src": "May1/Batch1/ci260501173418.2f4965e887c8411698dcfd27f9f7c0bc.ack"
+  },
+  {
+    "scenario": "TC-A03-race-amerindian",
+    "category": "postmarket/rejected",
+    "ack_result": "CR+AR",
+    "core_id": "ci260501170657.1dfcd2bf85f4481f90748224627fef03",
+    "sha256_xml": "3f15172efa6ea6903d98f9773148afd9aa5519585bd05a103147a4a1cd0fcef3",
+    "xml_src": "from_app/round2/TC-A03-race-amerindian.xml",
+    "ack_src": "May1/Batch1/ci260501170657.1dfcd2bf85f4481f90748224627fef03.ack"
+  },
+  {
+    "scenario": "TC-A04-race-hawaiian",
+    "category": "postmarket/rejected",
+    "ack_result": "CR+AR",
+    "core_id": "ci260501170706.15777c4a41aa43e19d81709ded86f1eb",
+    "sha256_xml": "b9dd2e6eac0a69657a158773dbc283aade2d7ea45c80bee92acbf85c41a4e624",
+    "xml_src": "from_app/round2/TC-A04-race-hawaiian.xml",
+    "ack_src": "May1/Batch1/ci260501170706.15777c4a41aa43e19d81709ded86f1eb.ack"
+  },
+  {
+    "scenario": "TC-A05-ethnicity-hispanic",
+    "category": "postmarket/accepted",
+    "ack_result": "CA+AA",
+    "core_id": "ci260423000420.11877ea00b49402fa8e367227c112eca",
+    "sha256_xml": "a8c79de69ea583e943017e752fbfebeb9c8728a4aac37a66f4ec9f7fb7da176c",
+    "xml_src": "from_app/CASE-20260422-RSJK.xml",
+    "ack_src": "Previous/ci260423000420.11877ea00b49402fa8e367227c112eca.ack"
+  },
+  {
+    "scenario": "TC-A06-ethnicity-ni",
+    "category": "postmarket/rejected",
+    "ack_result": "CR+AR",
+    "core_id": "ci260501170715.7beed508b6244fd19b35ccefb2ce6059",
+    "sha256_xml": "392ece95b8173b67ed16955dfa24615ecf5c0a84083849645ed1920b697c54a8",
+    "xml_src": "from_app/round2/TC-A06-ethnicity-ni.xml",
+    "ack_src": "May1/Batch1/ci260501170715.7beed508b6244fd19b35ccefb2ce6059.ack"
+  },
+  {
+    "scenario": "TC-B01-medhistory-empty",
+    "category": "postmarket/accepted",
+    "ack_result": "CA+AA",
+    "core_id": "ci260501170724.8602650394d44a0f9dda95b60f432b57",
+    "sha256_xml": "49a1f592bbdc88471bd80548cc13dd06821fd34f30f35a63553e0f1d5d06b375",
+    "xml_src": "from_app/round2/TC-B01-medhistory-empty.xml",
+    "ack_src": "May1/Batch1/ci260501170724.8602650394d44a0f9dda95b60f432b57.ack"
+  },
+  {
+    "scenario": "TC-B02-medhistory-narrative",
+    "category": "postmarket/accepted",
+    "ack_result": "CA+AA",
+    "core_id": "ci260508041220.f4fee9e6d02a4a2b8547417b334c7786",
+    "sha256_xml": "d1f543c3f4c4202366fcba8a2950c7d389e3a2c127522e8d71c7f676eecfaab5",
+    "xml_src": "from_app/headless/TC-B02-medhistory-narrative-fresh.xml",
+    "ack_src": "May7/ci260508041220.f4fee9e6d02a4a2b8547417b334c7786.ack"
+  },
+  {
+    "scenario": "TC-C01-reporter-qual-2",
+    "category": "postmarket/accepted",
+    "ack_result": "CA+AA",
+    "core_id": "ci260501170734.239f3823f97f4eb89242ec75cc2ccf47",
+    "sha256_xml": "271cb159be4c4f0f4548c6592a5e98165ebdb6d19efb3353f55330ac58a4fd27",
+    "xml_src": "from_app/round2/TC-C01-reporter-qual-2.xml",
+    "ack_src": "May1/Batch1/ci260501170734.239f3823f97f4eb89242ec75cc2ccf47.ack"
+  },
+  {
+    "scenario": "TC-C02-reporter-qual-3",
+    "category": "postmarket/accepted",
+    "ack_result": "CA+AA",
+    "core_id": "ci260501170544.eb13b6b23098495fac264b08247efeb2",
+    "sha256_xml": "048c3b1af1d4da05bac93fc52dad6991d7cff84cffb8d6ecdac3e61dcc8c5371",
+    "xml_src": "from_app/headless/TC-C02-reporter-qual-3.xml",
+    "ack_src": "May1/Batch1/ci260501170544.eb13b6b23098495fac264b08247efeb2.ack"
+  },
+  {
+    "scenario": "TC-D01-action-dose-reduced",
+    "category": "postmarket/accepted",
+    "ack_result": "CA+AA",
+    "core_id": "ci260501170553.407b534a8c8646e9890cdcdd28554e83",
+    "sha256_xml": "edeebe6cf1c053ff335cb966498fbb7d36b820b9a837c4e86f1551d153978a42",
+    "xml_src": "from_app/headless/TC-D01-action-dose-reduced.xml",
+    "ack_src": "May1/Batch1/ci260501170553.407b534a8c8646e9890cdcdd28554e83.ack"
+  },
+  {
+    "scenario": "TC-D02-actiontaken-3",
+    "category": "postmarket/accepted",
+    "ack_result": "CA+AA",
+    "core_id": "ci260501170743.317a308ddd4d4e1692aa9b34f89ba78a",
+    "sha256_xml": "a9c5dda30f66f0d6d8d22d2e09f1f0dbcc01443cba1b9668109ab5463800ee24",
+    "xml_src": "from_app/round2/TC-D02-actiontaken-3.xml",
+    "ack_src": "May1/Batch1/ci260501170743.317a308ddd4d4e1692aa9b34f89ba78a.ack"
+  },
+  {
+    "scenario": "TC-D03-actiontaken-5",
+    "category": "postmarket/accepted",
+    "ack_result": "CA+AA",
+    "core_id": "ci260501170752.a4d2539af77241fc86641f4b1125674f",
+    "sha256_xml": "a5895a15997243c999598074f18b52041f7e986dda107c761ba79bc97a5888dd",
+    "xml_src": "from_app/round2/TC-D03-actiontaken-5.xml",
+    "ack_src": "May1/Batch1/ci260501170752.a4d2539af77241fc86641f4b1125674f.ack"
+  },
+  {
+    "scenario": "TC-D04-dechallenge-1",
+    "category": "postmarket/accepted",
+    "ack_result": "CA+AA",
+    "core_id": "ci260501170801.df6b4779666c4e38b23fcbf09d9efc4c",
+    "sha256_xml": "80e1ab20bfa8ce9780ae455b3c29a573ed60b82e4687e6ec13ae9575f3f62b0b",
+    "xml_src": "from_app/round2/TC-D04-dechallenge-1.xml",
+    "ack_src": "May1/Batch1/ci260501170801.df6b4779666c4e38b23fcbf09d9efc4c.ack"
+  },
+  {
+    "scenario": "TC-D05-two-suspect-drugs",
+    "category": "postmarket/accepted",
+    "ack_result": "CA+AA",
+    "core_id": "ci260501170602.2123b84d221f4071b6d86dea5eb933cc",
+    "sha256_xml": "6d58b4f5ea9472218a1564d354591487f5618bd8fac94018e300c110b3c5b24a",
+    "xml_src": "from_app/headless/TC-D05-two-suspect-drugs.xml",
+    "ack_src": "May1/Batch1/ci260501170602.2123b84d221f4071b6d86dea5eb933cc.ack"
+  },
+  {
+    "scenario": "TC-D06-concom-actiontaken-6",
+    "category": "postmarket/accepted",
+    "ack_result": "CA+AA",
+    "core_id": "ci260501170810.c6d07948de5c4d07aa7e0c0509607070",
+    "sha256_xml": "a29f1628133b05974a65e9015b57b2301f4150a380fd358f3c94ad22c373cd8e",
+    "xml_src": "from_app/round2/TC-D06-concom-actiontaken-6.xml",
+    "ack_src": "May1/Batch1/ci260501170810.c6d07948de5c4d07aa7e0c0509607070.ack"
+  },
+  {
+    "scenario": "TC-E01-weight-absent",
+    "category": "postmarket/accepted",
+    "ack_result": "CA+AA",
+    "core_id": "ci260501170819.da2348d12ac1421ba0a562f734db3851",
+    "sha256_xml": "05ceadb3c7c73e306d1437cc87c7c4e8b856e63d52551f0149d496363695ba6a",
+    "xml_src": "from_app/round2/TC-E01-weight-absent.xml",
+    "ack_src": "May1/Batch1/ci260501170819.da2348d12ac1421ba0a562f734db3851.ack"
+  },
+  {
+    "scenario": "TC-E02-age-nullflavor",
+    "category": "postmarket/accepted",
+    "ack_result": "CA+AA",
+    "core_id": "ci260501170828.841147b2493d4b2f94b7ccb5669acec3",
+    "sha256_xml": "0b5db37714c1f5495e43a3aaa2ba6319a275aaad738f9d688f1b1fa4c5863fb5",
+    "xml_src": "from_app/round2/TC-E02-age-nullflavor.xml",
+    "ack_src": "May1/Batch1/ci260501170828.841147b2493d4b2f94b7ccb5669acec3.ack"
+  },
+  {
+    "scenario": "TC-E03-patient-female",
+    "category": "postmarket/accepted",
+    "ack_result": "CA+AA",
+    "core_id": "ci260508041224.bd0c4c72950448f49a75332c1d6868a3",
+    "sha256_xml": "c32d0ba2c3726392a9d2a5b2448677a1e69d8a76901ac45ffca93a02d665f02d",
+    "xml_src": "from_app/headless/TC-E03-patient-female-fresh.xml",
+    "ack_src": "May7/ci260508041224.bd0c4c72950448f49a75332c1d6868a3.ack"
+  },
+  {
+    "scenario": "TC-F01-followup-v3",
+    "category": "postmarket/accepted",
+    "ack_result": "CA+AA",
+    "core_id": "ci260501170837.1fd56d3801ee45a9aa62ac4ee92c6788",
+    "sha256_xml": "a240977ec0fffc2bd20c81e74b7937ef1c1cc8a0ac65a250a6ef2527d40954c0",
+    "xml_src": "from_app/round2/TC-F01-followup-v3.xml",
+    "ack_src": "May1/Batch1/ci260501170837.1fd56d3801ee45a9aa62ac4ee92c6788.ack"
+  },
+  {
+    "scenario": "TC-F02-comboproduct",
+    "category": "postmarket/accepted",
+    "ack_result": "CA+AA",
+    "core_id": "ci260501170846.4693050d5f174bcdbd25c26f7f872c54",
+    "sha256_xml": "b4fe24774df06c1876a304ed877e628a7042561e00c320b6f0a30217f96b90e4",
+    "xml_src": "from_app/round2/TC-F02-comboproduct.xml",
+    "ack_src": "May1/Batch1/ci260501170846.4693050d5f174bcdbd25c26f7f872c54.ack"
+  },
+  {
+    "scenario": "TC-F03-nonexpedited",
+    "category": "postmarket/accepted",
+    "ack_result": "CA+AA",
+    "core_id": "ci260501225648.eb7dbc4f30cd45929119741f524910d8",
+    "sha256_xml": "dc92f6c8b83c8f3ffa35e622e1236bac81da23aefec2aae94ad0393dce6e55f3",
+    "xml_src": "from_app/round2/TC-F03-nonexpedited.xml",
+    "ack_src": "May1/Batch2/ci260501225648.eb7dbc4f30cd45929119741f524910d8.ack"
+  },
+  {
+    "scenario": "TC-F04-ich-rpttype-2",
+    "category": "postmarket/accepted",
+    "ack_result": "CA+AA",
+    "core_id": "ci260501225657.bdd26c9a43f64f808dacb7718a202198",
+    "sha256_xml": "00b688110371ccec267d15e8bf3d8fe38b6becd78ab9a93352039760dd817d27",
+    "xml_src": "from_app/round2/TC-F04-ich-rpttype-2.xml",
+    "ack_src": "May1/Batch2/ci260501225657.bdd26c9a43f64f808dacb7718a202198.ack"
+  },
+  {
+    "scenario": "TC-G01-nonserous",
+    "category": "postmarket/accepted",
+    "ack_result": "CA+AA",
+    "core_id": "ci260501225706.94c8c512f4124e0082be2aae84dc05ee",
+    "sha256_xml": "62ff0f9e22cf793c1f19cb303d86298f0acb545e9fa46df4cb814d4ab66fa3ea",
+    "xml_src": "from_app/round2/TC-G01-nonserous.xml",
+    "ack_src": "May1/Batch2/ci260501225706.94c8c512f4124e0082be2aae84dc05ee.ack"
+  },
+  {
+    "scenario": "TC-G02-outcome-recovering",
+    "category": "postmarket/accepted",
+    "ack_result": "CA+AA",
+    "core_id": "ci260501170922.21d0cdbf8b114742b96c0cf09222ff61",
+    "sha256_xml": "6dbe8aee350dbbb5ffb346f2e869f479d30d6d4f58e91db0afee81553b354b29",
+    "xml_src": "from_app/round2/TC-G02-outcome-recovering.xml",
+    "ack_src": "May1/Batch1/ci260501170922.21d0cdbf8b114742b96c0cf09222ff61.ack"
+  },
+  {
+    "scenario": "TC-G03-outcome-sequelae",
+    "category": "postmarket/accepted",
+    "ack_result": "CA+AA",
+    "core_id": "ci260501170931.0aefb3497b6541bab1da7cb4a6d26653",
+    "sha256_xml": "f63009acd00a78acdc823297ab5b765a52f75302df7b95f050b976b8fd3930e6",
+    "xml_src": "from_app/round2/TC-G03-outcome-sequelae.xml",
+    "ack_src": "May1/Batch1/ci260501170931.0aefb3497b6541bab1da7cb4a6d26653.ack"
+  },
+  {
+    "scenario": "TC-G04-fatal-outcome",
+    "category": "postmarket/accepted",
+    "ack_result": "CA+AA",
+    "core_id": "ci260501170611.bb9d6033c77d46788e6c0fe33c2247c5",
+    "sha256_xml": "90bab7070a8b251a8b256eab0e6e84268467ce6b78e992725da9acc1fd84ce43",
+    "xml_src": "from_app/headless/TC-G04-fatal-outcome.xml",
+    "ack_src": "May1/Batch1/ci260501170611.bb9d6033c77d46788e6c0fe33c2247c5.ack"
+  },
+  {
+    "scenario": "TC-H01-addldocs-true",
+    "category": "postmarket/accepted",
+    "ack_result": "CA+AA",
+    "core_id": "ci260501170940.a90cee22e2844d4995ba75d71eec5142",
+    "sha256_xml": "b7a264a522c4d10992f734a810ea16409526fe0a56883dd1e251148380ba3f2b",
+    "xml_src": "from_app/round2/TC-H01-addldocs-true.xml",
+    "ack_src": "May1/Batch1/ci260501170940.a90cee22e2844d4995ba75d71eec5142.ack"
+  },
+  {
+    "scenario": "TC-H03-orgname-changed",
+    "category": "postmarket/accepted",
+    "ack_result": "CA+AA",
+    "core_id": "ci260501170958.f9d56f18af6f4306a49ebe497405f12d",
+    "sha256_xml": "27fed9d3540bcb9c604d406708fc1573a79a3aae5cde1b3b68af20f5f295637e",
+    "xml_src": "from_app/round2/TC-H03-orgname-changed.xml",
+    "ack_src": "May1/Batch1/ci260501170958.f9d56f18af6f4306a49ebe497405f12d.ack"
+  },
+  {
+    "scenario": "IND-T01-susar-baseline",
+    "category": "ind/accepted",
+    "ack_result": "CA+AE",
+    "core_id": "ci260507054727.392c2406978f4a92bbb542d677e228aa",
+    "sha256_xml": "a292378b830b369d12cbeae85b2660b78c27e5345337efa966e5b9ab0a9b21a4",
+    "xml_src": "from_app/ind/IND-T01-susar-baseline.xml",
+    "ack_src": "IND_May6/ci260507054727.392c2406978f4a92bbb542d677e228aa.ack"
+  },
+  {
+    "scenario": "IND-T02-susar-repeat",
+    "category": "ind/accepted",
+    "ack_result": "CA+AE",
+    "core_id": "ci260507054737.edc470647efa476c85834a16c972696a",
+    "sha256_xml": "c037d75cab0171aee6f76aab191a0e8f7964b364af80aafed5f8ee968ddf5844",
+    "xml_src": "from_app/ind/IND-T02-susar-repeat.xml",
+    "ack_src": "IND_May6/ci260507054737.edc470647efa476c85834a16c972696a.ack"
+  },
+  {
+    "scenario": "IND-T03-cross-ref-ind",
+    "category": "ind/accepted",
+    "ack_result": "CA+AE",
+    "core_id": "ci260507054746.50f8473e5aa242ee80ccf3c943e0ed44",
+    "sha256_xml": "5bf839d4a7f51544d8a52daa846a9dd7c85652410e1eade348ed2af78f6fc1b8",
+    "xml_src": "from_app/ind/IND-T03-cross-ref-ind.xml",
+    "ack_src": "IND_May6/ci260507054746.50f8473e5aa242ee80ccf3c943e0ed44.ack"
+  },
+  {
+    "scenario": "IND-T04-no-study-registration",
+    "category": "ind/accepted",
+    "ack_result": "CA+AE",
+    "core_id": "ci260507054756.dc1e6eddc447411481f0ec8b75072cf9",
+    "sha256_xml": "c74a3898c63b9d8749ecf9d52836f6a4909b2a752f70994007617c91d524f030",
+    "xml_src": "from_app/ind/IND-T04-no-study-registration.xml",
+    "ack_src": "IND_May6/ci260507054756.dc1e6eddc447411481f0ec8b75072cf9.ack"
+  },
+  {
+    "scenario": "IND-T05-fatal-seven-day",
+    "category": "ind/accepted",
+    "ack_result": "CA+AE",
+    "core_id": "ci260507054806.188de655b7ba4536bce4dd344ea51376",
+    "sha256_xml": "d39f13f796d6e4f0b745a6b56e8d2b7e6e504195d7ccea73b574661671eb04be",
+    "xml_src": "from_app/ind/IND-T05-fatal-seven-day.xml",
+    "ack_src": "IND_May6/ci260507054806.188de655b7ba4536bce4dd344ea51376.ack"
+  },
+  {
+    "scenario": "IND-T06-babe-test-reference",
+    "category": "ind/accepted",
+    "ack_result": "CA+AE",
+    "core_id": "ci260507054815.723b0f48995a4b8ba967219a0d8f33fe",
+    "sha256_xml": "4f3f84ad6f5bcdfb271951e9198a2b9ee79bf3caa6b04bf0901dab701d8d14e3",
+    "xml_src": "from_app/ind/IND-T06-babe-test-reference.xml",
+    "ack_src": "IND_May6/ci260507054815.723b0f48995a4b8ba967219a0d8f33fe.ack"
+  },
+  {
+    "scenario": "IND-T07-followup-report",
+    "category": "ind/accepted",
+    "ack_result": "CA+AE",
+    "core_id": "ci260507054825.f9208bd002e745fe98131049c4a10270",
+    "sha256_xml": "0961c6940e74d91e60b1cc0d6c4b59785465977c9d077c6caa61466081a4714a",
+    "xml_src": "from_app/ind/IND-T07-followup-report.xml",
+    "ack_src": "IND_May6/ci260507054825.f9208bd002e745fe98131049c4a10270.ack"
+  }
+]

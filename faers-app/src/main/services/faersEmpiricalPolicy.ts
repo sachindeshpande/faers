@@ -9,6 +9,14 @@
  *
  * **Do not extend by spec reading alone.** Only add entries after an ACK3
  * from ZZFDATST confirms a new value is accepted or rejected.
+ *
+ * Source-of-truth evidence (curated 2026-05-07):
+ *   - test/golden/postmarket/accepted/  — 26 confirmed CA+AA pairs
+ *   - test/golden/postmarket/rejected/  — 3 confirmed CR+AR pairs
+ *                                         (TC-A03/A04/A06 — race + ethnicity)
+ *   - test/golden/ind/accepted/         — 7 confirmed CA+AE pairs (IND-T01..T07)
+ * Each rejected XML+ACK pair under that tree is the authoritative
+ * evidence behind a `proven_rejected` entry below.
  */
 
 export type PolicyVerdict = 'proven_safe' | 'proven_rejected' | 'untested';
@@ -45,8 +53,8 @@ export const FAERS_POLICY: Record<string, FieldPolicy> = {
     entries: [
       { value: 'C41260', verdict: 'proven_safe',     evidence: 'v37, 2L8T ACK3' },
       { value: 'C17998', verdict: 'proven_rejected',  evidence: '26ZL ACK3' },
-      { value: 'C41257', verdict: 'proven_rejected',  evidence: 'TC-A03 ci260501170657 — "Element value not allowed for tag FDA.D.11.r.1"' },
-      { value: 'C41258', verdict: 'proven_rejected',  evidence: 'TC-A04 ci260501170706 — "Element value not allowed for tag FDA.D.11.r.1"' },
+      { value: 'C41257', verdict: 'proven_rejected',  evidence: 'TC-A03 ci260501170657 — "Element value not allowed for tag FDA.D.11.r.1" (test/golden/postmarket/rejected/TC-A03-race-amerindian.{xml,ack})' },
+      { value: 'C41258', verdict: 'proven_rejected',  evidence: 'TC-A04 ci260501170706 — "Element value not allowed for tag FDA.D.11.r.1" (test/golden/postmarket/rejected/TC-A04-race-hawaiian.{xml,ack})' },
       // nullFlavor NI is rejected (QTXZ, 2GZK) — captured structurally above.
     ]
   },
@@ -56,7 +64,8 @@ export const FAERS_POLICY: Record<string, FieldPolicy> = {
     observationCode: 'C16564',
     // nullFlavor="NI" on the <value> element triggers SAXParseException:
     // "cvc-type.2: The type definition cannot be abstract for element value."
-    // Confirmed CR+AR: TC-A06 ci260501170715 (2026-05-01).
+    // Confirmed CR+AR: TC-A06 ci260501170715 (2026-05-01) —
+    // test/golden/postmarket/rejected/TC-A06-ethnicity-ni.{xml,ack}.
     rejectsNullFlavorNI: true,
     entries: [
       { value: 'C41222', verdict: 'proven_safe',    evidence: 'v37, 2L8T ACK3' },

@@ -11,6 +11,18 @@ Source of truth for IND empirical verdicts: [`faers-app/src/main/services/faersE
 
 ---
 
+## 1.5 Curated Golden Reference Set
+
+As of 2026-05-07 the source-of-truth XML+ACK pairs from the campaign live under [`test/golden/`](../golden/), curated manually:
+
+- [`test/golden/postmarket/accepted/`](../golden/postmarket/accepted/) — 26 confirmed CA+AA postmarket scenarios (TC-A01, A02, A05, B01, B02, C01, C02, D01-D06, E01-E03, F01-F04, G01-G04, H01, H03)
+- [`test/golden/postmarket/rejected/`](../golden/postmarket/rejected/) — 3 confirmed CR+AR data-point rejections (TC-A03 race C41257, TC-A04 race C41258, TC-A06 ethnicity nullFlavor=NI)
+- [`test/golden/ind/accepted/`](../golden/ind/accepted/) — 7 confirmed CA+AE IND/SUSAR scenarios (IND-T01..T07)
+
+Each `.ack` is the authoritative FDA response for its sibling `.xml`. The `proven_safe` and `proven_rejected` entries in [`faersEmpiricalPolicy.ts`](../../faers-app/src/main/services/faersEmpiricalPolicy.ts) trace back to specific files in this tree. `resolveGoldenIndPath()` in `fivePassValidatorService.ts` looks here first when running passes 1/4/5 against IND/babe submissions; the `ackParserService` test fixtures reference TC-A01 (CA+AA) and TC-A03 (CR+AR) from this tree.
+
+When a new ACK lands, drop the `.xml` + `.ack` pair into the correct subdirectory and add or update the matching `IND_POLICY` / `FAERS_POLICY` entry. The policy comments cite the file path so future readers can replay the evidence.
+
 ## 1. Fix Inventory (chronological)
 
 Each row is a code change that materially affected ESG submissions. The **commit** column anchors the change; the **closes** column points at the gap doc with the FDA evidence.

@@ -95,13 +95,16 @@ export function resolveGoldenV37Path(): string | null {
 
 /**
  * Locate the IND structural baseline (`IND-T01-susar-baseline.xml`) for
- * passes 1/4/5 of an IND/babe submission. Per GAP-APP-004, this is the
- * confirmed CA+AE T01 package at `test/test_submission/from_app/ind/`.
- * Returns `null` when not found, in which case passes 1/4/5 fall back to
- * the historical "no golden reference" skip.
+ * passes 1/4/5 of an IND/babe submission. As of 2026-05-07 the curated
+ * FDA-accepted package set lives under `test/golden/ind/accepted/`; the
+ * historical `test/test_submission/from_app/ind/` and `…/package/`
+ * locations are kept as fallbacks so older session state still works.
+ * Returns `null` when not found, in which case passes 1/4/5 fall back
+ * to the historical "no golden reference" skip.
  */
 export function resolveGoldenIndPath(): string | null {
   return resolveGoldenPath(IND_GOLDEN_FILENAME, [
+    ['test', 'golden', 'ind', 'accepted'],
     ['test', 'test_submission', 'from_app', 'ind'],
     ['test', 'test_submission', 'package']
   ]);
