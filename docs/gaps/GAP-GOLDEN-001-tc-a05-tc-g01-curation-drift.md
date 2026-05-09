@@ -1,6 +1,23 @@
 # GAP-GOLDEN-001 — TC-A05 + TC-G01 Golden Curation Drift
 
-**Status:** Open — golden regeneration required
+**Status:** ✅ **CLOSED** 2026-05-08 — both goldens regenerated; regression run reports **33/33 PASS / 3 SKIPPED / 0 OPEN**.
+
+---
+
+## Closure summary
+
+| Scenario | Action taken | New `sha256_xml` |
+|---|---|---|
+| TC-A05-ethnicity-hispanic | Regenerated from JSON; replaces curated XML missing `<effectiveTime>` block | `dc481fa41cbf…` |
+| TC-G01-nonserous | Regenerated from JSON; replaces hand-curated XML with internally-inconsistent C83121 blocks | `09bd6b7af420…` |
+
+Both new XMLs scored 60/60 PASS on `faers_xml_lint.py`. `test/golden/manifest.json` updated with the new SHAs.
+
+The original gap analysis below is preserved as the diagnostic trail.
+
+---
+
+**Status (original):** Open — golden regeneration required
 **Severity:** LOW — both XMLs are FDA-accepted (CA+AA); the drift is between the *curated* golden and what the *generator* now produces from the corresponding JSON. Production submissions are not affected.
 **Discovered:** 2026-05-08 (golden regression run; commits `158206a` → `9cf75f1`)
 **Affects:**

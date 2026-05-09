@@ -1,7 +1,11 @@
 # Status — Path to 33/33 on the Golden Regression Test
 
-**Date:** 2026-05-08 (updated after items 3+4 landed)
-**Snapshot at commit:** post-`5f58f4d` (items 3+4 committed; items 1+2 + TC-G01 residual drift open)
+**Date:** 2026-05-08
+**Status:** ✅ **REACHED** — regression run reports **33/33 PASS / 3 SKIPPED / 0 OPEN** at commit-pending. All four open items closed (Items 3+4 in commit `7e01aab`, Items 1+2 via the TC-A05/TC-G01 golden regenerations + JSON syncs in commits `9cf75f1` and the current commit). [`docs/gaps/GAP-GOLDEN-001`](../gaps/GAP-GOLDEN-001-tc-a05-tc-g01-curation-drift.md) closed.
+
+---
+
+**Snapshot at original write:** post-`5f58f4d` (items 3+4 committed; items 1+2 + TC-G01 residual drift open)
 **Source prompts:**
 - [`docs/prompts/fix_golden_data_items_1_2.md`](../prompts/fix_golden_data_items_1_2.md)
 - [`docs/prompts/fix_golden_code_items_3_4.md`](../prompts/fix_golden_code_items_3_4.md)
