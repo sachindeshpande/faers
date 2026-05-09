@@ -12,7 +12,12 @@
 
 ## Where the campaign stands
 
-Latest regression run (post items 3+4): **30 PASS / 3 OPEN / 3 SKIPPED**. Item 4 closed cleanly; Item 3 closed its specified scope (validator no longer blocks TC-G01) but exposed residual test-data drift. Items 1+2 await execution of the data prompt.
+Latest regression run: **31 PASS / 2 OPEN / 3 SKIPPED**.
+
+- Item 4 (IND-T05): clean PASS
+- Item 3 (TC-G01): validator unblocked + JSON synced + C83121 emission added for non-serious — residual 1 diff (golden has internal per-reaction inconsistency that no generator-derivable input can reproduce; needs golden regen OR per-reaction JSON override schema)
+- Item 2 (TC-F03): JSON narrative synced — PASS
+- Item 1 (TC-A05): unchanged — needs golden regeneration (golden missing `<effectiveTime>` substanceAdministration child that every other passing golden has)
 
 | Bucket | Count | Status |
 |---|---|---|

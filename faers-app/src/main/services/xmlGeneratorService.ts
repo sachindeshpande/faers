@@ -1064,7 +1064,7 @@ export class XMLGeneratorService {
 
     // Reactions (B.2)
     for (const reaction of reactions) {
-      lines.push(this.buildReaction(reaction, isPremarket));
+      lines.push(this.buildReaction(reaction, isPremarket, !!caseData.overallNonSerious));
     }
 
     // Drugs (B.4)
@@ -1090,7 +1090,7 @@ export class XMLGeneratorService {
    * Per v37 template, each seriousness criterion is its own
    * outboundRelationship2/observation (not a comma-separated CE).
    */
-  private buildReaction(reaction: CaseReaction, isPremarket: boolean): string {
+  private buildReaction(reaction: CaseReaction, isPremarket: boolean, overallNonSerious: boolean = false): string {
     const lines: string[] = [];
 
     lines.push('                  <subjectOf2 typeCode="SBJ">');
@@ -1178,7 +1178,13 @@ export class XMLGeneratorService {
       lines.push('                      </outboundRelationship2>');
     }
 
-    // Seriousness summary (C83121) — primary seriousness criterion as CE
+    // Seriousness summary (C83121) — primary seriousness criterion as CE.
+    // CDER FAERS 2.18 expects this block on every reaction. When all six
+    // BL flags are false AND the case explicitly declares overallNonSerious
+    // (TC-G01 path), default to "otherMedicallyImportant" — the value the
+    // TC-G01 golden carries in its CA+AA submission (ci260501225706). The
+    // null branch is preserved for future cases where neither a true flag
+    // nor the overallNonSerious opt-in is present (defensive).
     const primarySeriousness =
       reaction.seriousDeath ? 'death' :
       reaction.seriousLifeThreat ? 'lifeThreatening' :
@@ -1186,6 +1192,7 @@ export class XMLGeneratorService {
       reaction.seriousDisability ? 'disability' :
       reaction.seriousCongenital ? 'congenitalAnomaly' :
       reaction.seriousOther ? 'otherMedicallyImportant' :
+      overallNonSerious ? 'otherMedicallyImportant' :
       null;
     if (primarySeriousness) {
       lines.push('                      <outboundRelationship2 typeCode="PERT">');
