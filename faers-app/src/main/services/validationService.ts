@@ -429,7 +429,7 @@ export class ValidationService {
   /**
    * Validate Reactions (B.2)
    */
-  private validateReactions(reactions: CaseReaction[], _caseData: Case, errors: ValidationError[]): void {
+  private validateReactions(reactions: CaseReaction[], caseData: Case, errors: ValidationError[]): void {
     // At least one reaction is required
     if (reactions.length === 0) {
       errors.push({
@@ -450,7 +450,11 @@ export class ValidationService {
         });
       }
 
-      // B.2.i.7 - At least one seriousness criterion required
+      // B.2.i.7 - At least one seriousness criterion required.
+      // Suppressed when the case explicitly declares itself non-serious
+      // (caseData.overallNonSerious === true). The non-serious path is
+      // empirically accepted by CDER FAERS 2.18 — TC-G01 golden CA+AA
+      // (ci260501225706) at test/golden/postmarket/accepted/xml/TC-G01-nonserous.xml.
       const hasSeriousness = reaction.seriousDeath ||
                             reaction.seriousLifeThreat ||
                             reaction.seriousHospitalization ||
@@ -458,7 +462,7 @@ export class ValidationService {
                             reaction.seriousCongenital ||
                             reaction.seriousOther;
 
-      if (!hasSeriousness) {
+      if (!hasSeriousness && !caseData.overallNonSerious) {
         errors.push({
           field: `reactions[${index}].seriousness`,
           message: `Reaction ${index + 1}: At least one seriousness criterion is required (B.2.i.7)`,

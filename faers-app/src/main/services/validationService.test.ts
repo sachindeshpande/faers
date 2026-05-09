@@ -291,6 +291,66 @@ describe('ValidationService', () => {
     });
   });
 
+  describe('B.2.i.7 non-serious opt-out (TC-G01)', () => {
+    // CDER FAERS 2.18 accepts cases where every reaction has all six
+    // seriousness BL fields set to false, provided the case explicitly
+    // declares itself non-serious (A.1.2 = 2). Empirical evidence:
+    // TC-G01 golden CA+AA (ci260501225706).
+    it('passes B.2.i.7 when overallNonSerious is true and all criteria are false', () => {
+      // overall_non_serious=1 in snake-case form so the case.repository
+      // hydrator (`row.overall_non_serious === 1`) picks it up.
+      mockDb = createMockDb({
+        caseData: { ...mockValidCase, overall_non_serious: 1 } as unknown as typeof mockValidCase,
+        reactions: [{
+          id: 1,
+          case_id: 'CASE-001',
+          reaction_term: 'Nausea',
+          serious_death: 0,
+          serious_life_threat: 0,
+          serious_hospitalization: 0,
+          serious_disability: 0,
+          serious_congenital: 0,
+          serious_other: 0,
+          start_date: '2026-01-20',
+          outcome: 1
+        }]
+      });
+      validationService = new ValidationService(mockDb);
+
+      const result = validationService.validate('CASE-001');
+      const seriousnessErrs = result.errors.filter(
+        (e) => e.severity === 'error' && /B\.2\.i\.7/.test(e.message)
+      );
+      expect(seriousnessErrs).toEqual([]);
+    });
+
+    it('fires B.2.i.7 when overallNonSerious is unset and all criteria are false', () => {
+      mockDb = createMockDb({
+        // overallNonSerious not set
+        reactions: [{
+          id: 1,
+          case_id: 'CASE-001',
+          reaction_term: 'Nausea',
+          serious_death: 0,
+          serious_life_threat: 0,
+          serious_hospitalization: 0,
+          serious_disability: 0,
+          serious_congenital: 0,
+          serious_other: 0,
+          start_date: '2026-01-20',
+          outcome: 1
+        }]
+      });
+      validationService = new ValidationService(mockDb);
+
+      const result = validationService.validate('CASE-001');
+      const seriousnessErrs = result.errors.filter(
+        (e) => e.severity === 'error' && /B\.2\.i\.7/.test(e.message)
+      );
+      expect(seriousnessErrs.length).toBeGreaterThanOrEqual(1);
+    });
+  });
+
   describe('Reporter address all-five rule (TC-H02 / CDER 2.18)', () => {
     it('emits C.3.4.1-4 errors when only country is populated', () => {
       mockDb = createMockDb({

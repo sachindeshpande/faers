@@ -645,6 +645,11 @@ function runMigrations(database: DatabaseInstance): void {
     if (!caseColumnNames.includes('is_serious')) {
       database.exec('ALTER TABLE cases ADD COLUMN is_serious INTEGER DEFAULT 0');
     }
+    // overallNonSerious — opt-in flag suppressing the B.2.i.7 validator
+    // for non-serious cases (TC-G01 golden CA+AA, ci260501225706).
+    if (!caseColumnNames.includes('overall_non_serious')) {
+      database.exec('ALTER TABLE cases ADD COLUMN overall_non_serious INTEGER DEFAULT 0');
+    }
     if (!caseColumnNames.includes('expectedness')) {
       database.exec('ALTER TABLE cases ADD COLUMN expectedness TEXT');
     }

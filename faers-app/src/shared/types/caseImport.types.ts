@@ -51,6 +51,12 @@ export const CaseImportCaseSchema = z
      */
     receiveDate: isoDate.optional(),
     expeditedReport: z.boolean().optional(),
+    /**
+     * Non-serious case (A.1.2 = 2). When true, all reaction seriousness BL
+     * fields are intentionally false; the validator suppresses B.2.i.7.
+     * TC-G01 golden CA+AA (ci260501225706) is the empirical evidence.
+     */
+    overallNonSerious: z.boolean().optional(),
     localReportTypeCode: enumish.optional(),    // 1 (15-Day) | 7 (7-Day)
     additionalDocs: z.boolean().optional(),
     caseNarrative: z.string().optional(),

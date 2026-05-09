@@ -175,6 +175,29 @@ export class XMLGeneratorService {
       warnings.push('At least one reporter is recommended');
     }
 
+    // Reporter address validation — all five C.3.4.x sub-fields are required by CDER 2.18.
+    // Confirmed empirically: TC-H02 v3 ci260501235624 (2026-05-01) rejected with
+    // "Data value required for tag C.3.4.1/2/3/4" when street/city/state/postal absent.
+    // All five fields (C.3.4.1 street, C.3.4.2 city, C.3.4.3 state, C.3.4.4 postal,
+    // C.3.4.5 asLocatedEntity country) must be non-empty for every reporter.
+    for (const reporter of reporters) {
+      const rLabel = [reporter.givenName, reporter.familyName].filter(Boolean).join(' ') || 'Reporter';
+      const missingAddr: string[] = [];
+      if (!reporter.address)  missingAddr.push('C.3.4.1 street (reporter.address)');
+      if (!reporter.city)     missingAddr.push('C.3.4.2 city (reporter.city)');
+      if (!reporter.state)    missingAddr.push('C.3.4.3 state (reporter.state)');
+      if (!reporter.postcode) missingAddr.push('C.3.4.4 postal code (reporter.postcode)');
+      if (!reporter.country)  missingAddr.push('C.3.4.5 country (reporter.country) — needed for asLocatedEntity');
+      if (missingAddr.length > 0) {
+        errors.push(
+          `${rLabel}: CDER 2.18 requires all reporter address fields (C.3.4.1–C.3.4.5). ` +
+          `Missing: ${missingAddr.join(', ')}. ` +
+          `A reporter with a partial address will be rejected (CR+AR). ` +
+          `Evidence: TC-H02 ci260501235624.`
+        );
+      }
+    }
+
     if (errors.length > 0) {
       return { success: false, errors, warnings };
     }
@@ -497,18 +520,31 @@ export class XMLGeneratorService {
     lines.push('            </observationEvent>');
     lines.push('          </component>');
 
-    // C.1.7 localCriteriaReportType (code 1 = 15-Day, 6 = 7-Day).
-    // Lint requires code 1 or 6 (FDA premarket codelist — GAP-IND-004); default to 15-Day when unset.
-    const reportTypeCode = caseData.localReportTypeCode === 7 ? '6' : '1';
-    const reportTypeDisplay = reportTypeCode === '6' ? '7-Day' : '15-Day';
-
-    // C.1.7 localCriteriaForExpedited — must be logically consistent with the
-    // report type. A 15-Day or 7-Day report by definition meets expedited
-    // criteria (v37 golden uses true). Force true when emitting an expedited
-    // report type to avoid the F-7 contradiction.
-    const isExpedited = caseData.expeditedReport === true
-      || reportTypeCode === '1'
-      || reportTypeCode === '6';
+    // C.1.7 localCriteriaForExpedited + C.1.7.1 localCriteriaReportType
+    // FDA FAERS 2.18 business rule (empirically confirmed):
+    //   When localCriteriaForExpedited = false (AND combo-product flag is false/NI),
+    //   localCriteriaReportType MUST be code="2" (Non-Expedited AE).
+    //   Using an expedited code (1=15-Day, 6=7-Day) while expedited=false → CR+AR.
+    //   Confirmed rejected: TC-F03 ci260501170855, TC-G01 ci260501170913 (2026-05-01).
+    //
+    // isExpedited is derived solely from caseData.expeditedReport:
+    //   - explicitly false  → non-expedited (code 2)
+    //   - true or undefined → expedited; use 7-Day (code 6) or 15-Day (code 1)
+    const isExpedited = caseData.expeditedReport !== false;
+    // FIX-X05: FDA PREMKT channel (ZZFDATST_PREMKT / CDER_IND) only accepts
+    // code="1" (15-Day) for localCriteriaReportType, regardless of the JSON's
+    // localReportTypeCode. Empirical evidence: IND-T05 CR+AR → CA+AE after
+    // manual patch (FAERS_Workflow_XML_Gap_Analysis_v2.docx FIX-X05). The
+    // postmarket channel continues to accept both code="1" (15-Day) and
+    // code="6" (7-Day) per the FAERS codelist.
+    const reportTypeCode = !isExpedited
+      ? '2'                                                         // Non-Expedited AE (Periodic)
+      : isPremarket
+        ? '1'                                                       // IND/PREMKT: 15-Day only (FIX-X05)
+        : (caseData.localReportTypeCode === 7 ? '6' : '1');        // Postmarket: 7-Day or 15-Day
+    const reportTypeDisplay = !isExpedited
+      ? 'Non-Expedited AE'
+      : (reportTypeCode === '6' ? '7-Day' : '15-Day');
     lines.push('          <component typeCode="COMP">');
     lines.push('            <observationEvent classCode="OBS" moodCode="EVN">');
     lines.push('              <code code="23" codeSystem="2.16.840.1.113883.3.989.2.1.1.19" displayName="localCriteriaForExpedited"/>');
@@ -636,10 +672,11 @@ export class XMLGeneratorService {
     }
 
     // ── SUBJECT OF 2: ICH ReportType investigationCharacteristic (C.1.3) ──
-    // Switch between "Spontaneous report" (postmarket, code=1) and
-    // "Report from study" (IND/SUSAR and IND-Exempt BA/BE, code=2) based
-    // on caseType. Per SUSAR_IND_Feature_Spec.md §4.3.
-    const isStudy = caseData.caseType === 'ind' || caseData.caseType === 'babe';
+    // code=2 (Report from study) for IND/BABE cases, OR postmarket cases with
+    // caseData.studyReport = true. When C.1.3 = 2, CDER 2.18 requires C.5.4
+    // (Study Type). C.5.4 is emitted below in the researchStudy block.
+    // Confirmed CR+AR without C.5.4: TC-F04 ci260501170904 (2026-05-01).
+    const isStudy = caseData.caseType === 'ind' || caseData.caseType === 'babe' || caseData.studyReport === true;
     const ichReportCode = isStudy ? '2' : '1';
     const ichReportDisplay = isStudy ? 'Report from study' : 'Spontaneous report';
     lines.push('          <subjectOf2 typeCode="SUBJ">');
@@ -687,21 +724,16 @@ export class XMLGeneratorService {
     const qualCode = reporter.qualification ?? 1;
     lines.push(`                  <code code="${qualCode}" codeSystem="2.16.840.1.113883.3.989.2.1.1.7"/>`);
 
-    // C.3.4.1–C.3.4.6 address
+    // C.3.4.1–C.3.4.6 address — all fields required by CDER 2.18.
+    // Confirmed empirically: TC-H02 ci260501235624 (2026-05-01) rejected for
+    // missing C.3.4.1/2/3/4 when only country was provided. The generate()
+    // method blocks before reaching here if any field is absent, but emit
+    // unconditionally anyway to keep XML well-formed if --no-gate bypasses the check.
     lines.push('                  <addr>');
-    if (reporter.address) {
-      lines.push(`                    <streetAddressLine>${this.escapeXml(reporter.address)}</streetAddressLine>`);
-    }
-    if (reporter.city) {
-      lines.push(`                    <city>${this.escapeXml(reporter.city)}</city>`);
-    }
-    if (reporter.state) {
-      lines.push(`                    <state>${this.escapeXml(reporter.state)}</state>`);
-    }
-    if (reporter.postcode) {
-      lines.push(`                    <postalCode>${this.escapeXml(reporter.postcode)}</postalCode>`);
-    }
-    // C.3.4.6 country is lint-required
+    lines.push(`                    <streetAddressLine>${this.escapeXml(reporter.address || '')}</streetAddressLine>`);
+    lines.push(`                    <city>${this.escapeXml(reporter.city || '')}</city>`);
+    lines.push(`                    <state>${this.escapeXml(reporter.state || '')}</state>`);
+    lines.push(`                    <postalCode>${this.escapeXml(reporter.postcode || '')}</postalCode>`);
     lines.push(`                    <country>${this.escapeXml(reporter.country || 'US')}</country>`);
     lines.push('                  </addr>');
 
@@ -870,13 +902,24 @@ export class XMLGeneratorService {
     }
     lines.push('                  </player1>');
 
-    // SUSAR / IND + IND-Exempt BA/BE — researchStudy block. Sits between
-    // <player1> and the first <subjectOf2> (age), matching the anchor in
-    // Scenario 3 (FAERS2022Scenario3.xml lines 71–112). Emitted only for
-    // study-type cases with an indStudy payload; postmarket cases skip.
+    // researchStudy block — emitted when C.1.3 = 2 (Report from study).
+    // Covers three cases:
+    //   1. IND/SUSAR (caseType='ind') with full indStudy payload → full block
+    //   2. IND-Exempt BA/BE (caseType='babe') with indStudy payload → full block
+    //   3. Postmarket "Report from study" (studyReport=true, no indStudy) → minimal
+    //      block with C.5.4 only (code="1" Clinical trials).
+    //      CDER 2.18 requires C.5.4 when C.1.3=2 regardless of case type.
+    //      Confirmed CR+AR without it: TC-F04 ci260501170904 (2026-05-01).
     const isStudyCase = caseData.caseType === 'ind' || caseData.caseType === 'babe';
     if (isStudyCase && caseData.indStudy) {
       lines.push(this.buildResearchStudy(caseData.indStudy));
+    } else if (caseData.studyReport === true) {
+      // Minimal C.5.4 block for postmarket "Report from study" (no IND study metadata)
+      lines.push('                  <subjectOf1 typeCode="SBJ">');
+      lines.push('                    <researchStudy classCode="CLNTRL" moodCode="EVN">');
+      lines.push('                      <code code="1" displayName="Clinical trials" codeSystem="2.16.840.1.113883.3.989.2.1.1.8" codeSystemVersion="1.0"/>');
+      lines.push('                    </researchStudy>');
+      lines.push('                  </subjectOf1>');
     }
 
     // B.1.2.2 age (PQ)

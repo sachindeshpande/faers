@@ -208,6 +208,9 @@ function buildUpdateDto(doc: CaseImportDocument, warnings: string[]): UpdateCase
     if (doc.case.receiptDate) update.receiptDate = doc.case.receiptDate;
     if (doc.case.receiveDate) update.receiveDate = doc.case.receiveDate;
     if (doc.case.expeditedReport !== undefined) update.expeditedReport = doc.case.expeditedReport;
+    // overallNonSerious — opt-in flag that suppresses the B.2.i.7 validator
+    // for legitimate non-serious cases (TC-G01 golden CA+AA, ci260501225706).
+    if (doc.case.overallNonSerious !== undefined) update.overallNonSerious = doc.case.overallNonSerious;
     if (doc.case.additionalDocs !== undefined) update.additionalDocs = doc.case.additionalDocs;
     if (doc.case.worldwideCaseId) update.worldwideCaseId = doc.case.worldwideCaseId;
     if (doc.case.caseNarrative) update.caseNarrative = doc.case.caseNarrative;

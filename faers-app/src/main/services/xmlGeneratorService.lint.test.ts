@@ -250,4 +250,28 @@ describe('XMLGeneratorService v37 lint conformance', () => {
     expect(result.xml).toMatch(/displayName="localCriteriaReportType"\/>\s*<value xsi:type="CE" code="6"[^>]*displayName="7-Day"/);
     runLint(result.xml!, '7day');
   }, 15_000);
+
+  // FIX-X05: FDA PREMKT channel only accepts code="1" (15-Day) for
+  // localCriteriaReportType. Even when the JSON requests 7-Day, IND/babe
+  // submissions route via Premarket and the generator must force 15-Day.
+  // See FAERS_Workflow_XML_Gap_Analysis_v2.docx FIX-X05 (IND-T05 CR+AR
+  // before fix → CA+AE after manual XML patch).
+  it('forces localCriteriaReportType to 1 (15-Day) for IND PREMKT regardless of localReportTypeCode = 7', () => {
+    const indCase: Case = {
+      ...FIXTURE_CASE,
+      caseType: 'ind',
+      localReportTypeCode: LocalReportTypeCode.SevenDay
+    };
+    const svc = makeServiceWithFixture(indCase);
+    const result = svc.generate(indCase.id, {
+      ...GEN_OPTIONS,
+      submissionReportType: 'Premarket',
+      batchNumber: `DeepQuenceTest-20260508-v37-ind-${Date.now()}`
+    });
+
+    expect(result.success).toBe(true);
+    // FIX-X05: forced to 15-Day on the PREMKT channel.
+    expect(result.xml).toMatch(/displayName="localCriteriaReportType"\/>\s*<value xsi:type="CE" code="1"[^>]*displayName="15-Day"/);
+    expect(result.xml).not.toMatch(/displayName="localCriteriaReportType"\/>\s*<value xsi:type="CE" code="6"/);
+  }, 15_000);
 });

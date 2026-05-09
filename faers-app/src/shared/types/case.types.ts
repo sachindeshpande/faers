@@ -446,6 +446,11 @@ export interface Case {
   receiveDate?: string;
   additionalDocs?: boolean;
   expeditedReport?: boolean;
+  /** When true, sets C.1.3 = 2 (Report from study) and emits a minimal
+   *  researchStudy block with C.5.4 = "Clinical trials" (code 1).
+   *  Required by CDER 2.18 when C.1.3 = 2; omitting C.5.4 → CR+AR.
+   *  Confirmed: TC-F04 ci260501170904 (2026-05-01). */
+  studyReport?: boolean;
   worldwideCaseId?: string;
   nullificationType?: NullificationType;
   nullificationReason?: string;
@@ -523,6 +528,15 @@ export interface Case {
   reportTypeClassification?: 'expedited' | 'non_expedited' | 'followup' | 'nullification';
   expeditedCriteria?: '15_day' | 'periodic' | 'remedial' | 'malfunction';
   isSerious?: boolean;
+  /**
+   * When true, the case is classified as non-serious (A.1.2 = 2) and all
+   * seriousness criteria BL fields are intentionally false. Suppresses the
+   * B.2.i.7 "at least one criterion required" validator finding so legitimate
+   * non-serious adverse-event reports can submit. Empirical evidence: TC-G01
+   * golden XML (CA+AA, ci260501225706) — see
+   * `test/golden/postmarket/accepted/xml/TC-G01-nonserous.xml`.
+   */
+  overallNonSerious?: boolean;
   expectedness?: 'expected' | 'unexpected' | 'unknown';
   // expectednessJustification is declared in the Phase 6 IND block below.
 

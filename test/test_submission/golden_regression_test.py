@@ -29,6 +29,7 @@ Run from repo root or `faers-app/`. Path resolution is independent of cwd.
 
 from __future__ import annotations
 
+import argparse
 import json
 import os
 import subprocess
@@ -551,6 +552,21 @@ def git_rev() -> str:
 
 
 def main() -> int:
+    parser = argparse.ArgumentParser(
+        description="Golden dataset regression test. Runs all JSON-backed scenarios "
+                    "through the headless CLI and diffs against the curated golden XMLs."
+    )
+    parser.add_argument(
+        "--scenario",
+        action="append",
+        metavar="NAME",
+        dest="scenarios",
+        help="Run only this scenario (repeatable; e.g. --scenario TC-G01-nonserous "
+             "--scenario IND-T05-fatal-seven-day). Omit to run all scenarios.",
+    )
+    args = parser.parse_args()
+    scenario_filter: set[str] | None = set(args.scenarios) if args.scenarios else None
+
     if not MANIFEST.exists():
         print(f"Manifest not found: {MANIFEST}", file=sys.stderr)
         return 2
@@ -558,6 +574,12 @@ def main() -> int:
     if not isinstance(entries, list):
         print("Manifest is not a JSON array", file=sys.stderr)
         return 2
+
+    if scenario_filter:
+        entries = [e for e in entries if e.get("scenario") in scenario_filter]
+        if not entries:
+            print(f"No manifest entries matched: {sorted(scenario_filter)}", file=sys.stderr)
+            return 2
 
     results: list[ScenarioResult] = []
     with tempfile.TemporaryDirectory(prefix="golden_regression_") as tmp:

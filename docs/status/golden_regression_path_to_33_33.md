@@ -1,7 +1,7 @@
 # Status — Path to 33/33 on the Golden Regression Test
 
-**Date:** 2026-05-08
-**Snapshot at commit:** `e3d6d74`
+**Date:** 2026-05-08 (updated after items 3+4 landed)
+**Snapshot at commit:** post-`5f58f4d` (items 3+4 committed; items 1+2 + TC-G01 residual drift open)
 **Source prompts:**
 - [`docs/prompts/fix_golden_data_items_1_2.md`](../prompts/fix_golden_data_items_1_2.md)
 - [`docs/prompts/fix_golden_code_items_3_4.md`](../prompts/fix_golden_code_items_3_4.md)
@@ -12,7 +12,7 @@
 
 ## Where the campaign stands
 
-Latest regression run: **29 PASS / 4 OPEN / 3 SKIPPED**. The 4 open items have prompts ready to drive each one to closure.
+Latest regression run (post items 3+4): **30 PASS / 3 OPEN / 3 SKIPPED**. Item 4 closed cleanly; Item 3 closed its specified scope (validator no longer blocks TC-G01) but exposed residual test-data drift. Items 1+2 await execution of the data prompt.
 
 | Bucket | Count | Status |
 |---|---|---|
@@ -53,7 +53,7 @@ Latest regression run: **29 PASS / 4 OPEN / 3 SKIPPED**. The 4 open items have p
 
 | Field | Value |
 |---|---|
-| Status | **Not started** |
+| Status | **DONE — prompt scope** (validator relax + JSON flag); **OPEN — residual test-data drift** |
 | Type | Code change — 5 small edits across 4 files + 2 new tests |
 | Touches | `faers-app/src/main/services/validationService.ts` (relax B.2.i.7), `…/services/caseImportService.ts` (wire mapping), `…/shared/types/case.types.ts` (add `overallNonSerious`), `…/services/validationService.test.ts` (2 new tests), `test/golden/postmarket/accepted/json/TC-G01-nonserous.json` (set `overallNonSerious: true`) |
 | Estimated effort | ~30 LOC + 2 tests |
@@ -65,7 +65,7 @@ Latest regression run: **29 PASS / 4 OPEN / 3 SKIPPED**. The 4 open items have p
 
 | Field | Value |
 |---|---|
-| Status | **Not started** |
+| Status | ✅ **DONE** — IND-T05 PASS, IND-T01..T07 all still PASS, regression test green |
 | Type | Code change — single-branch edit in the generator + one test |
 | Touches | `faers-app/src/main/services/xmlGeneratorService.ts` (~10 LOC near `reportTypeCode` derivation) + a generator test |
 | Estimated effort | ~10 LOC + 1 test |
@@ -95,18 +95,27 @@ The dependency is loose — the code prompt's pre-requisite line says "31/33 bas
 
 ---
 
-## Tooling gap to close before executing
+## Tooling gap — RESOLVED
 
-Both prompts call `python test/test_submission/golden_regression_test.py --scenario <name>` to verify a single item without re-running the full 36-scenario suite. **The script does not currently support `--scenario`.** It iterates the entire manifest unconditionally.
+~~Both prompts call `python test/test_submission/golden_regression_test.py --scenario <name>` to verify a single item without re-running the full 36-scenario suite. **The script does not currently support `--scenario`.** It iterates the entire manifest unconditionally.~~
 
-| Option | Effort | Trade-off |
-|---|---|---|
-| **A.** Add a `--scenario <name>` filter using `argparse` | ~10 LOC | Aligns the script with the prompts; faster per-item iteration |
-| **B.** Run the full suite each time | None | Simpler; ~2 minutes per run vs ~5 seconds per scenario |
+**The `--scenario` flag was added** to `test/test_submission/golden_regression_test.py` using `argparse` (option A). The flag is repeatable so multiple scenarios can be verified in a single run:
 
-Recommendation: **A.** Add the flag before executing items 1–4, since each prompt verifies its own scenario plus regressions in 6+ neighbours. Saves ~10 minutes of cumulative wait across the 4 items.
+```bash
+# single scenario
+python test/test_submission/golden_regression_test.py --scenario TC-G01-nonserous
 
-If A is chosen, also accept multiple `--scenario` flags (the IND-T05 prompt uses 6 of them in step 3 to verify the other IND scenarios are unaffected).
+# multiple scenarios (e.g. verify all IND neighbours are unaffected)
+python test/test_submission/golden_regression_test.py \
+  --scenario IND-T01-susar-baseline \
+  --scenario IND-T02-susar-repeat \
+  --scenario IND-T03-cross-ref-ind \
+  --scenario IND-T04-no-study-registration \
+  --scenario IND-T06-babe-test-reference \
+  --scenario IND-T07-followup-report
+```
+
+The full suite (all scenarios) still runs when `--scenario` is omitted.
 
 ---
 

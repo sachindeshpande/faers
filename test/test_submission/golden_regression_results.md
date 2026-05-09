@@ -1,13 +1,13 @@
 # Golden Regression Test Results
-Run date: 2026-05-08T19:19:42+00:00
-Generator version: 158206a
+Run date: 2026-05-09T00:22:58+00:00
+Generator version: 5f58f4d
 Backend: lxml
 
 ## Summary
 | Result | Count |
 |---|---|
-| PASS | 29 |
-| GATE FAILURE | 1 |
+| PASS | 30 |
+| GATE FAILURE | 0 |
 | LINT FAILURE | 0 |
 | STRUCTURAL DIFF | 3 |
 | SKIPPED | 3 |
@@ -19,10 +19,6 @@ Backend: lxml
 - TC-F04-ich-rpttype-2 — No JSON input registered in manifest
 
 ## Failures (detail)
-
-### TC-G01-nonserous  (postmarket/accepted, ACK CA+AA)
-- **Result:** GATE FAILURE
-- **Exit code:** 1
 
 ### TC-A05-ethnicity-hispanic  (postmarket/accepted, ACK CA+AA)
 - **Result:** STRUCTURAL DIFF
@@ -66,17 +62,32 @@ Backend: lxml
 - **Diffs (1):**
   - `/MCCI_IN200100UV01/PORR_IN049016UV[6]/controlActProcess[9]/subject[3]/investigationEvent[1]/component[10]/adverseEventAssessment[1]/component[1]/causalityAssessment[1]/value[2]` `text` golden=`Variant of 2L8T baseline. TC-F03 fix v2: localCriteriaForExpedited=false, localCriteriaReportType=code 2 (Non-Expedited AE). SR-CASE-20260501-TCF03.` generated=`Variant of 2L8T baseline. Expedited flag set to false (A.1.9 = 2, non-expedited) for TC-F03. localReportTypeCode omitted.`
 
-### IND-T05-fatal-seven-day  (ind/accepted, ACK CA+AE)
+### TC-G01-nonserous  (postmarket/accepted, ACK CA+AA)
 - **Result:** STRUCTURAL DIFF
-- **Diffs (2):**
-  - `/MCCI_IN200100UV01/PORR_IN049016UV[6]/controlActProcess[9]/subject[3]/investigationEvent[1]/component[13]/observationEvent[1]/value[2]` `@code` golden=`1` generated=`6`
-  - `/MCCI_IN200100UV01/PORR_IN049016UV[6]/controlActProcess[9]/subject[3]/investigationEvent[1]/component[13]/observationEvent[1]/value[2]` `@displayName` golden=`15-Day` generated=`7-Day`
+- **Diffs (16):**
+  - `/MCCI_IN200100UV01/PORR_IN049016UV[6]/controlActProcess[9]/subject[3]/investigationEvent[1]/component[9]/adverseEventAssessment[1]/subject1[1]/primaryRole[1]/player1[1]/birthTime[3]` `@value` golden=`19700515` generated=`19750615`
+  - `/MCCI_IN200100UV01/PORR_IN049016UV[6]/controlActProcess[9]/subject[3]/investigationEvent[1]/component[9]/adverseEventAssessment[1]/subject1[1]/primaryRole[1]/subjectOf2[2]/observation[1]/value[2]` `@value` golden=`55` generated=`50`
+  - `/MCCI_IN200100UV01/PORR_IN049016UV[6]/controlActProcess[9]/subject[3]/investigationEvent[1]/component[9]/adverseEventAssessment[1]/subject1[1]/primaryRole[1]/subjectOf2[8]/observation[1]` `child_count` golden=`14` generated=`13`
+  - `/MCCI_IN200100UV01/PORR_IN049016UV[6]/controlActProcess[9]/subject[3]/investigationEvent[1]/component[9]/adverseEventAssessment[1]/subject1[1]/primaryRole[1]/subjectOf2[8]/observation[1]/outboundRelationship2[13]/observation[1]/code[1]` `@code` golden=`C83121` generated=`C49489`
+  - `/MCCI_IN200100UV01/PORR_IN049016UV[6]/controlActProcess[9]/subject[3]/investigationEvent[1]/component[9]/adverseEventAssessment[1]/subject1[1]/primaryRole[1]/subjectOf2[8]/observation[1]/outboundRelationship2[13]/observation[1]/code[1]` `@displayName` golden=`Seriousness` generated=`Outcome`
+  - `/MCCI_IN200100UV01/PORR_IN049016UV[6]/controlActProcess[9]/subject[3]/investigationEvent[1]/component[9]/adverseEventAssessment[1]/subject1[1]/primaryRole[1]/subjectOf2[8]/observation[1]/outboundRelationship2[13]/observation[1]/value[2]` `@code` golden=`otherMedicallyImportant` generated=`1`
+  - `/MCCI_IN200100UV01/PORR_IN049016UV[6]/controlActProcess[9]/subject[3]/investigationEvent[1]/component[9]/adverseEventAssessment[1]/subject1[1]/primaryRole[1]/subjectOf2[8]/observation[1]/outboundRelationship2[13]/observation[1]/value[2]` `@codeSystem` golden=`2.16.840.1.113883.3.989.2.1.1.19` generated=`2.16.840.1.113883.3.989.2.1.1.11`
+  - `/MCCI_IN200100UV01/PORR_IN049016UV[6]/controlActProcess[9]/subject[3]/investigationEvent[1]/component[9]/adverseEventAssessment[1]/subject1[1]/primaryRole[1]/subjectOf2[9]/observation[1]` `child_count` golden=`14` generated=`13`
+  - `/MCCI_IN200100UV01/PORR_IN049016UV[6]/controlActProcess[9]/subject[3]/investigationEvent[1]/component[9]/adverseEventAssessment[1]/subject1[1]/primaryRole[1]/subjectOf2[9]/observation[1]/outboundRelationship2[13]/observation[1]/code[1]` `@code` golden=`C83121` generated=`C49489`
+  - `/MCCI_IN200100UV01/PORR_IN049016UV[6]/controlActProcess[9]/subject[3]/investigationEvent[1]/component[9]/adverseEventAssessment[1]/subject1[1]/primaryRole[1]/subjectOf2[9]/observation[1]/outboundRelationship2[13]/observation[1]/code[1]` `@displayName` golden=`Seriousness` generated=`Outcome`
+  - `/MCCI_IN200100UV01/PORR_IN049016UV[6]/controlActProcess[9]/subject[3]/investigationEvent[1]/component[9]/adverseEventAssessment[1]/subject1[1]/primaryRole[1]/subjectOf2[9]/observation[1]/outboundRelationship2[13]/observation[1]/value[2]` `@code` golden=`hospitalization` generated=`6`
+  - `/MCCI_IN200100UV01/PORR_IN049016UV[6]/controlActProcess[9]/subject[3]/investigationEvent[1]/component[9]/adverseEventAssessment[1]/subject1[1]/primaryRole[1]/subjectOf2[9]/observation[1]/outboundRelationship2[13]/observation[1]/value[2]` `@codeSystem` golden=`2.16.840.1.113883.3.989.2.1.1.19` generated=`2.16.840.1.113883.3.989.2.1.1.11`
+  - `/MCCI_IN200100UV01/PORR_IN049016UV[6]/controlActProcess[9]/subject[3]/investigationEvent[1]/component[10]/adverseEventAssessment[1]/component[1]/causalityAssessment[1]/value[2]` `text` golden=`Patient experienced an adverse event approximately 60 days after initiation of Testdrugimab therapy for rheumatoid arthritis. Nausea resolved within 48 hours. No hospitalization required. Concomitant therapy with lisinopril continued without modification.` generated=`Variant of 2L8T baseline. All seriousness criteria set to false on both reactions (non-serious case) for TC-G01.`
+  - `/MCCI_IN200100UV01/PORR_IN049016UV[6]/controlActProcess[9]/subject[3]/investigationEvent[1]/component[12]/observationEvent[1]/value[2]` `@value` golden=`false` generated=`true`
+  - `/MCCI_IN200100UV01/PORR_IN049016UV[6]/controlActProcess[9]/subject[3]/investigationEvent[1]/component[13]/observationEvent[1]/value[2]` `@code` golden=`2` generated=`1`
+  - `/MCCI_IN200100UV01/PORR_IN049016UV[6]/controlActProcess[9]/subject[3]/investigationEvent[1]/component[13]/observationEvent[1]/value[2]` `@displayName` golden=`Non-Expedited AE` generated=`15-Day`
 
 ## Full Pass List
 - IND-T01-susar-baseline
 - IND-T02-susar-repeat
 - IND-T03-cross-ref-ind
 - IND-T04-no-study-registration
+- IND-T05-fatal-seven-day
 - IND-T06-babe-test-reference
 - IND-T07-followup-report
 - TC-A01-race-white
@@ -102,20 +113,3 @@ Backend: lxml
 - TC-G04-fatal-outcome
 - TC-H01-addldocs-true
 - TC-H03-orgname-changed
-
----
-
-## Classification & Disposition (per docs/prompts/golden_regression_test.md acceptance criteria)
-
-Per the prompt: *"Only fix regressions. New policy drift and test data mismatches should be flagged for review, not silently corrected."*
-
-| Scenario | Classification | Disposition |
-|---|---|---|
-| TC-A05-ethnicity-hispanic | **Test data mismatch** — generator now emits an `Indication` (C41331) observation per drug; the golden was authored before this emission landed and has 5 child elements per `substanceAdministration` vs the generator's 6. The diffs are all positional shifts of identical Action Taken / Dechallenge / Rechallenge blocks. | Flag for review. Do NOT modify the generator. The fix is to re-curate the TC-A05 golden by regenerating from JSON and resubmitting (it has already submitted CA+AA in its current shape). |
-| TC-F03-nonexpedited | **Test data mismatch** — case narrative text differs. Golden text reflects the patched v2 narrative ("TC-F03 fix v2: localCriteriaForExpedited=false…SR-CASE-20260501-TCF03"); the JSON narrative is the original ("Expedited flag set to false … localReportTypeCode omitted"). The XML structure is otherwise identical. | Flag. Either regenerate the golden from the current JSON or update the JSON narrative to match the patched golden. |
-| TC-G01-nonserous | **Open scenario** (per `FAERS_Workflow_XML_Gap_Analysis_v2.docx` §6 P01 status note "TC-G01 v2 dashboard shows 'Center's Response Sent' — ACK3 retrieval pending"). The headless CLI's import-stage `validateReporterInformation` rule rejects all-false seriousness via B.2.i.7 ("at least one seriousness criterion required") even with `--no-gate` — gates run after import. | Flag. Either relax the validator for non-serious cases, or revise the JSON to satisfy B.2.i.7. The golden TC-G01 XML *was* generated at some point (since it's curated); decide whether the current validator behaviour is correct. |
-| IND-T05-fatal-seven-day | **Test data mismatch** — golden has FDA.C.1.7.1 `code="1"` (15-Day) per the FIX-X05 patch the v2 gap doc applied to PREMKT submissions; the JSON specifies `localReportTypeCode: 7` so the generator emits `code="6"` (7-Day per FIX-IND-004). | Flag. Either regenerate the golden from the current JSON, update the JSON to set `localReportTypeCode: 1`, or wire FIX-X05 into the generator (auto-rewrite 7-Day→15-Day for IND/PREMKT). |
-
-**Net regression status:** 0 regressions detected. The 23/33 → 29/33 → 29/33 PASS progression came from fixing two genuine infrastructure issues (`seedCountries` headless guard + the lint-vs-FIX-P01 drift on C.1.7.1 codelist) and from completing the volatile-field exclusion list.
-
-**Next-action recommendation:** the four flagged scenarios require human review of the test data vs. generator behaviour, not generator changes. After disposition, re-run `python3 test/test_submission/golden_regression_test.py`.
