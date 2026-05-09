@@ -70,10 +70,13 @@ jobs:
           IND_ENROLLMENT_CONFIRMED: 'true'
         run: python3 test/test_submission/golden_regression_test.py
 
-      - name: Upload regression report
+      - name: Upload regression report + generated XMLs
+        # Always upload — even on a non-zero script exit — so reviewers
+        # can inspect the diff source. The artifact contains the report
+        # alongside one .xml per scenario at xml/<scenario>.xml.
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: golden-regression-results
-          path: test/test_submission/regression/golden_regression_results.md
+          path: test/test_submission/regression/
           retention-days: 30

@@ -23,9 +23,17 @@ Excluded fields (per docs/prompts/golden_regression_test.md):
   - investigationEvent IVL_TS low (receipt date)
   - safetyReportId / worldwideCaseId on investigationEvent
 
-Output: `test/test_submission/regression/golden_regression_results.md`
-        (the directory is created if missing; any other `*.md` in the
-        directory is removed each run so stale reports can't accumulate)
+Outputs (under `test/test_submission/regression/`):
+  - `golden_regression_results.md`    — pass/fail report
+  - `xml/<scenario>.xml`              — generated XML per scenario,
+                                        kept for inspection / artifact upload
+
+Stale-protection: an unfiltered full run wipes the entire `xml/`
+sub-directory before writing so removed/renamed scenarios don't
+leave orphan files. A `--scenario`-filtered run only overwrites the
+XMLs for the named scenarios; existing XMLs for other scenarios are
+preserved. Stale `*.md` reports in the regression directory are
+removed on every run.
 Run from repo root or `faers-app/`. Path resolution is independent of cwd.
 """
 
@@ -36,7 +44,6 @@ import json
 import os
 import subprocess
 import sys
-import tempfile
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
@@ -60,6 +67,7 @@ APP_DIR = REPO_ROOT / "faers-app"
 LINT_SCRIPT = REPO_ROOT / "test" / "test_submission" / "faers_xml_lint.py"
 RESULTS_DIR = REPO_ROOT / "test" / "test_submission" / "regression"
 RESULTS_FILE = RESULTS_DIR / "golden_regression_results.md"
+XML_OUTPUT_DIR = RESULTS_DIR / "xml"
 
 NS = "{urn:hl7-org:v3}"
 XSI = "{http://www.w3.org/2001/XMLSchema-instance}"
@@ -348,7 +356,7 @@ def diff_trees(golden_root, generated_root) -> list[Diff]:
 #  Main per-scenario routine
 # ────────────────────────────────────────────────────────────────────────────
 
-def process(entry: dict, tmp_root: Path) -> ScenarioResult:
+def process(entry: dict, xml_out_dir: Path) -> ScenarioResult:
     scenario = entry["scenario"]
     category = entry["category"]
     ack = entry.get("ack_result", "?")
@@ -381,8 +389,10 @@ def process(entry: dict, tmp_root: Path) -> ScenarioResult:
             notes=f"Golden XML not found on disk: {golden_xml_path}",
         )
 
-    out_dir = tmp_root / scenario
-    code, _stdout, stderr = run_headless(json_path, out_dir)
+    # Generated XML lands at xml_out_dir/<input-stem>.xml — the headless
+    # CLI uses the input JSON stem as the XML filename. Each scenario has
+    # a unique stem so there's no risk of cross-scenario collision.
+    code, _stdout, stderr = run_headless(json_path, xml_out_dir)
 
     if code != 0:
         tail = "\n".join(stderr.splitlines()[-15:])
@@ -395,21 +405,16 @@ def process(entry: dict, tmp_root: Path) -> ScenarioResult:
             cli_stderr_tail=tail,
         )
 
-    # Locate the generated XML (matches the JSON stem)
-    expected_xml = out_dir / (json_path.stem + ".xml")
+    expected_xml = xml_out_dir / (json_path.stem + ".xml")
     if not expected_xml.exists():
-        # Fall back: take any .xml in the out dir
-        candidates = list(out_dir.glob("*.xml"))
-        if not candidates:
-            return ScenarioResult(
-                scenario=scenario,
-                category=category,
-                ack_result=ack,
-                verdict="GATE FAILURE",
-                exit_code=code,
-                notes="Headless CLI exit 0 but no XML produced",
-            )
-        expected_xml = candidates[0]
+        return ScenarioResult(
+            scenario=scenario,
+            category=category,
+            ack_result=ack,
+            verdict="GATE FAILURE",
+            exit_code=code,
+            notes=f"Headless CLI exit 0 but expected XML not found: {expected_xml.name}",
+        )
 
     # Lint
     lint_pass, lint_fails = run_lint(expected_xml)
@@ -592,32 +597,43 @@ def main() -> int:
             print(f"No manifest entries matched: {sorted(scenario_filter)}", file=sys.stderr)
             return 2
 
+    # Persist generated XMLs under test/test_submission/regression/xml/.
+    # On an unfiltered full run we wipe the directory first so removed or
+    # renamed scenarios can't leave orphan XMLs behind. Per-scenario
+    # filtered runs preserve the others' XMLs.
+    XML_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    if not scenario_filter:
+        for stale in XML_OUTPUT_DIR.iterdir():
+            if stale.is_file():
+                try:
+                    stale.unlink()
+                except OSError:
+                    pass
+
     results: list[ScenarioResult] = []
-    with tempfile.TemporaryDirectory(prefix="golden_regression_") as tmp:
-        tmp_root = Path(tmp)
-        for i, entry in enumerate(entries, 1):
-            scenario = entry.get("scenario", f"<entry-{i}>")
-            print(f"[{i}/{len(entries)}] {scenario} … ", end="", flush=True)
-            try:
-                r = process(entry, tmp_root)
-            except subprocess.TimeoutExpired:
-                r = ScenarioResult(
-                    scenario=scenario,
-                    category=entry.get("category", "?"),
-                    ack_result=entry.get("ack_result", "?"),
-                    verdict="GATE FAILURE",
-                    notes="headless CLI timeout (>120s)",
-                )
-            except Exception as e:
-                r = ScenarioResult(
-                    scenario=scenario,
-                    category=entry.get("category", "?"),
-                    ack_result=entry.get("ack_result", "?"),
-                    verdict="GATE FAILURE",
-                    notes=f"unexpected error: {e}",
-                )
-            print(r.verdict)
-            results.append(r)
+    for i, entry in enumerate(entries, 1):
+        scenario = entry.get("scenario", f"<entry-{i}>")
+        print(f"[{i}/{len(entries)}] {scenario} … ", end="", flush=True)
+        try:
+            r = process(entry, XML_OUTPUT_DIR)
+        except subprocess.TimeoutExpired:
+            r = ScenarioResult(
+                scenario=scenario,
+                category=entry.get("category", "?"),
+                ack_result=entry.get("ack_result", "?"),
+                verdict="GATE FAILURE",
+                notes="headless CLI timeout (>120s)",
+            )
+        except Exception as e:
+            r = ScenarioResult(
+                scenario=scenario,
+                category=entry.get("category", "?"),
+                ack_result=entry.get("ack_result", "?"),
+                verdict="GATE FAILURE",
+                notes=f"unexpected error: {e}",
+            )
+        print(r.verdict)
+        results.append(r)
 
     write_report(results, git_rev())
     print(f"\nReport written: {RESULTS_FILE.relative_to(REPO_ROOT)}")
