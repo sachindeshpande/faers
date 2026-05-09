@@ -1,0 +1,76 @@
+name: Golden Regression
+
+# Pre-merge gate: every PR (and every push to main) must score 33/33
+# on test/test_submission/golden_regression_test.py. The script exits
+# non-zero when any JSON-backed scenario fails to match its golden
+# (within the documented volatile-field exclusion envelope), or when
+# a generated XML drops a 60-check lint finding.
+#
+# Invoked by:
+#   - GitHub Actions on pull_request and push events to `main`
+#   - Locally via:  python3 test/test_submission/golden_regression_test.py
+#
+# When this gate fails, read test/test_submission/golden_regression_results.md
+# for the per-scenario verdict + diff list. Per-scenario reruns:
+#   python3 test/test_submission/golden_regression_test.py --scenario <name>
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  golden-regression:
+    name: Run golden dataset regression (33 scenarios)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: 'faers-app/package-lock.json'
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Python dependencies
+        # lxml gives the regression diff better attribute-order preservation;
+        # the script falls back to xml.etree.ElementTree when lxml is absent.
+        run: pip install --upgrade pip lxml
+
+      - name: Install Electron + npm dependencies
+        # Use --no-audit --no-fund to keep CI logs tight. better-sqlite3
+        # rebuilds against Electron's Node here as part of postinstall;
+        # that's the same bindings the headless CLI loads at runtime.
+        working-directory: faers-app
+        run: npm ci --no-audit --no-fund
+
+      - name: Build headless CLI bundle
+        working-directory: faers-app
+        run: npm run build:headless
+
+      - name: Run golden regression suite
+        # ELECTRON_RUN_AS_NODE=1 lets Electron act as a plain Node binary
+        # — no display server needed. xvfb-run is therefore unnecessary.
+        # The script writes test/test_submission/golden_regression_results.md
+        # which is uploaded below regardless of pass/fail.
+        env:
+          IND_ENROLLMENT_CONFIRMED: 'true'
+        run: python3 test/test_submission/golden_regression_test.py
+
+      - name: Upload regression report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: golden-regression-results
+          path: test/test_submission/golden_regression_results.md
+          retention-days: 30

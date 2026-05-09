@@ -87,13 +87,19 @@ See [`2026-05-08_golden_regression_open_items.md`](./2026-05-08_golden_regressio
 
 Total estimated work: **~40 LOC + 2 data edits**.
 
-### 3.2 Run the regression test in CI (pre-merge)
+### 3.2 Run the regression test in CI (pre-merge) — ✅ DONE
 
-The regression test is now self-contained: `python3 test/test_submission/golden_regression_test.py` returns exit 0 only when every JSON-backed scenario passes. Adding it as a CI step prevents the silent generator drift that this session uncovered (e.g. P01 lint mismatch).
+The workflow at `.github/workflows/regression.yml` runs the golden regression on every `pull_request` and every `push` to `main`. Steps:
 
-Pre-requisite: the 4 open items in §3.1 must close first, otherwise CI is red on day one. Once they close, the script becomes a clean pre-merge gate.
+1. Checkout
+2. Set up Node 20 (with `npm` cache against `faers-app/package-lock.json`)
+3. Set up Python 3.11 + install lxml
+4. `npm ci` in `faers-app/` (postinstall rebuilds better-sqlite3 against Electron's Node)
+5. `npm run build:headless`
+6. `python3 test/test_submission/golden_regression_test.py` (with `IND_ENROLLMENT_CONFIRMED=true`)
+7. Upload `golden_regression_results.md` as an artifact regardless of pass/fail (30-day retention)
 
-**Effort:** ~10 lines of CI YAML once the dependencies are pinned (Electron + Python 3.13 + lxml).
+Pre-requisite (from this doc) — all 4 open items closed in commits `7e01aab` (Items 3+4), `9cf75f1` (Item 2 + JSON sync), and `4419b33` (Item 1, GAP-GOLDEN-001 closure: TC-A05 + TC-G01 goldens regenerated).
 
 ### 3.3 OPEN-01 v5 ACK round-trip — confirm `crossReportedInd` resolution
 
