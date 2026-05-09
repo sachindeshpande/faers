@@ -1,0 +1,98 @@
+{
+  "$schema": "faers-case-import-v1",
+  "exampleId": "IND-T06-babe-test-reference",
+  "description": "IND-Exempt BA/BE study (caseType='babe'). Two drugs forming the required Test + Reference pair per G.k.10a.r (spec §4.6); a third drug carries the concomitant NA label. Exercises the new BA/BE drug-pair enforcement in ValidationService.",
+  "baseline": "IND-T01",
+  "case": {
+    "safetyReportId": "SR-CASE-EXAMPLE-INDT06",
+    "worldwideCaseId": "SR-CASE-EXAMPLE-INDT06",
+    "reportType": "Study",
+    "initialOrFollowup": "Initial",
+    "receiptDate": "2026-03-15",
+    "receiveDate": "2026-03-15",
+    "expeditedReport": true,
+    "localReportTypeCode": 1,
+    "caseType": "babe",
+    "indReportType": "15_day",
+    "studyId": 2,
+    "subjectNumber": "B001",
+    "dateInformed": "2026-03-10",
+    "caseNarrative": "BA/BE study comparing Testdrug-Generic (test) against Testdrug-Reference (reference) in healthy volunteers. Subject developed nausea after administration of the test product. Concomitant acetaminophen taken for unrelated headache."
+  },
+  "indStudy": {
+    "indNumber": "123456",
+    "sponsorStudyNumber": "BA-BE-2026-001",
+    "studyName": "Bioequivalence Study of Testdrug vs Reference",
+    "studyRegistrationNumber": "NCT99999999",
+    "crossReferencedIndNumbers": ["654321"]
+  },
+  "patient": {
+    "initials": "V.H.",
+    "sex": "Male",
+    "birthDate": "1985-03-14",
+    "ageValue": 40,
+    "ageUnit": "Year",
+    "weightKg": 75,
+    "race": "C41260",
+    "ethnicity": "C41222",
+    "medicalHistoryText": "None reported",
+    "hasConcomitantTherapy": true,
+    "death": false
+  },
+  "sender": {
+    "senderType": "PharmaceuticalCompany",
+    "organization": "DeepQuence",
+    "department": "Drug Safety",
+    "givenName": "Sachin",
+    "familyName": "Deshpande",
+    "address": { "street": "123 Test St", "city": "Sunnyvale", "state": "CA", "postalCode": "94085", "country": "US" },
+    "contact": { "phone": "+1-408-555-0100", "email": "sachin@deepquence.com" }
+  },
+  "reporter": {
+    "qualification": "Physician",
+    "prefix": "Dr",
+    "givenName": "Jane",
+    "familyName": "Doe",
+    "organization": "City General Hospital",
+    "department": "Drug Safety",
+    "address": { "street": "100 Main St", "city": "Anytown", "state": "CA", "postalCode": "94085", "country": "US" },
+    "contact": { "phone": "+1-408-555-0100", "email": "jane.doe@example.com" }
+  },
+  "reactions": [
+    {
+      "term": "Nausea",
+      "meddraCode": "10028813",
+      "startDate": "2026-03-05",
+      "endDate": "2026-03-06",
+      "outcomeCode": 1,
+      "seriousness": { "otherMedicallyImportant": true }
+    }
+  ],
+  "drugs": [
+    {
+      "role": "Suspect", "productName": "Testdrug-Generic (sponsor test formulation)",
+      "dose": "100mg", "doseValue": 100, "doseUnit": "mg", "route": "Oral",
+      "indication": "Bioequivalence study volunteer", "indicationMeddraCode": "10039073",
+      "startDate": "2026-03-05", "endDate": "2026-03-05",
+      "actionTakenCode": 6, "dechallengeCode": 3, "rechallengeCode": 3,
+      "manufacturerName": "DeepQuence",
+      "indAuthorizationNumber": "IND123456",
+      "fdaAdditionalDrugInfo": "TEST"
+    },
+    {
+      "role": "Suspect", "productName": "Testdrug-Reference (comparator)",
+      "dose": "100mg", "doseValue": 100, "doseUnit": "mg", "route": "Oral",
+      "indication": "Bioequivalence study volunteer", "indicationMeddraCode": "10039073",
+      "actionTakenCode": 6, "dechallengeCode": 3, "rechallengeCode": 3,
+      "manufacturerName": "Reference Pharma",
+      "fdaAdditionalDrugInfo": "REFERENCE"
+    },
+    {
+      "role": "Concomitant", "productName": "Acetaminophen",
+      "dose": "500mg", "doseValue": 500, "doseUnit": "mg", "route": "Oral",
+      "indication": "Headache", "indicationMeddraCode": "10019211",
+      "actionTakenCode": 4, "dechallengeCode": 4, "rechallengeCode": 4,
+      "fdaAdditionalDrugInfo": "NA"
+    }
+  ]
+}

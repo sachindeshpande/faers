@@ -9,24 +9,58 @@ This directory contains the canonical reference corpus for validating the DeepQu
 ```
 golden/
 ├── README.md
-├── manifest.json                    ← machine-readable index (SHA256, core_id, ack_result per scenario)
+├── manifest.json                    ← machine-readable index (SHA256, core_id, ack_result, paths per scenario)
 ├── postmarket/
 │   ├── accepted/                    ← 26 scenarios · FDA ACK typeCode CA+AA
-│   │   ├── TC-A01-race-white.xml
-│   │   ├── TC-A01-race-white.ack
-│   │   └── ...
+│   │   ├── xml/                     ← submitted XMLs + ACK3 acknowledgements (always present)
+│   │   │   ├── TC-A01-race-white.xml
+│   │   │   ├── TC-A01-race-white.ack
+│   │   │   └── ...
+│   │   └── json/                    ← headless CLI inputs (24 of 26; see §Missing JSON note)
+│   │       ├── TC-A01-race-white.json
+│   │       └── ...
 │   └── rejected/                    ← 3 scenarios · FDA ACK typeCode CR+AR  (negative golden refs)
-│       ├── TC-A03-race-amerindian.xml
-│       ├── TC-A03-race-amerindian.ack
-│       └── ...
+│       ├── xml/
+│       │   ├── TC-A03-race-amerindian.xml
+│       │   ├── TC-A03-race-amerindian.ack
+│       │   └── ...
+│       └── json/                    ← 2 of 3 have JSON (TC-A06 missing)
+│           ├── TC-A03-race-amerindian.json
+│           └── ...
 └── ind/
     └── accepted/                    ← 7 scenarios · FDA ACK typeCode CA+AE
-        ├── IND-T01-susar-baseline.xml
-        ├── IND-T01-susar-baseline.ack
-        └── ...
+        ├── xml/
+        │   ├── IND-T01-susar-baseline.xml
+        │   ├── IND-T01-susar-baseline.ack
+        │   └── ...
+        └── json/                    ← all 7 IND scenarios have JSON inputs
+            ├── IND-T01-susar-baseline.json
+            └── ...
 ```
 
-Each scenario has exactly **one `.xml`** (the E2B(R3) ICSR batch) and **one `.ack`** (the FDA ESG NextGen ACK3 acknowledgement). The `.ack` filename is the canonical name; the original `core_id` is preserved in `manifest.json`.
+Each scenario has up to three files sharing the same stem, split across two subfolders:
+
+| Subfolder | Extension | Contents | Always present |
+|---|---|---|---|
+| `xml/` | `.xml` | E2B(R3) ICSR batch — the exact file submitted to FDA | Yes |
+| `xml/` | `.ack` | FDA ESG NextGen ACK3 acknowledgement | Yes |
+| `json/` | `.json` | Headless CLI input that generated the `.xml` | 33 of 36 (see below) |
+
+The `.xml` and `.ack` files live together in `xml/` because they are an inseparable submission-evidence pair — the ACK references the batch UUID inside the XML. The `.json` inputs are kept in `json/` for clean separation between the generator input layer and the FDA submission evidence layer.
+
+The `json_src` field in `manifest.json` records the original source path within `test_submission/examples/cases/` (relative to `test_submission/`). `golden_xml`, `golden_ack`, and `golden_json` give the in-dataset paths (relative to `golden/`).
+
+### Missing JSON Input Files (3 scenarios)
+
+Three scenarios were submitted without a tracked headless JSON — they were either generated via a different path or the JSON was not committed alongside the XML:
+
+| Scenario | Category | Reason |
+|---|---|---|
+| `TC-F02-comboproduct` | postmarket/accepted | XML generated via app GUI path; no headless JSON saved |
+| `TC-F04-ich-rpttype-2` | postmarket/accepted | XML generated via app GUI path; no headless JSON saved |
+| `TC-A06-ethnicity-ni` | postmarket/rejected | Negative-reference XML; rejection confirmed without a separate JSON |
+
+To regenerate the missing JSONs, inspect the corresponding `.xml` files and reverse-engineer the DeepQuence case import schema (`caseImportService.ts`), or reconstruct manually using the `TC-A05-ethnicity-hispanic.json` (for A06) and the `TC-F01-followup-v3.json` (for F02/F04) as the closest structural peers.
 
 ---
 
@@ -121,13 +155,17 @@ Fields:
 
 | Field | Description |
 |---|---|
-| `scenario` | Canonical stem name (matches the `.xml` / `.ack` filenames in this directory) |
-| `category` | Subdirectory path within `golden/` |
+| `scenario` | Canonical stem name (matches `.xml` / `.ack` / `.json` filenames) |
+| `category` | Category subdirectory within `golden/` (e.g. `postmarket/accepted`) |
 | `ack_result` | Expected FDA ACK outcome: `CA+AA`, `CA+AE`, or `CR+AR` |
 | `core_id` | ESG NextGen submission core ID — full `ci{timestamp}.{uuid}` format |
 | `sha256_xml` | SHA256 of the XML at the time of submission (matches `submission_log.json`) |
-| `xml_src` | Original source path relative to `test_submission/` |
+| `xml_src` | Original source path of the XML relative to `test_submission/` |
 | `ack_src` | ACK source path relative to `test_submission/acks/ACK3/` |
+| `json_src` | Original headless CLI input path relative to `test_submission/`; `null` if not available |
+| `golden_xml` | In-dataset path to the XML, relative to `golden/` (always `{category}/xml/{scenario}.xml`) |
+| `golden_ack` | In-dataset path to the ACK, relative to `golden/` (always `{category}/xml/{scenario}.ack`) |
+| `golden_json` | In-dataset path to the JSON, relative to `golden/` (`{category}/json/{scenario}.json` or `null`) |
 
 ---
 
@@ -142,8 +180,8 @@ manifest = json.load(open('golden/manifest.json'))
 for entry in manifest:
     if entry['ack_result'] != 'CA+AA':
         continue
-    golden_xml = pathlib.Path('golden') / entry['category'] / f"{entry['scenario']}.xml"
-    generated_xml = run_generator(entry['scenario'])   # your code here
+    golden_xml = pathlib.Path('golden') / entry['golden_xml']   # e.g. postmarket/accepted/xml/TC-A01-race-white.xml
+    generated_xml = run_generator(entry['scenario'])             # your code here
     # Compare field by field or SHA256 if generator is deterministic
     assert_xml_structurally_equivalent(golden_xml, generated_xml)
 ```
@@ -152,11 +190,40 @@ for entry in manifest:
 
 ```python
 for entry in manifest:
-    ack_file = pathlib.Path('golden') / entry['category'] / f"{entry['scenario']}.ack"
+    ack_file = pathlib.Path('golden') / entry['golden_ack']   # e.g. postmarket/accepted/xml/TC-A01-race-white.ack
     expected = entry['ack_result']
     # Parse the .ack XML and assert typeCode matches expected
     assert parse_ack_result(ack_file) == expected
 ```
+
+### Round-trip validation (JSON → XML → ACK)
+
+The `.json` files are the headless CLI inputs used to generate the corresponding `.xml`. You can use them to assert that the generator produces bit-equivalent output for known-accepted cases:
+
+```python
+import subprocess, pathlib, json
+
+manifest = json.load(open('golden/manifest.json'))
+for entry in manifest:
+    if entry['json_src'] is None:
+        continue   # no JSON available for this scenario
+    if entry['ack_result'] != 'CA+AA':
+        continue   # only validate positive cases end-to-end
+
+    json_path = pathlib.Path('test_submission') / entry['json_src']
+    golden_xml = pathlib.Path('golden') / entry['golden_xml']
+
+    # Generate XML from the input JSON using the headless CLI
+    result = subprocess.run(
+        ['npm', 'run', 'headless', '--', str(json_path)],
+        capture_output=True, text=True
+    )
+    generated_xml = find_generated_xml(result)   # your extraction logic here
+
+    assert_xml_structurally_equivalent(golden_xml, generated_xml)
+```
+
+For negative cases (CR+AR), run the generator against the `.json` and assert that the output contains the expected rejected field value — the assertion is that the generator *can* produce the value, and the ACK record confirms it was properly rejected.
 
 ### Linting before comparison
 
@@ -165,6 +232,9 @@ All golden XMLs pass the `faers_xml_lint.py` 60-check suite. Run the lint on any
 ```bash
 python test/test_submission/faers_xml_lint.py <generated.xml>
 # Must report: 0 FAIL before comparison is meaningful
+
+# Or lint against a golden XML directly:
+python test/test_submission/faers_xml_lint.py golden/postmarket/accepted/xml/TC-A01-race-white.xml
 ```
 
 ---

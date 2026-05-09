@@ -1,0 +1,69 @@
+{
+  "$schema": "faers-case-import-v1",
+  "exampleId": "TC-E01-weight-absent",
+  "description": "Test catalog TC-E01: patient weight absent (D.3 omitted). Omits weightKg entirely to test that the XML generator emits nullFlavor=NI or skips the D.3 element when weight is not provided.",
+  "baseline": "2L8T",
+  "case": {
+    "safetyReportId": "SR-CASE-EXAMPLE-TCE01",
+    "worldwideCaseId": "SR-CASE-EXAMPLE-TCE01",
+    "reportType": "Spontaneous",
+    "initialOrFollowup": "Initial",
+    "receiptDate": "2026-03-15",
+    "receiveDate": "2026-03-15",
+    "expeditedReport": true,
+    "localReportTypeCode": 1,
+    "caseNarrative": "Variant of 2L8T baseline. Patient weight (D.3) omitted for TC-E01."
+  },
+  "patient": {
+    "initials": "T.P.",
+    "sex": "Male",
+    "birthDate": "1975-06-15",
+    "ageValue": 50,
+    "ageUnit": "Year",
+    "race": "C41260",
+    "ethnicity": "C41222",
+    "medicalHistoryText": "None reported",
+    "hasConcomitantTherapy": true,
+    "death": false
+  },
+  "sender": {
+    "senderType": "PharmaceuticalCompany",
+    "organization": "DeepQuence",
+    "department": "Drug Safety",
+    "givenName": "Sachin",
+    "familyName": "Deshpande",
+    "address": { "street": "123 Test St", "city": "Sunnyvale", "state": "CA", "postalCode": "94085", "country": "US" },
+    "contact": { "phone": "+1-408-555-0100", "email": "sachin@deepquence.com" }
+  },
+  "reporter": {
+    "qualification": "Physician",
+    "prefix": "Dr",
+    "givenName": "Jane",
+    "familyName": "Doe",
+    "organization": "City General Hospital",
+    "department": "Drug Safety",
+    "address": { "street": "100 Main St", "city": "Anytown", "state": "CA", "postalCode": "94085", "country": "US" },
+    "contact": { "phone": "+1-408-555-0100", "email": "jane.doe@example.com" }
+  },
+  "reactions": [
+    { "term": "Nausea", "meddraCode": "10028813", "startDate": "2026-03-01", "endDate": "2026-03-10", "outcomeCode": 1, "seriousness": { "otherMedicallyImportant": true } },
+    { "term": "Hepatic enzyme increased", "meddraCode": "10019675", "startDate": "2026-03-05", "outcomeCode": 3, "seriousness": { "hospitalization": true } }
+  ],
+  "drugs": [
+    {
+      "role": "Suspect", "productName": "Testdrugimab",
+      "dose": "50mg", "doseValue": 50, "doseUnit": "mg", "route": "Subcutaneous",
+      "indication": "Rheumatoid arthritis", "indicationMeddraCode": "10039073",
+      "startDate": "2026-01-15", "endDate": "2026-03-10",
+      "actionTakenCode": 1, "dechallengeCode": 3, "rechallengeCode": 3,
+      "authorizationType": "NDA", "authorizationNumber": "NDA123456"
+    },
+    {
+      "role": "Concomitant", "productName": "Lisinopril",
+      "dose": "10mg", "doseValue": 10, "doseUnit": "mg", "route": "Oral",
+      "indication": "Hypertension", "indicationMeddraCode": "10020772",
+      "startDate": "2025-06-01",
+      "actionTakenCode": 4, "dechallengeCode": 4, "rechallengeCode": 4
+    }
+  ]
+}
