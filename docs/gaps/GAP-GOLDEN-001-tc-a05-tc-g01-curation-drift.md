@@ -24,7 +24,7 @@ The original gap analysis below is preserved as the diagnostic trail.
 - `test/golden/postmarket/accepted/xml/TC-A05-ethnicity-hispanic.xml`
 - `test/golden/postmarket/accepted/xml/TC-G01-nonserous.xml`
 **Impact:** 2 of 33 regression scenarios stay STRUCTURAL DIFF until the golden XMLs are refreshed. The campaign run reports 31/33 PASS rather than 33/33.
-**Source-of-truth report:** [`test/test_submission/golden_regression_results.md`](../../test/test_submission/golden_regression_results.md)
+**Source-of-truth report:** [`test/test_submission/regression/golden_regression_results.md`](../../test/test_submission/regression/golden_regression_results.md)
 
 ---
 

@@ -10,8 +10,9 @@ name: Golden Regression
 #   - GitHub Actions on pull_request and push events to `main`
 #   - Locally via:  python3 test/test_submission/golden_regression_test.py
 #
-# When this gate fails, read test/test_submission/golden_regression_results.md
-# for the per-scenario verdict + diff list. Per-scenario reruns:
+# When this gate fails, read
+# test/test_submission/regression/golden_regression_results.md for the
+# per-scenario verdict + diff list. Per-scenario reruns:
 #   python3 test/test_submission/golden_regression_test.py --scenario <name>
 
 on:
@@ -61,8 +62,10 @@ jobs:
       - name: Run golden regression suite
         # ELECTRON_RUN_AS_NODE=1 lets Electron act as a plain Node binary
         # — no display server needed. xvfb-run is therefore unnecessary.
-        # The script writes test/test_submission/golden_regression_results.md
-        # which is uploaded below regardless of pass/fail.
+        # The script writes test/test_submission/regression/
+        # golden_regression_results.md, uploaded below regardless of
+        # pass/fail. The script also wipes any stale .md in that
+        # directory before writing, so the artifact is always current.
         env:
           IND_ENROLLMENT_CONFIRMED: 'true'
         run: python3 test/test_submission/golden_regression_test.py
@@ -72,5 +75,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: golden-regression-results
-          path: test/test_submission/golden_regression_results.md
+          path: test/test_submission/regression/golden_regression_results.md
           retention-days: 30

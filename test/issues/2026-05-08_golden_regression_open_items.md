@@ -2,7 +2,7 @@
 
 **Run date:** 2026-05-08
 **Generator version:** `2f4e947`
-**Source run:** [`test/test_submission/golden_regression_results.md`](../test_submission/golden_regression_results.md)
+**Source run:** [`test/test_submission/regression/golden_regression_results.md`](../test_submission/golden_regression_results.md)
 **Driver:** [`test/test_submission/golden_regression_test.py`](../test_submission/golden_regression_test.py)
 **Prompt:** [`docs/prompts/golden_regression_test.md`](../../docs/prompts/golden_regression_test.md)
 

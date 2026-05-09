@@ -10,7 +10,7 @@
 - [`docs/prompts/fix_golden_data_items_1_2.md`](../prompts/fix_golden_data_items_1_2.md)
 - [`docs/prompts/fix_golden_code_items_3_4.md`](../prompts/fix_golden_code_items_3_4.md)
 **Issue tracker:** [`test/issues/2026-05-08_golden_regression_open_items.md`](../../test/issues/2026-05-08_golden_regression_open_items.md)
-**Last regression run:** [`test/test_submission/golden_regression_results.md`](../../test/test_submission/golden_regression_results.md)
+**Last regression run:** [`test/test_submission/regression/golden_regression_results.md`](../../test/test_submission/regression/golden_regression_results.md)
 
 ---
 

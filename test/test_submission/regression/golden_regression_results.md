@@ -1,6 +1,6 @@
 # Golden Regression Test Results
-Run date: 2026-05-09T03:51:15+00:00
-Generator version: 6e7b588
+Run date: 2026-05-09T04:09:45+00:00
+Generator version: 907d489
 Backend: lxml
 
 ## Summary

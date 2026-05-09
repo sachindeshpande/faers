@@ -100,7 +100,7 @@ python ../test/test_submission/golden_regression_test.py
 
 ### Step 4 — Produce a results report
 
-After all 33 scenarios are processed, write `test/test_submission/golden_regression_results.md` with this structure:
+After all 33 scenarios are processed, write `test/test_submission/regression/golden_regression_results.md` with this structure:
 
 ```
 # Golden Regression Test Results

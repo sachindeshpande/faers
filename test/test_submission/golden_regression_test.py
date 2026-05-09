@@ -23,7 +23,9 @@ Excluded fields (per docs/prompts/golden_regression_test.md):
   - investigationEvent IVL_TS low (receipt date)
   - safetyReportId / worldwideCaseId on investigationEvent
 
-Output: `test/test_submission/golden_regression_results.md`
+Output: `test/test_submission/regression/golden_regression_results.md`
+        (the directory is created if missing; any other `*.md` in the
+        directory is removed each run so stale reports can't accumulate)
 Run from repo root or `faers-app/`. Path resolution is independent of cwd.
 """
 
@@ -56,7 +58,8 @@ GOLDEN_DIR = REPO_ROOT / "test" / "golden"
 MANIFEST = GOLDEN_DIR / "manifest.json"
 APP_DIR = REPO_ROOT / "faers-app"
 LINT_SCRIPT = REPO_ROOT / "test" / "test_submission" / "faers_xml_lint.py"
-RESULTS_FILE = REPO_ROOT / "test" / "test_submission" / "golden_regression_results.md"
+RESULTS_DIR = REPO_ROOT / "test" / "test_submission" / "regression"
+RESULTS_FILE = RESULTS_DIR / "golden_regression_results.md"
 
 NS = "{urn:hl7-org:v3}"
 XSI = "{http://www.w3.org/2001/XMLSchema-instance}"
@@ -536,7 +539,15 @@ def write_report(results: list[ScenarioResult], git_rev: str) -> None:
         for s in passes:
             out.append(f"- {s}")
 
-    RESULTS_FILE.parent.mkdir(parents=True, exist_ok=True)
+    # Wipe any stale .md reports in the regression results directory before
+    # writing the new one so old runs can't masquerade as current state.
+    RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+    for stale in RESULTS_DIR.glob("*.md"):
+        if stale != RESULTS_FILE:
+            try:
+                stale.unlink()
+            except OSError:
+                pass
     RESULTS_FILE.write_text("\n".join(out) + "\n", encoding="utf-8")
 
 
