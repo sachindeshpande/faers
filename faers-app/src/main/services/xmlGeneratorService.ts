@@ -558,11 +558,15 @@ export class XMLGeneratorService {
     lines.push('            </observationEvent>');
     lines.push('          </component>');
 
-    // Combination Product Report Indicator (C156384) — v37 parity
+    // Combination Product Report Indicator (C156384) — v37 parity for the
+    // default case. GAP-PROD-001 / TC-F02 lets the JSON opt the case in via
+    // `case.combinationProduct: true`; the field defaults to `undefined`/false
+    // so all 33 prior scenarios (which never set it) still emit `value="false"`.
+    const comboProd = caseData.combinationProduct === true;
     lines.push('          <component typeCode="COMP">');
     lines.push('            <observationEvent classCode="OBS" moodCode="EVN">');
     lines.push('              <code code="C156384" codeSystem="2.16.840.1.113883.3.26.1.1" displayName="Combination Product Report Indicator"/>');
-    lines.push('              <value xsi:type="BL" value="false"/>');
+    lines.push(`              <value xsi:type="BL" value="${comboProd}"/>`);
     lines.push('            </observationEvent>');
     lines.push('          </component>');
 

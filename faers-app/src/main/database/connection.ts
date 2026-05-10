@@ -2116,6 +2116,40 @@ function runMigrations(database: DatabaseInstance): void {
     ).run('025_ind_safety_report_fields');
     console.log('Migration 025 applied successfully.');
   }
+
+  // ─── Migration 026: studyReport flag for postmarket "Report from study" ───
+  // GAP-PROD-002 / TC-F04. Empirical evidence: TC-F04 v1 CR+AR ci260501170904
+  // (no C.5.4 emitted) → v2 CA+AA ci260501225657 (researchStudy block added).
+  // Generator already branches on caseData.studyReport === true; this migration
+  // adds the column the importer writes to.
+  const migration026Exists = database.prepare(
+    'SELECT 1 FROM migrations WHERE name = ?'
+  ).get('026_study_report');
+  if (!migration026Exists) {
+    const cols026 = database.prepare("PRAGMA table_info(cases)").all() as Array<{ name: string }>;
+    if (!cols026.map(c => c.name).includes('study_report')) {
+      database.exec('ALTER TABLE cases ADD COLUMN study_report INTEGER DEFAULT 0');
+    }
+    database.prepare('INSERT INTO migrations (name) VALUES (?)').run('026_study_report');
+    console.log('Migration 026 applied successfully.');
+  }
+
+  // ─── Migration 027: combinationProduct flag (C156384 indicator) ──────────
+  // GAP-PROD-001 / TC-F02. Empirical evidence: TC-F02 golden CA+AA
+  // ci260501170846. The C156384 "Combination Product Report Indicator" was
+  // hard-coded to value="false" before this change; the column drives the
+  // BL value emitted by the generator.
+  const migration027Exists = database.prepare(
+    'SELECT 1 FROM migrations WHERE name = ?'
+  ).get('027_combination_product');
+  if (!migration027Exists) {
+    const cols027 = database.prepare("PRAGMA table_info(cases)").all() as Array<{ name: string }>;
+    if (!cols027.map(c => c.name).includes('combination_product')) {
+      database.exec('ALTER TABLE cases ADD COLUMN combination_product INTEGER DEFAULT 0');
+    }
+    database.prepare('INSERT INTO migrations (name) VALUES (?)').run('027_combination_product');
+    console.log('Migration 027 applied successfully.');
+  }
 }
 
 /**

@@ -3,13 +3,13 @@
                    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                    ITSVersion="XML_1.0"
                    xsi:schemaLocation="urn:hl7-org:v3 MCCI_IN200100UV01.xsd">
-  <id root="2.16.840.1.113883.3.989.2.1.3.22" extension="DeepQuenceTest-20260510-53dd9da6-d1ac-4e65-ae7a-1793ba42e934"/>
+  <id root="2.16.840.1.113883.3.989.2.1.3.22" extension="DeepQuenceTest-20260510-8b685ced-9f77-4be2-889b-bb90672546ad"/>
   <creationTime value="20260315070000-0700"/>
   <responseModeCode code="D"/>
   <interactionId root="2.16.840.1.113883.1.6" extension="MCCI_IN200100UV01"/>
   <name code="1" displayName="ichicsr" codeSystem="2.16.840.1.113883.3.989.2.1.1.1"/>
   <PORR_IN049016UV>
-    <id root="2.16.840.1.113883.3.989.2.1.3.1" extension="cbe4b390-3d69-4d38-99a8-dcb8a1bf97ca"/>
+    <id root="2.16.840.1.113883.3.989.2.1.3.1" extension="51369d39-20e1-4f86-95dd-ac2add42b350"/>
     <creationTime value="20260315070000-0700"/>
     <interactionId root="2.16.840.1.113883.1.6" extension="PORR_IN049016UV"/>
     <processingCode code="P"/>
@@ -32,8 +32,8 @@
       <effectiveTime value="20260315070000-0700"/>
       <subject typeCode="SUBJ">
         <investigationEvent classCode="INVSTG" moodCode="EVN">
-          <id root="2.16.840.1.113883.3.989.2.1.3.1" extension="SR-CASE-EXAMPLE-TCD02"/>
-          <id root="2.16.840.1.113883.3.989.2.1.3.2" extension="CASE-20260510-YYRF"/>
+          <id root="2.16.840.1.113883.3.989.2.1.3.1" extension="SR-CASE-EXAMPLE-TCF04"/>
+          <id root="2.16.840.1.113883.3.989.2.1.3.2" extension="CASE-20260510-TPIB"/>
           <id root="2.16.840.1.113883.3.989.2.1.3.4" extension="2"/>
           <code code="PAT_ADV_EVNT" codeSystem="2.16.840.1.113883.5.4"/>
           <text>Case Narrative Including Clinical Course, Therapeutic Measures, Outcome and Additional Relevant Information</text>
@@ -49,12 +49,17 @@
                   <player1 classCode="PSN" determinerCode="INSTANCE">
                     <name>T.P.</name>
                     <administrativeGenderCode code="1" displayName="Male" codeSystem="1.0.5218"/>
-                    <birthTime value="19750615"/>
+                    <birthTime value="19700515"/>
                   </player1>
+                  <subjectOf1 typeCode="SBJ">
+                    <researchStudy classCode="CLNTRL" moodCode="EVN">
+                      <code code="1" displayName="Clinical trials" codeSystem="2.16.840.1.113883.3.989.2.1.1.8" codeSystemVersion="1.0"/>
+                    </researchStudy>
+                  </subjectOf1>
                   <subjectOf2 typeCode="SBJ">
                     <observation classCode="OBS" moodCode="EVN">
                       <code code="C25150" codeSystem="2.16.840.1.113883.3.26.1.1" displayName="Age"/>
-                      <value xsi:type="PQ" value="50" unit="a"/>
+                      <value xsi:type="PQ" value="55" unit="a"/>
                     </observation>
                   </subjectOf2>
                   <subjectOf2 typeCode="SBJ">
@@ -100,7 +105,7 @@
                   </subjectOf2>
                   <subjectOf2 typeCode="SBJ">
                     <observation classCode="OBS" moodCode="EVN">
-                      <id root="2a3d5df4-8e73-4230-9f35-faead86d70b1"/>
+                      <id root="56f2ece1-ff6a-43a5-baf9-d660f393918b"/>
                       <code code="29" codeSystem="2.16.840.1.113883.3.989.2.1.1.19" displayName="reaction"/>
                       <effectiveTime xsi:type="IVL_TS">
                         <low value="20260301"/>
@@ -171,7 +176,7 @@
                   </subjectOf2>
                   <subjectOf2 typeCode="SBJ">
                     <observation classCode="OBS" moodCode="EVN">
-                      <id root="effa736f-ba14-4528-9df7-70c9fe6764ee"/>
+                      <id root="e6129aee-9f70-4fb0-81ed-a08aa5c529fb"/>
                       <code code="29" codeSystem="2.16.840.1.113883.3.989.2.1.1.19" displayName="reaction"/>
                       <effectiveTime xsi:type="IVL_TS">
                         <low value="20260305"/>
@@ -264,7 +269,7 @@
                     <outboundRelationship2 typeCode="COMP">
                       <observation classCode="OBS" moodCode="EVN">
                         <code code="C41341" codeSystem="2.16.840.1.113883.3.26.1.1" displayName="Action Taken"/>
-                        <value xsi:type="CE" code="3" codeSystem="2.16.840.1.113883.3.989.2.1.1.15"/>
+                        <value xsi:type="CE" code="1" codeSystem="2.16.840.1.113883.3.989.2.1.1.15"/>
                       </observation>
                     </outboundRelationship2>
                     <outboundRelationship2 typeCode="COMP">
@@ -335,7 +340,7 @@
               <component typeCode="COMP">
                 <causalityAssessment classCode="OBS" moodCode="EVN">
                   <code code="C53253" codeSystem="2.16.840.1.113883.3.26.1.1" displayName="Case Narrative"/>
-                  <value xsi:type="ED">Variant of 2L8T baseline. Suspect-drug ActionTaken changed to Dose Increased (code=3) for TC-D02.</value>
+                  <value xsi:type="ED">Variant of 2L8T baseline. case.studyReport=true emits C.1.3=2 (Report from study) + the minimal C.5.4 researchStudy block for TC-F04.</value>
                 </causalityAssessment>
               </component>
             </adverseEventAssessment>
@@ -420,7 +425,7 @@
           <subjectOf2 typeCode="SUBJ">
             <investigationCharacteristic classCode="OBS" moodCode="EVN">
               <code code="1" codeSystem="2.16.840.1.113883.3.989.2.1.1.23" displayName="ICH ReportType"/>
-              <value xsi:type="CE" code="1" displayName="Spontaneous report" codeSystem="2.16.840.1.113883.3.989.2.1.1.2"/>
+              <value xsi:type="CE" code="2" displayName="Report from study" codeSystem="2.16.840.1.113883.3.989.2.1.1.2"/>
             </investigationCharacteristic>
           </subjectOf2>
           <subjectOf2 typeCode="SUBJ">

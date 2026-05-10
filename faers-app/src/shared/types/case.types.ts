@@ -445,6 +445,12 @@ export interface Case {
   receiptDate?: string;
   receiveDate?: string;
   additionalDocs?: boolean;
+  /**
+   * Combination Product Report Indicator (C156384). When true the generator
+   * emits BL `value="true"` on the C156384 observation; default false.
+   * Empirical evidence: TC-F02 golden CA+AA (ci260501170846, GAP-PROD-001).
+   */
+  combinationProduct?: boolean;
   expeditedReport?: boolean;
   /** When true, sets C.1.3 = 2 (Report from study) and emits a minimal
    *  researchStudy block with C.5.4 = "Clinical trials" (code 1).

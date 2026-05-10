@@ -212,7 +212,9 @@ export class CaseRepository {
       receiptDate: 'receipt_date',
       receiveDate: 'receive_date',
       additionalDocs: 'additional_docs',
+      combinationProduct: 'combination_product',
       expeditedReport: 'expedited_report',
+      studyReport: 'study_report',
       overallNonSerious: 'overall_non_serious',
       worldwideCaseId: 'worldwide_case_id',
       nullificationType: 'nullification_type',
@@ -509,7 +511,15 @@ export class CaseRepository {
       receiptDate: row.receipt_date as string | undefined,
       receiveDate: row.receive_date as string | undefined,
       additionalDocs: row.additional_docs === 1,
+      // `=== 1 || undefined` for combinationProduct so a NULL/false column
+      // doesn't force a literal `false` onto every postmarket case — the
+      // generator's `=== true` check then naturally falls through to
+      // `value="false"` when this is undefined.
+      combinationProduct: row.combination_product === 1 || undefined,
       expeditedReport: row.expedited_report === 1,
+      // `=== 1 || undefined` so a NULL/false column doesn't force `false` onto
+      // every postmarket case — keeps studyReport optional/absent unless set.
+      studyReport: row.study_report === 1 || undefined,
       overallNonSerious: row.overall_non_serious === 1,
       worldwideCaseId: row.worldwide_case_id as string | undefined,
       nullificationType: row.nullification_type as number | undefined,

@@ -264,13 +264,13 @@
     "category": "postmarket/accepted",
     "ack_result": "CA+AA",
     "core_id": "ci260501170846.4693050d5f174bcdbd25c26f7f872c54",
-    "sha256_xml": "b4fe24774df06c1876a304ed877e628a7042561e00c320b6f0a30217f96b90e4",
+    "sha256_xml": "027fc3dfb0b9b0b72f41da5a28fe37cd37a8f2a093a5bac1dbd49fa9241548f3",
     "xml_src": "from_app/round2/TC-F02-comboproduct.xml",
     "ack_src": "May1/Batch1/ci260501170846.4693050d5f174bcdbd25c26f7f872c54.ack",
     "json_src": null,
     "golden_xml": "postmarket/accepted/xml/TC-F02-comboproduct.xml",
     "golden_ack": "postmarket/accepted/xml/TC-F02-comboproduct.ack",
-    "golden_json": null
+    "golden_json": "postmarket/accepted/json/TC-F02-comboproduct.json"
   },
   {
     "scenario": "TC-F03-nonexpedited",
@@ -290,13 +290,13 @@
     "category": "postmarket/accepted",
     "ack_result": "CA+AA",
     "core_id": "ci260501225657.bdd26c9a43f64f808dacb7718a202198",
-    "sha256_xml": "00b688110371ccec267d15e8bf3d8fe38b6becd78ab9a93352039760dd817d27",
+    "sha256_xml": "aece3e37e56760c06eeca2394b28cd4361112044d5de75424d705b92fcbed54d",
     "xml_src": "from_app/round2/TC-F04-ich-rpttype-2.xml",
     "ack_src": "May1/Batch2/ci260501225657.bdd26c9a43f64f808dacb7718a202198.ack",
     "json_src": null,
     "golden_xml": "postmarket/accepted/xml/TC-F04-ich-rpttype-2.xml",
     "golden_ack": "postmarket/accepted/xml/TC-F04-ich-rpttype-2.ack",
-    "golden_json": null
+    "golden_json": "postmarket/accepted/json/TC-F04-ich-rpttype-2.json"
   },
   {
     "scenario": "TC-G01-nonserous",

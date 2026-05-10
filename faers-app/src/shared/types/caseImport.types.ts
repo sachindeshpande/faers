@@ -57,6 +57,19 @@ export const CaseImportCaseSchema = z
      * TC-G01 golden CA+AA (ci260501225706) is the empirical evidence.
      */
     overallNonSerious: z.boolean().optional(),
+    /**
+     * Postmarket "Report from study" (C.1.3 = 2). When true, the generator
+     * emits ICH ReportType code=2 and the minimal C.5.4 researchStudy block.
+     * CDER 2.18 requires C.5.4 when C.1.3=2 — confirmed CR+AR without it
+     * (TC-F04 v1 ci260501170904) and CA+AA with it (TC-F04 v2 ci260501225657).
+     */
+    studyReport: z.boolean().optional(),
+    /**
+     * Combination Product Report Indicator (C156384). When true, the generator
+     * emits BL `value="true"` on the C156384 observation; default false.
+     * TC-F02 golden CA+AA (ci260501170846) is the empirical evidence.
+     */
+    combinationProduct: z.boolean().optional(),
     localReportTypeCode: enumish.optional(),    // 1 (15-Day) | 7 (7-Day)
     additionalDocs: z.boolean().optional(),
     caseNarrative: z.string().optional(),

@@ -211,6 +211,13 @@ function buildUpdateDto(doc: CaseImportDocument, warnings: string[]): UpdateCase
     // overallNonSerious — opt-in flag that suppresses the B.2.i.7 validator
     // for legitimate non-serious cases (TC-G01 golden CA+AA, ci260501225706).
     if (doc.case.overallNonSerious !== undefined) update.overallNonSerious = doc.case.overallNonSerious;
+    // studyReport — postmarket "Report from study" (C.1.3=2). Drives ICH
+    // ReportType code 2 + the minimal C.5.4 researchStudy block. Required
+    // for TC-F04 (GAP-PROD-002).
+    if (doc.case.studyReport !== undefined) update.studyReport = doc.case.studyReport;
+    // combinationProduct — Combination Product Report Indicator (C156384).
+    // Drives BL value="true" emission. Required for TC-F02 (GAP-PROD-001).
+    if (doc.case.combinationProduct !== undefined) update.combinationProduct = doc.case.combinationProduct;
     if (doc.case.additionalDocs !== undefined) update.additionalDocs = doc.case.additionalDocs;
     if (doc.case.worldwideCaseId) update.worldwideCaseId = doc.case.worldwideCaseId;
     if (doc.case.caseNarrative) update.caseNarrative = doc.case.caseNarrative;

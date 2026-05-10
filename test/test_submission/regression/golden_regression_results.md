@@ -1,22 +1,20 @@
 # Golden Regression Test Results
-Run date: 2026-05-09T04:19:22+00:00
-Generator version: 3fac393
+Run date: 2026-05-10T03:17:44+00:00
+Generator version: 5ebac22
 Backend: lxml
 
 ## Summary
 | Result | Count |
 |---|---|
-| PASS | 33 |
+| PASS | 35 |
 | GATE FAILURE | 0 |
 | LINT FAILURE | 0 |
 | STRUCTURAL DIFF | 0 |
-| SKIPPED | 3 |
+| SKIPPED | 1 |
 | **Total scenarios** | **36** |
 
 ## Skipped Scenarios
 - TC-A06-ethnicity-ni — No JSON input registered in manifest
-- TC-F02-comboproduct — No JSON input registered in manifest
-- TC-F04-ich-rpttype-2 — No JSON input registered in manifest
 
 ## Full Pass List
 - IND-T01-susar-baseline
@@ -45,7 +43,9 @@ Backend: lxml
 - TC-E02-age-nullflavor
 - TC-E03-patient-female
 - TC-F01-followup-v3
+- TC-F02-comboproduct
 - TC-F03-nonexpedited
+- TC-F04-ich-rpttype-2
 - TC-G01-nonserous
 - TC-G02-outcome-recovering
 - TC-G03-outcome-sequelae

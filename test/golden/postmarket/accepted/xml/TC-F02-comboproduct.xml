@@ -3,13 +3,13 @@
                    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                    ITSVersion="XML_1.0"
                    xsi:schemaLocation="urn:hl7-org:v3 MCCI_IN200100UV01.xsd">
-  <id root="2.16.840.1.113883.3.989.2.1.3.22" extension="DeepQuenceTest-20260429-53e31d3c-b1ca-4aae-b8ad-8b05a18754c3"/>
+  <id root="2.16.840.1.113883.3.989.2.1.3.22" extension="DeepQuenceTest-20260510-770cfe66-99b8-43c6-b2f5-4842db72dbc6"/>
   <creationTime value="20260315070000-0700"/>
   <responseModeCode code="D"/>
   <interactionId root="2.16.840.1.113883.1.6" extension="MCCI_IN200100UV01"/>
   <name code="1" displayName="ichicsr" codeSystem="2.16.840.1.113883.3.989.2.1.1.1"/>
   <PORR_IN049016UV>
-    <id root="2.16.840.1.113883.3.989.2.1.3.1" extension="dc49cf34-edac-461d-b64b-467f982b68f4"/>
+    <id root="2.16.840.1.113883.3.989.2.1.3.1" extension="0c990a9a-8364-4631-a7d5-ca5a73103a99"/>
     <creationTime value="20260315070000-0700"/>
     <interactionId root="2.16.840.1.113883.1.6" extension="PORR_IN049016UV"/>
     <processingCode code="P"/>
@@ -33,7 +33,7 @@
       <subject typeCode="SUBJ">
         <investigationEvent classCode="INVSTG" moodCode="EVN">
           <id root="2.16.840.1.113883.3.989.2.1.3.1" extension="SR-CASE-EXAMPLE-TCF02"/>
-          <id root="2.16.840.1.113883.3.989.2.1.3.2" extension="CASE-20260429-NTJY"/>
+          <id root="2.16.840.1.113883.3.989.2.1.3.2" extension="CASE-20260510-KQM6"/>
           <id root="2.16.840.1.113883.3.989.2.1.3.4" extension="2"/>
           <code code="PAT_ADV_EVNT" codeSystem="2.16.840.1.113883.5.4"/>
           <text>Case Narrative Including Clinical Course, Therapeutic Measures, Outcome and Additional Relevant Information</text>
@@ -100,7 +100,7 @@
                   </subjectOf2>
                   <subjectOf2 typeCode="SBJ">
                     <observation classCode="OBS" moodCode="EVN">
-                      <id root="42f7af19-1e4f-4b0d-82a3-4bb8ff3c421d"/>
+                      <id root="51bebdd6-6800-4663-8ff4-fb357aef4d37"/>
                       <code code="29" codeSystem="2.16.840.1.113883.3.989.2.1.1.19" displayName="reaction"/>
                       <effectiveTime xsi:type="IVL_TS">
                         <low value="20260301"/>
@@ -171,7 +171,7 @@
                   </subjectOf2>
                   <subjectOf2 typeCode="SBJ">
                     <observation classCode="OBS" moodCode="EVN">
-                      <id root="927cd4f7-d99e-4b56-b046-4e7ad764795b"/>
+                      <id root="3296b5f3-3386-421a-a71d-1ce9a201d773"/>
                       <code code="29" codeSystem="2.16.840.1.113883.3.989.2.1.1.19" displayName="reaction"/>
                       <effectiveTime xsi:type="IVL_TS">
                         <low value="20260305"/>
@@ -335,7 +335,7 @@
               <component typeCode="COMP">
                 <causalityAssessment classCode="OBS" moodCode="EVN">
                   <code code="C53253" codeSystem="2.16.840.1.113883.3.26.1.1" displayName="Case Narrative"/>
-                  <value xsi:type="ED">Patient experienced an adverse event approximately 60 days after initiation of Testdrugimab therapy for rheumatoid arthritis. Nausea resolved within 48 hours. No hospitalization required. Concomitant therapy with lisinopril continued without modification.</value>
+                  <value xsi:type="ED">Variant of 2L8T baseline. case.combinationProduct=true emits C156384 BL value=&quot;true&quot; (Combination Product Report Indicator) for TC-F02.</value>
                 </causalityAssessment>
               </component>
             </adverseEventAssessment>
