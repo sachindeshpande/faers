@@ -23,7 +23,7 @@ on:
 
 jobs:
   golden-regression:
-    name: Run golden dataset regression (33 scenarios)
+    name: Run golden dataset regression (35 scenarios)
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
