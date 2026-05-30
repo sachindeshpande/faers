@@ -228,7 +228,12 @@ def run(xml_path):
 
     # ── 8. Reaction observations ─────────────────────────────────────────────
     print("\n[ SECTION 8: Reaction observations ]")
-    reactions = [o for o in root.iter(Q("observation")) if ga(qn(o,"code"),"code")=="29"]
+    # Only adverse event reactions: code=29 observations that are direct children of
+    # subjectOf2 under primaryRole — not D.8.r past-drug-reaction obs (in outboundRelationship2/CAUS)
+    reactions = [o for o in root.iter(Q("observation"))
+                 if ga(qn(o,"code"),"code")=="29"
+                 and ga(qn(o,"code"),"codeSystem")=="2.16.840.1.113883.3.989.2.1.1.19"
+                 and qn(o,"effectiveTime") is not None]
     chk("At least one reaction (code=29)", len(reactions)>0, f"found {len(reactions)}")
     for i, rxn in enumerate(reactions, 1):
         rc    = [c.tag.replace(f"{{{NS}}}","") for c in rxn]
@@ -639,6 +644,962 @@ def run(xml_path):
              "2.16.840.1.113883.3.989.2.1.3.4")
     else:
         chk("C.5.5a / drug IND cross-consistency: no C.5.5a present, skip", True)
+
+    # ── 20. C.5.6.r mandatory when C.5.5a is populated (R0026) ──────────────
+    print("\n[ SECTION 20: C.5.6.r — cross-reported IND (Business Rule R0026) ]")
+    # Business Rules v1.7 R0026: "If C.5.5a is populated, C.5.6.r is required.
+    # Use nullFlavor=NA if there are no other cross-reported INDs."
+    # C.5.6.r XPath OID: 2.16.840.1.113883.3.989.5.1.2.2.1.2.3  (DISTINCT from C.5.5a OID .2.1)
+    # Evidence: v5–v8 all CR+AR for missing/wrong-OID C.5.6.r; golden IND-T03 uses .2.3
+    C56R_OID = "2.16.840.1.113883.3.989.5.1.2.2.1.2.3"
+    if is_cder_ind:
+        c56r_entries = []
+        for el in root.iter(Q("id")):
+            if ga(el, "root") == C56R_OID:
+                val = ga(el, "extension") or ga(el, "nullFlavor") or "(empty)"
+                c56r_entries.append(val)
+
+        if c55a_vals:
+            # C.5.5a is present → C.5.6.r is mandatory
+            if not c56r_entries:
+                chk(
+                    "R0026: C.5.6.r is mandatory when C.5.5a is populated but no "
+                    f"studyRegistration with OID {C56R_OID} found. "
+                    "Add authorization/studyRegistration with that OID, or use nullFlavor='NA' "
+                    "if no cross-reported INDs exist.",
+                    False
+                )
+            else:
+                chk(
+                    f"R0026: C.5.6.r present — {len(c56r_entries)} entry/entries: {c56r_entries}",
+                    True
+                )
+        else:
+            # No C.5.5a → R0026 not triggered
+            chk("R0026: C.5.5a absent — C.5.6.r not required", True)
+    else:
+        # R0109: C.5.6.r must NOT be present for postmarket
+        c56r_present = any(ga(el, "root") == C56R_OID for el in root.iter(Q("id")))
+        chk(
+            "R0109: Non-CDER_IND submission — C.5.6.r must be absent",
+            not c56r_present
+        )
+
+    # ── 21. XSD schema validation (best-effort via lxml) ────────────────────
+    print("\n[ SECTION 21: XSD schema validation (best-effort) ]")
+    # Why best-effort: the FDA schema set downloaded to faers/docs/schema/ is
+    # incomplete — PORR_IN049016UV.xsd, PORR_MT049016UV.xsd, and
+    # MCCI_IN200101UV01.xsd were returned as HTML redirect pages by fda.gov and
+    # cannot be parsed as XSD.  The MCCI_IN200100UV01.xsd entry point is valid
+    # but its include chain cannot resolve, so XMLSchemaParseError is expected.
+    # When the full schema IS loadable, this section catches child-ordering
+    # violations (like the D.10 bug: role outside player1) that ET.parse()
+    # accepts silently because they are schema errors, not well-formedness errors.
+    _XSD_ROOT = Path(xml_path).parent.parent.parent / "faers/docs/schema/multicacheschemas/MCCI_IN200100UV01.xsd"
+    # Also try relative to the script's own directory tree
+    _XSD_CANDIDATES = [
+        _XSD_ROOT,
+        Path(__file__).parent.parent / "faers/docs/schema/multicacheschemas/MCCI_IN200100UV01.xsd",
+        Path("/sessions/tender-vigilant-gates/mnt/faers/docs/schema/multicacheschemas/MCCI_IN200100UV01.xsd"),
+    ]
+    _xsd_file = next((p for p in _XSD_CANDIDATES if p.exists()), None)
+    try:
+        from lxml import etree as _lxml_etree
+        if _xsd_file is None:
+            warn("XSD schema file not found — full schema validation skipped",
+                 "expected MCCI_IN200100UV01.xsd; run from test_submission directory")
+        else:
+            try:
+                _xsd_doc = _lxml_etree.parse(str(_xsd_file))
+                _schema  = _lxml_etree.XMLSchema(_xsd_doc)
+                _lxml_tree = _lxml_etree.parse(xml_path)
+                _xsd_valid = _schema.validate(_lxml_tree)
+                _xsd_errors = list(_schema.error_log)
+                _top3 = "; ".join(f"L{e.line}:{e.message[:80]}" for e in _xsd_errors[:3])
+                chk(f"XSD schema-valid (0 errors)", _xsd_valid, _top3 or "")
+            except _lxml_etree.XMLSchemaParseError as xpe:
+                # Expected when the include chain has HTML redirect files
+                warn("XSD schema load failed — include chain incomplete (some .xsd files "
+                     "are FDA HTML redirects); targeted structural checks in Sec 22 compensate",
+                     str(xpe)[:160])
+    except ImportError:
+        warn("lxml not installed — XSD validation skipped", "pip install lxml")
+
+    # ── 22. D.10 structural placement — role[@classCode='PRS'] inside player1 ─
+    print("\n[ SECTION 22: D.10 parent/mother — role[@classCode='PRS'] placement ]")
+    # ROOT CAUSE of TC-M06 v1 CR+AR (2026-05-25):
+    #   role[@classCode='PRS'] was placed as a direct child of <primaryRole>
+    #   at line 688.  The FDA SAX parser rejected with:
+    #     cvc-complex-type.2.4.a: Invalid content was found starting with
+    #     element 'role'. One of 'subjectOf2' is expected.
+    #   FAERS2022Scenario6.xml confirms: role[@classCode='PRS'] must be the
+    #   LAST child of <player1 classCode="PSN">, not a sibling of player1.
+    #   ET.parse() accepts both positions (well-formed either way); only
+    #   lxml.getparent() can detect the ordering violation pre-submission.
+    try:
+        from lxml import etree as _lxml_etree
+        _lt = _lxml_etree.parse(xml_path)
+        _lr = _lt.getroot()
+        _NS = "urn:hl7-org:v3"
+        _prs_roles = _lr.findall(f'.//{{{_NS}}}role[@classCode="PRS"]')
+        if not _prs_roles:
+            info("D.10: No role[@classCode='PRS'] in document — D.10 parent block omitted (OK if not required)")
+        else:
+            for _i, _role_el in enumerate(_prs_roles, 1):
+                _parent_el  = _role_el.getparent()
+                _parent_tag = _parent_el.tag.split("}")[-1] if _parent_el is not None else "None"
+                _grandp_el  = _parent_el.getparent() if _parent_el is not None else None
+                _grandp_tag = _grandp_el.tag.split("}")[-1] if _grandp_el is not None else "None"
+                _ok = _parent_tag == "player1"
+                chk(
+                    f"D.10 role[{_i}][@classCode='PRS'] is direct child of <player1> "
+                    f"(grandparent=<{_grandp_tag}>)",
+                    _ok,
+                    f"found as child of <{_parent_tag}> — "
+                    "must be inside <player1 classCode='PSN'>; "
+                    "placing it as child of <primaryRole> causes SAX parse rejection "
+                    "(cvc-complex-type.2.4.a: 'subjectOf2' expected)"
+                    if not _ok else ""
+                )
+                if _ok:
+                    # Also verify it is the last child of player1 (Scenario6 pattern)
+                    _p1_children = list(_parent_el)
+                    _is_last = _p1_children[-1] is _role_el
+                    chk(
+                        f"D.10 role[{_i}] is last child of <player1> (Scenario6 ordering)",
+                        _is_last,
+                        f"role is child #{_p1_children.index(_role_el)+1} of {len(_p1_children)}; "
+                        "Scenario6 places it after all asIdentifiedEntity elements"
+                        if not _is_last else ""
+                    )
+    except Exception as _e22:
+        warn("D.10 structural check error", str(_e22))
+
+    # ── 23. E.i.7 outcome value-set membership ──────────────────────────────
+    print("\n[ SECTION 23: E.i.7 outcome code — value-set membership ]")
+    # ROOT CAUSE of TC-M06 v2 CR+AR (2026-05-25):
+    #   R2 outcome was set code="6" displayName="recovering/resolving".
+    #   In the FDA FAERS value set (OID 2.16.840.1.113883.3.989.2.1.1.11):
+    #     1 = recovered/resolved
+    #     2 = recovering/resolving      ← correct code for that concept
+    #     3 = not recovered/not resolved/ongoing
+    #     4 = recovered/resolved with sequelae
+    #     5 = fatal
+    #     6 = unknown                   ← NOT "recovering/resolving"
+    #   FAERS 2.18 validates the code value, not the displayName.
+    #   The linter had no value-set check, so a wrong code with a correct
+    #   displayName silently passed all 22 prior checks.
+    #   Two outcome fields share this value set in each reaction block:
+    #     (a) code="27" / OID .3.989.2.1.1.19  — the canonical E.i.7 field
+    #     (b) code="C49489" / OID .3.26.1.1     — companion NCI Outcome field
+    #   Both must carry the same valid code from the allowed set {1,2,3,4,5,6}.
+    #   Note: FDA FAERS 2.18 business rules REJECT code=6 for E.i.7 (Unknown
+    #   is not a permitted outcome value). Allowed: {1, 2, 3, 4, 5}.
+    OUTCOME_OID    = "2.16.840.1.113883.3.989.2.1.1.11"
+    OUTCOME_CODE_27_OID = "2.16.840.1.113883.3.989.2.1.1.19"
+    ALLOWED_OUTCOME_CODES = {"1", "2", "3", "4", "5", "6"}  # 6=Unknown — valid per ICH E2B(R3); TC-F04 CA+AA confirmed
+    OUTCOME_LABELS = {"1":"recovered/resolved", "2":"recovering/resolving",
+                      "3":"not recovered/not resolved", "4":"recovered with sequelae",
+                      "5":"fatal", "6":"unknown"}
+
+    # Find all outcome observations (code=27, OID .3.989.2.1.1.19)
+    _outcome_obs = [
+        o for o in root.iter(Q("observation"))
+        if ga(qn(o, "code"), "code") == "27"
+        and ga(qn(o, "code"), "codeSystem") == OUTCOME_CODE_27_OID
+    ]
+    if not _outcome_obs:
+        warn("E.i.7: No outcome observations (code=27) found")
+    else:
+        for _i, _obs in enumerate(_outcome_obs, 1):
+            _val = qn(_obs, "value")
+            _code = ga(_val, "code") if _val is not None else None
+            _cs   = ga(_val, "codeSystem") if _val is not None else None
+            _dname = ga(_val, "displayName") if _val is not None else None
+            _cs_ok = _cs == OUTCOME_OID
+            _code_ok = _code in ALLOWED_OUTCOME_CODES
+            _detail = (f"code={_code!r} ({OUTCOME_LABELS.get(_code,'?')}) "
+                       f"codeSystem={_cs!r} displayName={_dname!r}")
+            chk(f"E.i.7 reaction[{_i}]: outcome codeSystem is FAERS value set OID",
+                _cs_ok,
+                f"got {_cs!r}; expected {OUTCOME_OID!r}" if not _cs_ok else "")
+            chk(f"E.i.7 reaction[{_i}]: outcome code in allowed set {{1,2,3,4,5,6}}",
+                _code_ok,
+                f"{_detail} — code must be in {1,2,3,4,5,6} — see OUTCOME_LABELS for mapping"
+                if not _code_ok else f"code={_code!r} ({OUTCOME_LABELS.get(_code,'?')})")
+
+    # Also check the companion C49489 Outcome field (same value set, same rules)
+    _c49489_obs = [
+        o for o in root.iter(Q("observation"))
+        if ga(qn(o, "code"), "code") == "C49489"
+    ]
+    for _i, _obs in enumerate(_c49489_obs, 1):
+        _val = qn(_obs, "value")
+        _code = ga(_val, "code") if _val is not None else None
+        _cs   = ga(_val, "codeSystem") if _val is not None else None
+        _code_ok = _code in ALLOWED_OUTCOME_CODES
+        chk(f"C49489 companion outcome[{_i}]: code in allowed set {{1,2,3,4,5,6}}",
+            _code_ok,
+            f"code={_code!r} ({OUTCOME_LABELS.get(_code,'?')}) — must match E.i.7 and be in {{1,2,3,4,5}}"
+            if not _code_ok else f"code={_code!r} ({OUTCOME_LABELS.get(_code,'?')})")
+
+    # ── 24. F.r.3.1 interpretationCode position — must precede referenceRange ─
+    print("\n[ SECTION 24: F.r.3.1 interpretationCode — element order in observation ]")
+    # ROOT CAUSE of TC-M07 v1 CR+AR (2026-05-26):
+    #   interpretationCode was inserted AFTER the referenceRange blocks.
+    #   HL7 v3 observation element order requires interpretationCode to appear
+    #   BEFORE referenceRange, outboundRelationship1/2, inboundRelationship.
+    #   The FDA SAX parser rejected:
+    #     cvc-complex-type.2.4.a: Invalid content found starting with
+    #     'interpretationCode'. One of 'referenceRange, outboundRelationship1,
+    #     outboundRelationship2, inboundRelationship' is expected.
+    #   Fix: place interpretationCode immediately after </value>, before <referenceRange>.
+    FR31_OID = "2.16.840.1.113883.3.989.2.1.1.12"
+    _fr31_obs = [
+        o for o in root.iter(Q("observation"))
+        if any(
+            ga(ch, "codeSystem") == FR31_OID
+            for ch in o
+            if ch.tag == Q("interpretationCode")
+        )
+    ]
+    if not _fr31_obs:
+        info("F.r.3.1: No interpretationCode with OID .3.989.2.1.1.12 — field omitted (optional)")
+    else:
+        for _i, _obs in enumerate(_fr31_obs, 1):
+            _children = list(_obs)
+            _tags = [ch.tag.split("}")[-1] for ch in _children]
+            _interp_indices = [j for j,t in enumerate(_tags) if t == "interpretationCode"
+                               and ga(_children[j], "codeSystem") == FR31_OID]
+            _refrange_indices = [j for j,t in enumerate(_tags) if t == "referenceRange"]
+            _ob1_indices = [j for j,t in enumerate(_tags) if t in ("outboundRelationship1","outboundRelationship2","inboundRelationship")]
+            for _ii_pos in _interp_indices:
+                _before_refrange = all(_ii_pos < r for r in _refrange_indices) if _refrange_indices else True
+                _before_outbound = all(_ii_pos < r for r in _ob1_indices) if _ob1_indices else True
+                _ok = _before_refrange and _before_outbound
+                chk(
+                    f"F.r.3.1 obs[{_i}]: interpretationCode precedes referenceRange/outboundRelationship",
+                    _ok,
+                    f"interpretationCode at position {_ii_pos}; "
+                    f"referenceRange positions={_refrange_indices}; "
+                    f"outbound positions={_ob1_indices} — "
+                    "must place interpretationCode BEFORE referenceRange (HL7v3 obs element order)"
+                    if not _ok else
+                    f"pos={_ii_pos} refrange={_refrange_indices} outbound={_ob1_indices[:3]}"
+                )
+                _ic_code = ga(_children[_ii_pos], "code")
+                _ic_disp = ga(_children[_ii_pos], "displayName")
+                # Source: FDA E2B(R3) Core and Regional Data Elements and
+                # Business Rules v1.7, sheet 'ICSR Data Elements', row F.r.3.1.
+                # Allowed codes: 1=Positive, 2=Negative, 3=Borderline, 4=Inconclusive.
+                # Code 5 (Abnormal) does NOT exist in the spec and was rejected
+                # by FDA FAERS 2.18 business rules (TC-M07 v5 ACK, 2026-05-26).
+                ALLOWED_FR31 = {"1","2","3","4"}
+                FR31_LABELS  = {"1":"Positive","2":"Negative","3":"Borderline","4":"Inconclusive"}
+                _ic_ok = _ic_code in ALLOWED_FR31
+                chk(
+                    f"F.r.3.1 obs[{_i}]: interpretationCode value in {{1,2,3,4}}",
+                    _ic_ok,
+                    f"code={_ic_code!r} ({_ic_disp}) — FDA Business Rules v1.7 only allows "
+                    "1=Positive, 2=Negative, 3=Borderline, 4=Inconclusive; "
+                    "code 5 does not exist and is rejected as 'Element value not allowed' (TC-M07 v5 ACK)"
+                    if not _ic_ok else f"code={_ic_code!r} ({FR31_LABELS.get(_ic_code,'?')})"
+                )
+
+    # ── 25. kindOfProduct — subjectOf must NOT appear as direct child ─────────
+    print("\n[ SECTION 25: kindOfProduct — subjectOf must not be a direct child ]")
+    # ROOT CAUSE of TC-M07 v2+v3 CR+AR (2026-05-26):
+    #   G.k.2.4 <subjectOf> was placed inside <kindOfProduct> (v2: after <part>;
+    #   v3: after <ingredient>).  The HL7 v3 content model for kindOfProduct
+    #   allows only: asManufacturedProduct, ingredient, asContent,
+    #   asPartOfAssembly, part — <subjectOf> is NEVER valid there.
+    #   Correct location: child of <instanceOfKind>, AFTER </kindOfProduct>.
+    #   Reference: FAERS2022Scenario6.xml lines 25123-25139.
+    #
+    #   Previous bug in this check: it only fired when BOTH subjectOf AND part
+    #   were siblings, so v3 (subjectOf next to ingredient, no part) slipped
+    #   through with "check skipped".  Fixed: now any subjectOf as direct child
+    #   of kindOfProduct is an unconditional FAIL, regardless of what other
+    #   siblings are present.
+    try:
+        from lxml import etree as _lxml_etree
+        _lt25 = _lxml_etree.parse(xml_path)
+        _lr25 = _lt25.getroot()
+        _NS25 = "urn:hl7-org:v3"
+
+        _kop_els = _lr25.findall(f'.//{{{_NS25}}}kindOfProduct')
+        _found_any = bool(_kop_els)
+        for _kop in _kop_els:
+            # Resolve a display name for the drug
+            _drug_name = ""
+            _name_el = _kop.find(f'{{{_NS25}}}name')
+            if _name_el is None:
+                _parent = _kop.getparent() if hasattr(_kop, 'getparent') else None
+                if _parent is not None:
+                    _name_el = _parent.find(f'{{{_NS25}}}name')
+            if _name_el is not None and _name_el.text:
+                _drug_name = f" (drug: {_name_el.text.strip()[:30]})"
+
+            _bad = [ch for ch in _kop
+                    if isinstance(ch.tag, str)
+                    and ch.tag.split("}")[-1] == "subjectOf"]
+            chk(
+                f"kindOfProduct{_drug_name}: no <subjectOf> as direct child",
+                len(_bad) == 0,
+                f"Found {len(_bad)} <subjectOf> element(s) directly inside "
+                "<kindOfProduct>. G.k.2.4 <subjectOf> must be a child of "
+                "<instanceOfKind> placed AFTER </kindOfProduct>, not inside it. "
+                "This causes SAX cvc-complex-type.2.4.a at FDA. "
+                "See FAERS2022Scenario6.xml lines 25123-25139."
+                if _bad else
+                "no subjectOf inside kindOfProduct"
+            )
+        if not _found_any:
+            info("kindOfProduct check: no <kindOfProduct> elements found — check skipped")
+    except Exception as _e25:
+        warn("kindOfProduct direct-child check error", str(_e25))
+
+    # ── 26. Attribute validity — qualifier on non-person <name> elements ──────
+    print("\n[ SECTION 26: qualifier attribute on non-person <name> elements ]")
+    # ROOT CAUSE of TC-M08 v1 CR+AR (2026-05-27):
+    #   <name qualifier="MODEL">Auto-Injector Pen Model A2</name> was added to
+    #   a device (partProduct/kindOfProduct) <name> element.  The FDA SAX parser
+    #   rejected with:
+    #     cvc-complex-type.3.2.2: Attribute 'qualifier' is not allowed to appear
+    #     in element 'name'.  (Line 609, col 59)
+    #
+    #   Root cause of linter miss: Section 21 XSD validation is degraded because
+    #   all coreschemas/*.xsd files are HTML redirect stubs from the FDA website.
+    #   The qualifier constraint lives in DataTypes-base.xsd (TN data type) and
+    #   was never reached.  Sections 22-25 are structural checks only.
+    #
+    #   In HL7v3:
+    #     - Person <name> uses EN (Entity Name) → ENXP parts support qualifier
+    #     - Device/drug/organisation <name> uses TN (Trivial Name) or ST → NO qualifier
+    #   Person name containers: player1[@classCode='PSN'], assignedPerson,
+    #     associatedPerson, guardianPerson.
+    #   Non-person containers: kindOfProduct, partProduct, manufacturerOrganization,
+    #     representedOrganization, ingredientSubstance, and all device/material elements.
+    #
+    #   This check scans every <name> element with a qualifier attribute and
+    #   fails if the parent is not a recognised person-type container.
+    PERSON_CONTAINERS = {
+        "player1", "assignedPerson", "associatedPerson", "guardianPerson",
+        "livingSubject", "patient",
+    }
+    try:
+        from lxml import etree as _lxml_etree
+        _lt26 = _lxml_etree.parse(xml_path)
+        _lr26 = _lt26.getroot()
+        _NS26 = "urn:hl7-org:v3"
+        _named_els = _lr26.findall(f'.//{{{_NS26}}}name[@qualifier]')
+        if not _named_els:
+            chk("No <name qualifier='...'> on non-person elements", True,
+                "no name elements with qualifier attribute found")
+        else:
+            for _ne in _named_els:
+                _parent26 = _ne.getparent()
+                _ptag = _parent26.tag.split("}")[-1] if _parent26 is not None else "None"
+                _is_person = _ptag in PERSON_CONTAINERS
+                _qual_val  = _ne.get("qualifier", "")
+                chk(
+                    f"<name qualifier='{_qual_val}'> inside <{_ptag}> — "
+                    "qualifier only allowed on person (EN) name elements",
+                    _is_person,
+                    f"<{_ptag}> is not a person container — device/drug/org <name> uses "
+                    "TN data type which has no qualifier attribute. "
+                    "Remove qualifier or use a separate element (e.g. comment). "
+                    "Causes cvc-complex-type.3.2.2 SAX rejection at FDA gateway."
+                    if not _is_person else
+                    f"parent <{_ptag}> is a recognised person container — qualifier valid"
+                )
+    except Exception as _e26:
+        warn("Section 26 qualifier check error", str(_e26))
+
+    # ── 27. <id root> format — OID or valid RFC 4122 UUID ────────────────────
+    print("\n[ SECTION 27: <id root> format — OID or valid RFC 4122 UUID ]")
+    # ROOT CAUSE of TC-M10 v10 CR+AR (2026-05-29):
+    #   Four hand-crafted UUID values were used as substanceAdministration id roots
+    #   and as causalityAssessment productUseReference id roots.  They had invalid
+    #   version nibbles (7, 8, None) and/or invalid variant bits, failing RFC 4122.
+    #   The FDA FAERS 2.18 business rules engine validates the root attribute format
+    #   on all <id> elements that carry cross-reference UUIDs (G.k.1, G.k.9.i.2.r).
+    #   Error returned: "G.k.1/FDA.G.k.1.a: Incorrect Root ID."
+    #
+    #   Root cause of linter miss: Section 21 XSD validation is permanently degraded
+    #   (HTML redirect stubs from FDA), so the II.root regex check never runs.
+    #   No other section called uuid.UUID() on root values.
+    #
+    #   Valid root values in HL7v3 II data type (ISO 21090):
+    #     OID  — matches /[0-2](\.[1-9]\d*)+/  (dotted positive-integer arcs)
+    #     UUID — matches /[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89aAbB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}/
+    #   Anything else (e.g. arbitrary strings, version-6/7/8 UUIDs) is rejected.
+    import re as _re27, uuid as _uuid27
+    _OID_RE   = _re27.compile(r'^[0-2](\.[1-9]\d*)+$')
+    # RFC 4122 §4.1: version nibble must be 1-5; variant bits must be 10xxxxxx (8-b hex)
+    _UUID_RE  = _re27.compile(
+        r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}'
+        r'-[1-5][0-9a-fA-F]{3}'           # version nibble 1-5
+        r'-[89aAbB][0-9a-fA-F]{3}'        # variant bits 10xxxxxx
+        r'-[0-9a-fA-F]{12}$',
+        _re27.IGNORECASE
+    )
+    # Well-known FAERS OID roots that are exempt from OID dot-count check
+    _KNOWN_ROOTS = {
+        "2.16.840.1.113883.3.989.2.1.3.1",   # SR message number
+        "2.16.840.1.113883.3.989.2.1.3.2",   # related case id
+        "2.16.840.1.113883.3.989.2.1.3.3",   # linked report
+        "2.16.840.1.113883.3.989.2.1.3.4",   # approval/NDA
+        "2.16.840.1.113883.3.989.2.1.3.11",  # sender
+        "2.16.840.1.113883.3.989.2.1.3.12",  # receiver
+        "2.16.840.1.113883.3.989.2.1.3.13",  # DUNS OID
+        "2.16.840.1.113883.3.989.2.1.3.14",  # ZZFDATST
+        "2.16.840.1.113883.3.989.2.1.3.16",  # ACK receiver
+        "2.16.840.1.113883.3.989.2.1.3.17",  # ACK sender
+        "2.16.840.1.113883.3.989.2.1.3.18",  # ACK receiver 2
+        "2.16.840.1.113883.3.989.2.1.3.19",  # ACK report id
+        "2.16.840.1.113883.3.989.2.1.3.20",  # ACK batch
+        "2.16.840.1.113883.3.989.2.1.3.21",  # ACK local msg
+        "2.16.840.1.113883.3.989.2.1.3.22",  # batch number
+        "1.3.6.1.4.1.519.1",                 # DUNS
+        "2.16.840.1.113883.4.9",             # UNII
+        "2.16.840.1.113883.6.69",            # NDC
+    }
+    try:
+        from lxml import etree as _lxml27
+        _lt27 = _lxml27.parse(xml_path)
+        _lr27 = _lt27.getroot()
+        _NS27 = "urn:hl7-org:v3"
+        _id_els = _lr27.findall(f'.//{{{_NS27}}}id[@root]')
+        _bad_roots = []
+        for _el in _id_els:
+            _r = _el.get("root", "")
+            if not _r:
+                continue
+            if _r in _KNOWN_ROOTS:
+                continue
+            _is_oid  = bool(_OID_RE.match(_r))
+            _is_uuid = bool(_UUID_RE.match(_r))
+            if not (_is_oid or _is_uuid):
+                _parent_tag = _el.getparent().tag.split("}")[-1] if _el.getparent() is not None else "?"
+                _ext = _el.get("extension", "")
+                _bad_roots.append(
+                    f"root={_r!r} (parent=<{_parent_tag}>"
+                    + (f" ext={_ext!r}" if _ext else "")
+                    + f") — not a valid OID or RFC 4122 v1-5 UUID"
+                )
+        _n_checked = len(_id_els)
+        chk(
+            f"All <id root> values are valid OIDs or RFC 4122 v1-5 UUIDs ({_n_checked} checked)",
+            len(_bad_roots) == 0,
+            "; ".join(_bad_roots[:5]) or "all valid"
+            if _bad_roots else f"all {_n_checked} root values are valid OIDs or UUIDs"
+        )
+        if _bad_roots:
+            for _br in _bad_roots:
+                warn("Invalid <id root> — will cause 'Incorrect Root ID' rejection at FDA FAERS 2.18", _br)
+    except ImportError:
+        warn("lxml not installed — Section 27 UUID/OID check skipped", "pip install lxml")
+    except Exception as _e27:
+        warn("Section 27 id-root check error", str(_e27))
+
+    # ── 28. Seriousness flags — all 7 required per reaction ──────────────────
+    print("\n[ SECTION 28: Seriousness flags — all 7 required per reaction (E.i.3.2) ]")
+    # Reference: FDA FAERS 2.18 Business Rules; E2B(R3) ICH guideline E2B(R3)
+    # Each reaction observation (code=29) must contain ALL of the following
+    # outboundRelationship2 sub-observations.  A missing flag is an "Element
+    # Required" rejection. An incorrectly typed value is a "Value not allowed"
+    # rejection.  This section was identified as the largest "false safety" gap
+    # in the linter — Section 8 only checked effectiveTime and MedDRA code, so
+    # a reaction could be missing all seriousness flags and still PASS.
+    #
+    # Required codes + OIDs:
+    #   34  resultsInDeath                  OID .3.989.2.1.1.19
+    #   21  isLifeThreatening               OID .3.989.2.1.1.19
+    #   33  requiresInpatientHospitalization OID .3.989.2.1.1.19
+    #   35  resultsInPersistentOrSignificantDisability OID .3.989.2.1.1.19
+    #   12  congenitalAnomalyBirthDefect    OID .3.989.2.1.1.19
+    #   26  otherMedicallyImportantCondition OID .3.989.2.1.1.19
+    #    7  requiredIntervention            OID .3.989.5.1.2.2.1.3  (FDA-specific)
+    #
+    # Each value must be xsi:type="BL" with value="true" or value="false"
+    # (or nullFlavor="NI" when unknown).
+    _SER_FLAGS = [
+        ("34",  "2.16.840.1.113883.3.989.2.1.1.19", "resultsInDeath"),
+        ("21",  "2.16.840.1.113883.3.989.2.1.1.19", "isLifeThreatening"),
+        ("33",  "2.16.840.1.113883.3.989.2.1.1.19", "requiresInpatientHospitalization"),
+        ("35",  "2.16.840.1.113883.3.989.2.1.1.19", "resultsInPersistentOrSignificantDisability"),
+        ("12",  "2.16.840.1.113883.3.989.2.1.1.19", "congenitalAnomalyBirthDefect"),
+        ("26",  "2.16.840.1.113883.3.989.2.1.1.19", "otherMedicallyImportantCondition"),
+        ("7",   "2.16.840.1.113883.3.989.5.1.2.2.1.3", "requiredIntervention"),
+    ]
+    try:
+        _reactions28 = root.findall(
+            f'.//{{{NS}}}observation[@classCode="OBS"][@moodCode="EVN"]'
+        )
+        _rxn_obs = [r for r in _reactions28
+                    if r.find(f'{{{NS}}}code[@code="29"]') is not None]
+        if not _rxn_obs:
+            warn("Section 28: No reaction observations (code=29) found — seriousness check skipped")
+        for _ri, _rxn in enumerate(_rxn_obs, 1):
+            _rxn_code = _rxn.find(f'{{{NS}}}code')
+            _rxn_mdr = ga(_rxn_code, "displayName") or ga(_rxn_code, "code") or f"reaction[{_ri}]"
+            # Collect all outboundRelationship2 child observations
+            _ser_obs = {}
+            for _ob2 in _rxn.findall(f'{{{NS}}}outboundRelationship2'):
+                _obs_el = _ob2.find(f'{{{NS}}}observation')
+                if _obs_el is None:
+                    continue
+                _c = _obs_el.find(f'{{{NS}}}code')
+                if _c is None:
+                    continue
+                _key = (ga(_c, "code"), ga(_c, "codeSystem"))
+                _ser_obs[_key] = _obs_el
+            for (_fc, _foid, _fname) in _SER_FLAGS:
+                _found = _ser_obs.get((_fc, _foid))
+                _present = _found is not None
+                chk(
+                    f"E.i.3.2 rxn[{_ri}] ({_rxn_mdr}): {_fname} (code={_fc}) present",
+                    _present,
+                    f"Missing outboundRelationship2/observation[code={_fc} codeSystem={_foid}]. "
+                    "All 7 seriousness flags are mandatory per FDA FAERS 2.18 Business Rules."
+                    if not _present else f"present"
+                )
+                if _present:
+                    _val_el = _found.find(f'{{{NS}}}value')
+                    if _val_el is None:
+                        chk(
+                            f"E.i.3.2 rxn[{_ri}] ({_rxn_mdr}): {_fname} value present",
+                            False,
+                            f"<value> element missing inside seriousness observation code={_fc}"
+                        )
+                    else:
+                        _vtype = _val_el.get(f'{{{XSI}}}type', '')
+                        _vval  = _val_el.get('value', '')
+                        _vnull = _val_el.get('nullFlavor', '')
+                        _ok_val = (
+                            'BL' in _vtype and (_vval in ('true','false') or _vnull)
+                        )
+                        chk(
+                            f"E.i.3.2 rxn[{_ri}] ({_rxn_mdr}): {_fname} value is BL true/false",
+                            _ok_val,
+                            f"xsi:type={_vtype!r} value={_vval!r} nullFlavor={_vnull!r} — "
+                            "must be xsi:type='BL' with value='true' or value='false' "
+                            "(or nullFlavor='NI')"
+                            if not _ok_val else f"BL value={_vval!r}"
+                        )
+    except Exception as _e28:
+        warn("Section 28 seriousness-flags check error", str(_e28))
+
+    # ── 29. causalityAssessment UUID cross-reference integrity ────────────────
+    print("\n[ SECTION 29: causalityAssessment UUID cross-reference integrity ]")
+    # ROOT CAUSE PREVENTION:
+    #   TC-M10 v10 CR+AR was caused by invalid UUID format (fixed by Section 27).
+    #   This section prevents the NEXT class of failure: a *valid* UUID that simply
+    #   does not match any real drug or reaction in the document.  Such a mismatch
+    #   would produce exactly the same "Incorrect Root ID" FDA rejection but would
+    #   pass Section 27 because the UUID format is valid.
+    #
+    #   DUAL-FORMAT NOTE (TC-M12 learning):
+    #   FDA FAERS 2.18 accepts TWO drug organizer formats:
+    #     (A) NEW: organizer code=4 on .3.989.2.1.1.20 + causalityAssessment code=20/39
+    #              Drug role declared via causalityAssessment code=20 (interventionCharacterization)
+    #              substanceAdministration must have <id root="uuid"/> for cross-reference
+    #     (B) LEGACY: organizer code="suspect"/"concomitant" on .3.989.2.1.1.13
+    #              Drug role declared in organizer/code itself; no causalityAssessment code=20/39
+    #              NO substanceAdministration/id needed
+    #   Section 29 only runs the UUID cross-reference checks when format (A) is detected.
+    #   When format (B) is in use, causalityAssessment code=20/39 blocks are absent and
+    #   there is nothing to cross-reference; skip silently.
+    #
+    #   Cross-reference rules (format A only):
+    #     code=20 (interventionCharacterization):
+    #       subject2/productUseReference/id[@root] must match
+    #       a substanceAdministration/id[@root] inside a drug organizer (code=4 on .1.20)
+    #     code=39 (causality):
+    #       subject2/productUseReference/id[@root] must match a drug UUID (as above)
+    #       subject1/adverseEffectReference/id[@root] must match a reaction
+    #       observation[code=29]/id[@root]
+    #
+    #   Additional check (format A only):
+    #     Every drug substanceAdministration UUID must have AT LEAST ONE corresponding
+    #     code=20 block, otherwise the drug role is never declared.
+    try:
+        from lxml import etree as _lxml29
+        _lt29 = _lxml29.parse(xml_path)
+        _lr29 = _lt29.getroot()
+        _NS29 = "urn:hl7-org:v3"
+
+        # Detect format: look for causalityAssessment code=20 blocks
+        _ca20_blocks = [
+            _ca for _ca in _lr29.findall(f'.//{{{_NS29}}}causalityAssessment[@classCode="OBS"][@moodCode="EVN"]')
+            if _ca.find(f'{{{_NS29}}}code[@code="20"]') is not None
+        ]
+        _using_new_format = len(_ca20_blocks) > 0
+
+        if not _using_new_format:
+            info("Drug organizer format", "LEGACY (organizer string codes on .1.1.13) — "
+                 "Section 29 UUID cross-reference checks skipped (N/A for legacy format)")
+        else:
+            info("Drug organizer format", "NEW (code=4 on .1.1.20 + causalityAssessment code=20/39) — "
+                 "running UUID cross-reference checks")
+
+            # Collect all drug substanceAdministration UUIDs
+            # (inside organizer[code=4 on OID .1.20]/component/substanceAdministration)
+            _drug_uuids = set()
+            _drug_sa_info = {}  # uuid → drug name
+            for _org in _lr29.findall(f'.//{{{_NS29}}}organizer[@classCode="CATEGORY"][@moodCode="EVN"]'):
+                _oc = _org.find(f'{{{_NS29}}}code[@code="4"]')
+                if _oc is None:
+                    continue
+                _ocs = _oc.get("codeSystem","")
+                if "989.2.1.1.20" not in _ocs:
+                    continue
+                for _sa in _org.findall(f'.//{{{_NS29}}}substanceAdministration'):
+                    _sa_id = _sa.find(f'{{{_NS29}}}id')
+                    if _sa_id is not None:
+                        _u = _sa_id.get("root","")
+                        if _u:
+                            _drug_uuids.add(_u)
+                            # Try to find drug name
+                            _nm = _sa.find(f'.//{{{_NS29}}}kindOfProduct/{{{_NS29}}}name')
+                            _drug_sa_info[_u] = _nm.text.strip() if (_nm is not None and _nm.text) else "?"
+
+            # Collect all reaction observation UUIDs (observation[code=29]/id)
+            _rxn_uuids = set()
+            for _obs in _lr29.findall(f'.//{{{_NS29}}}observation[@classCode="OBS"][@moodCode="EVN"]'):
+                _oc29 = _obs.find(f'{{{_NS29}}}code[@code="29"]')
+                if _oc29 is None:
+                    continue
+                _oid29 = _obs.find(f'{{{_NS29}}}id')
+                if _oid29 is not None:
+                    _u = _oid29.get("root","")
+                    if _u:
+                        _rxn_uuids.add(_u)
+
+            info(f"Drug UUIDs found", f"{len(_drug_uuids)}: {sorted(_drug_uuids)}")
+            info(f"Reaction UUIDs found", f"{len(_rxn_uuids)}: {sorted(_rxn_uuids)}")
+
+            # Validate code=20 productUseReference cross-refs
+            _ca20_drug_refs = []
+            for _ca in _ca20_blocks:
+                _s2 = _ca.find(f'{{{_NS29}}}subject2/{{{_NS29}}}productUseReference/{{{_NS29}}}id')
+                _ref = _s2.get("root","") if _s2 is not None else ""
+                _ca20_drug_refs.append(_ref)
+                _match = _ref in _drug_uuids
+                chk(
+                    f"CA code=20 productUseReference root={_ref[:18]}... resolves to a known drug UUID",
+                    _match,
+                    f"UUID {_ref!r} does not match any substanceAdministration/id root. "
+                    f"Known drug UUIDs: {sorted(_drug_uuids)}"
+                    if not _match else f"matches drug '{_drug_sa_info.get(_ref,'?')}'"
+                )
+
+            # Check every drug UUID has at least one code=20 block
+            _covered = set(_ca20_drug_refs)
+            for _du in sorted(_drug_uuids):
+                chk(
+                    f"Drug UUID {_du[:18]}... ({_drug_sa_info.get(_du,'?')}) has ≥1 code=20 causalityAssessment",
+                    _du in _covered,
+                    f"No interventionCharacterization (code=20) block references this drug. "
+                    "Drug role (Suspect/Concomitant) will be unknown to FDA engine."
+                    if _du not in _covered else "referenced in code=20 block"
+                )
+
+            # Validate code=39 cross-refs (drug + reaction)
+            for _ca39 in _lr29.findall(f'.//{{{_NS29}}}causalityAssessment[@classCode="OBS"][@moodCode="EVN"]'):
+                _cc39 = _ca39.find(f'{{{_NS29}}}code[@code="39"]')
+                if _cc39 is None:
+                    continue
+                _s2_39 = _ca39.find(f'{{{_NS29}}}subject2/{{{_NS29}}}productUseReference/{{{_NS29}}}id')
+                _s1_39 = _ca39.find(f'{{{_NS29}}}subject1/{{{_NS29}}}adverseEffectReference/{{{_NS29}}}id')
+                _drug_ref39 = _s2_39.get("root","") if _s2_39 is not None else ""
+                _rxn_ref39  = _s1_39.get("root","") if _s1_39 is not None else ""
+                chk(
+                    f"CA code=39 subject2 (drug) root={_drug_ref39[:18]}... resolves to a known drug UUID",
+                    _drug_ref39 in _drug_uuids,
+                    f"UUID {_drug_ref39!r} does not match any drug. Known: {sorted(_drug_uuids)}"
+                    if _drug_ref39 not in _drug_uuids else
+                    f"matches drug '{_drug_sa_info.get(_drug_ref39,'?')}'"
+                )
+                chk(
+                    f"CA code=39 subject1 (reaction) root={_rxn_ref39[:18]}... resolves to a known reaction UUID",
+                    bool(_rxn_ref39) and _rxn_ref39 in _rxn_uuids,
+                    f"UUID {_rxn_ref39!r} does not match any reaction observation. "
+                    f"Known rxn UUIDs: {sorted(_rxn_uuids)}"
+                    if not (bool(_rxn_ref39) and _rxn_ref39 in _rxn_uuids) else
+                    "resolves to a reaction observation"
+                )
+                chk(
+                    f"CA code=39 has both subject1 (adverseEffect) and subject2 (product)",
+                    bool(_s2_39 is not None and _s1_39 is not None),
+                    "code=39 causality block is missing subject1 (adverseEffectReference) "
+                    "and/or subject2 (productUseReference) — both are required"
+                    if not (_s2_39 is not None and _s1_39 is not None) else "both subjects present"
+                )
+
+    except ImportError:
+        warn("lxml not installed — Section 29 cross-reference check skipped", "pip install lxml")
+    except Exception as _e29:
+        warn("Section 29 causalityAssessment cross-ref check error", str(_e29))
+
+    # ── 30. Drug organizer structure — dual-format validation ────────────────
+    print("\n[ SECTION 30: Drug organizer structure — legacy or new format ]")
+    # FDA FAERS 2.18 DUAL-FORMAT EVIDENCE (TC-M12 learning):
+    #   LEGACY format: organizer code="suspect"/"concomitant"/"interacting"/"notadministered"
+    #                  codeSystem="2.16.840.1.113883.3.989.2.1.1.13"
+    #                  → Drug role declared in organizer code itself
+    #                  → Accepted by FDA FAERS 2.18 (TC-M09 / v9 CA+AA confirmed)
+    #   NEW format:    organizer code="4" codeSystem="2.16.840.1.113883.3.989.2.1.1.20"
+    #                  + causalityAssessment code=20 (interventionCharacterization)
+    #                  → Drug role declared via causalityAssessment, not organizer
+    #                  → substanceAdministration must have <id root="uuid"/> for cross-ref
+    #                  → Correct per E2B(R3) IG but requires valid OID root for drug IDs
+    #   BOTH patterns are accepted.  What is INVALID: mixing without cross-reference,
+    #   or using a codeSystem that doesn't match either expected OID.
+    _DRUG_INFO_OID   = "2.16.840.1.113883.3.989.2.1.1.20"
+    _LEGACY_ROLE_OID = "2.16.840.1.113883.3.989.2.1.1.13"
+    _VALID_LEGACY_CODES = {"suspect", "concomitant", "interacting", "notadministered"}
+    try:
+        _all_orgs30 = root.findall(
+            f'.//{{{NS}}}organizer[@classCode="CATEGORY"][@moodCode="EVN"]'
+        )
+        _legacy_found = []    # list of valid string-code organizers
+        _legacy_bad   = []    # string-code organizers with unrecognised code values
+        _new_format_count = 0
+        for _org30 in _all_orgs30:
+            _oc30 = _org30.find(f'{{{NS}}}code')
+            if _oc30 is None:
+                continue
+            _c30  = ga(_oc30, "code")
+            _cs30 = ga(_oc30, "codeSystem") or ""
+            if _LEGACY_ROLE_OID in _cs30:
+                if _c30 in _VALID_LEGACY_CODES:
+                    _legacy_found.append(f"code={_c30!r}")
+                else:
+                    _legacy_bad.append(f"code={_c30!r} codeSystem={_cs30!r}")
+            if _DRUG_INFO_OID in _cs30 and _c30 == "4":
+                _new_format_count += 1
+
+        _has_legacy = len(_legacy_found) > 0
+        _has_new    = _new_format_count > 0
+
+        # At least one of the two valid formats must be present
+        chk(
+            "Drug organizer: at least one valid format present (legacy .1.13 string codes OR new code=4 on .1.1.20)",
+            _has_legacy or _has_new,
+            "No valid drug organizer found. Expect either organizer code='suspect'/'concomitant' "
+            f"codeSystem='.3.989.2.1.1.13' OR organizer code='4' codeSystem='.3.989.2.1.1.20'. "
+            f"legacy={_legacy_found}, new={_new_format_count}"
+            if not (_has_legacy or _has_new) else
+            f"legacy format: {_legacy_found or 'none'}; new format count: {_new_format_count}"
+        )
+
+        # Must not mix formats in the same document (ambiguous drug role resolution)
+        chk(
+            "Drug organizer: formats not mixed (no simultaneous legacy + new format)",
+            not (_has_legacy and _has_new),
+            f"MIXED FORMAT: found {len(_legacy_found)} legacy organizer(s) AND "
+            f"{_new_format_count} code=4 organizer(s). Use one format consistently."
+            if _has_legacy and _has_new else
+            f"single format: {'legacy' if _has_legacy else 'new (code=4)'}"
+        )
+
+        # If legacy format, all string codes must be from the valid set
+        if _legacy_bad:
+            chk(
+                "Legacy drug organizer codes are valid values (suspect/concomitant/interacting/notadministered)",
+                False,
+                f"Unrecognised legacy code value(s): {_legacy_bad}. "
+                f"Valid values: {sorted(_VALID_LEGACY_CODES)}"
+            )
+        elif _has_legacy:
+            chk(
+                "Legacy drug organizer codes are valid values (suspect/concomitant/interacting/notadministered)",
+                True, f"All {len(_legacy_found)} legacy organizer(s) have valid codes: {_legacy_found}"
+            )
+
+        if _has_new:
+            info("New-format drug organizers", f"{_new_format_count} organizer(s) with code=4 on .3.989.2.1.1.20")
+        if _has_legacy:
+            info("Legacy-format drug organizers", f"{len(_legacy_found)} organizer(s) with string role codes on .3.989.2.1.1.13")
+
+    except Exception as _e30:
+        warn("Section 30 drug organizer check error", str(_e30))
+
+    # ── 31. C.2.r sourceReport block — unconditional presence check ───────────
+    print("\n[ SECTION 31: C.2.r sourceReport (SPRT code=2) — unconditional presence ]")
+    # BUG FIX in linter:
+    #   Section 16 gates all sourceReport checks behind is_followup=True.
+    #   Initial reports (version extension = "1") got a blind PASS:
+    #   "Initial report (no follow-up checks required)".
+    #   This was wrong — C.2.r sourceReport is required for ALL submissions,
+    #   not just follow-ups.  An initial report without sourceReport passes the
+    #   linter but is rejected by FDA FAERS 2.18 with "Tags Missing: C.2.r".
+    #
+    #   Required structure:
+    #     investigationEvent/outboundRelationship[@typeCode="SPRT"]
+    #       /relatedInvestigation/code[@code="2"][@codeSystem=".3.989.2.1.1.22"]
+    #   With inside it:
+    #     subjectOf2/controlActEvent/author/assignedEntity
+    #       /assignedPerson/asQualifiedEntity/code[@codeSystem=".3.989.2.1.1.6"]
+    #     priorityNumber[@value]  (C.2.r sequence number)
+    _SPRT_OID = "2.16.840.1.113883.3.989.2.1.1.22"
+    _QUAL_OID = "2.16.840.1.113883.3.989.2.1.1.6"
+    _QUAL_CODES = {"1","2","3","4","5"}  # physician, pharmacist, other HCP, lawyer, consumer
+    _QUAL_LABELS = {
+        "1":"Physician","2":"Pharmacist","3":"Other HCP","4":"Lawyer","5":"Consumer/non-HCP"
+    }
+    try:
+        _ie31 = root.find(f'.//{{{NS}}}investigationEvent')
+        _sprt_blocks = []
+        if _ie31 is not None:
+            for _ob31 in _ie31.findall(f'{{{NS}}}outboundRelationship[@typeCode="SPRT"]'):
+                _ri31 = _ob31.find(f'{{{NS}}}relatedInvestigation')
+                if _ri31 is None:
+                    continue
+                _rc31 = _ri31.find(f'{{{NS}}}code')
+                if ga(_rc31,"code") == "2" and _SPRT_OID in (ga(_rc31,"codeSystem") or ""):
+                    _sprt_blocks.append(_ob31)
+        chk(
+            "C.2.r sourceReport outboundRelationship[SPRT code=2] present",
+            len(_sprt_blocks) > 0,
+            f"No outboundRelationship[@typeCode='SPRT']/relatedInvestigation/code[@code='2'] "
+            f"found under investigationEvent. This is required for ALL submissions "
+            "(initial and follow-up). Absence causes 'Tags Missing: C.2.r' rejection."
+            if not _sprt_blocks else f"found {len(_sprt_blocks)} sourceReport block(s)"
+        )
+        for _si, _sprt31 in enumerate(_sprt_blocks, 1):
+            _pn31 = _sprt31.find(f'{{{NS}}}priorityNumber')
+            chk(
+                f"C.2.r[{_si}] priorityNumber present",
+                _pn31 is not None and ga(_pn31,"value") is not None,
+                "priorityNumber element or value attribute missing — required for C.2.r sequence"
+                if not (_pn31 is not None and ga(_pn31,"value") is not None)
+                else f"value={ga(_pn31,'value')!r}"
+            )
+            _ri31 = _sprt31.find(f'{{{NS}}}relatedInvestigation')
+            _aq31 = _ri31.find(
+                f'.//{{{NS}}}asQualifiedEntity/{{{NS}}}code'
+            ) if _ri31 is not None else None
+            if _aq31 is None:
+                chk(
+                    f"C.2.r[{_si}] reporter qualification (asQualifiedEntity/code) present",
+                    False,
+                    f"asQualifiedEntity/code not found inside C.2.r sourceReport block. "
+                    f"C.2.r.4 reporter qualification is required."
+                )
+            else:
+                _qcs = ga(_aq31,"codeSystem") or ""
+                _qc  = ga(_aq31,"code") or ""
+                chk(
+                    f"C.2.r[{_si}] qualification codeSystem = .3.989.2.1.1.6",
+                    _QUAL_OID in _qcs,
+                    f"codeSystem={_qcs!r} — expected OID containing '.3.989.2.1.1.6'"
+                    if _QUAL_OID not in _qcs else f"OID correct ({_qcs})"
+                )
+                chk(
+                    f"C.2.r[{_si}] qualification code ∈ {{1=Physician,2=Pharmacist,"
+                    "3=Other HCP,4=Lawyer,5=Consumer}}",
+                    _qc in _QUAL_CODES,
+                    f"code={_qc!r} not in valid set {{1,2,3,4,5}}. "
+                    "Invalid qualification code causes 'Element value not allowed' rejection."
+                    if _qc not in _QUAL_CODES else
+                    f"code={_qc!r} ({_QUAL_LABELS.get(_qc,'?')})"
+                )
+    except Exception as _e31:
+        warn("Section 31 C.2.r sourceReport check error", str(_e31))
+
+    # ── 32. H-section author codes (H.2, H.3.r, H.4, H.5.r) ──────────────────
+    print("\n[ SECTION 32: H-section author codes ]")
+    # ROOT CAUSE of TC-M09 H.3.r fix:
+    #   H.3.r senderDiagnosis had author displayName="primaryReporter" (code=1 is sender,
+    #   not primary reporter — code=3 is sourceReporter).  This was a misattribution.
+    #   Fixed in TC-M09 → TC-M10 patch.  This section prevents regression.
+    #
+    #   Required author codes (OID 2.16.840.1.113883.3.989.2.1.1.21):
+    #     H.2  reporter comment:         observationEvent code=10, author code=3 (sourceReporter)
+    #                                    (inside adverseEventAssessment as component1)
+    #     H.3.r senderDiagnosis:         observationEvent code=15, author code=1 (sender)
+    #     H.4  sender comment:           observationEvent code=10, author code=1 (sender)
+    #                                    (inside adverseEventAssessment as component1)
+    #     H.5.r case summary (reporter): observationEvent code=10, author code=2 (reporter)
+    #                                    (outside adverseEventAssessment)
+    #   Note: H.2 (reporter comment) uses observationEvent code=10 OUTSIDE adverseEventAssessment.
+    #   H.4 (sender comment) uses the same code=10 INSIDE adverseEventAssessment (component1).
+    #   Both use the same element name and code — distinguished only by their container.
+    #
+    # Note on displayName: FDA engine validates the code value, not displayName.
+    # displayName is informational only.  The code must be correct.
+    _AUTHOR_OID = "2.16.840.1.113883.3.989.2.1.1.21"
+    _AUTHOR_LABELS = {"1":"sender","2":"reporter","3":"sourceReporter"}
+    _EXPECTED_AUTHOR = {
+        "15": "1",   # H.3.r senderDiagnosis → sender
+    }
+    try:
+        # Find adverseEventAssessment container
+        _aea32 = root.find(f'.//{{{NS}}}adverseEventAssessment')
+
+        # H.3.r: observationEvent code=15 inside adverseEventAssessment
+        if _aea32 is not None:
+            for _comp1 in _aea32.findall(f'{{{NS}}}component1'):
+                _oe32 = _comp1.find(f'{{{NS}}}observationEvent')
+                if _oe32 is None:
+                    continue
+                _oc32 = _oe32.find(f'{{{NS}}}code')
+                _ocode = ga(_oc32,"code")
+                _auth32 = _oe32.find(f'.//{{{NS}}}assignedEntity/{{{NS}}}code')
+                _acode = ga(_auth32,"code") or ""
+                _acs   = ga(_auth32,"codeSystem") or ""
+                if _ocode == "15":  # H.3.r senderDiagnosis
+                    chk(
+                        "H.3.r senderDiagnosis (code=15): author codeSystem=.3.989.2.1.1.21",
+                        _AUTHOR_OID in _acs,
+                        f"author codeSystem={_acs!r} — expected OID '.3.989.2.1.1.21'"
+                        if _AUTHOR_OID not in _acs else f"OID correct"
+                    )
+                    chk(
+                        "H.3.r senderDiagnosis (code=15): author must be code=1 (sender)",
+                        _acode == "1",
+                        f"author code={_acode!r} ({_AUTHOR_LABELS.get(_acode,'?')}) — "
+                        "must be code='1' (sender). Using code='3' (sourceReporter) misattributes "
+                        "the diagnosis to the reporter instead of the sender."
+                        if _acode != "1" else f"code='1' (sender) ✓"
+                    )
+                elif _ocode == "10":  # H.4 sender comment inside adverseEventAssessment
+                    chk(
+                        "H.4 sender comment (code=10 in adverseEventAssessment): author must be code=1 (sender)",
+                        _acode == "1",
+                        f"author code={_acode!r} — must be '1' (sender). "
+                        "H.4 sender comments inside adverseEventAssessment must be attributed to the sender."
+                        if _acode != "1" else f"code='1' (sender) ✓"
+                    )
+
+        # H.2 reporter comment: observationEvent code=10 OUTSIDE adverseEventAssessment
+        # (direct component child of PORR investigationEvent, not inside adverseEventAssessment)
+        _ie32 = root.find(f'.//{{{NS}}}investigationEvent')
+        if _ie32 is not None:
+            for _comp32 in _ie32.findall(f'{{{NS}}}component'):
+                _oe32b = _comp32.find(f'{{{NS}}}observationEvent')
+                if _oe32b is None:
+                    continue
+                _oc32b = _oe32b.find(f'{{{NS}}}code')
+                if ga(_oc32b,"code") != "10":
+                    continue
+                _auth32b = _oe32b.find(f'.//{{{NS}}}assignedEntity/{{{NS}}}code')
+                _acode32b = ga(_auth32b,"code") or ""
+                _acs32b   = ga(_auth32b,"codeSystem") or ""
+                chk(
+                    "H.2 reporter comment (code=10 outside adverseEventAssessment): "
+                    "author must be code=3 (sourceReporter)",
+                    _acode32b == "3",
+                    f"author code={_acode32b!r} ({_AUTHOR_LABELS.get(_acode32b,'?')}) — "
+                    "must be '3' (sourceReporter). H.2 is the reporter's own comment."
+                    if _acode32b != "3" else f"code='3' (sourceReporter) ✓"
+                )
+
+    except Exception as _e32:
+        warn("Section 32 H-section author check error", str(_e32))
 
     # ── Summary ──────────────────────────────────────────────────────────────
     fails  = [r for r in _results if r[0]==FAIL]

@@ -9,7 +9,7 @@
   <interactionId root="2.16.840.1.113883.1.6" extension="MCCI_IN200100UV01"/>
   <name code="1" displayName="ichicsr" codeSystem="2.16.840.1.113883.3.989.2.1.1.1"/>
   <PORR_IN049016UV>
-    <id root="2.16.840.1.113883.3.989.2.1.3.1" extension="fb65a046-902c-4cc0-92e7-f759eab79d09"/>
+    <id root="2.16.840.1.113883.3.989.2.1.3.1" extension="f03v2-b6560643"/>
     <creationTime value="20260315070000-0700"/>
     <interactionId root="2.16.840.1.113883.1.6" extension="PORR_IN049016UV"/>
     <processingCode code="P"/>
@@ -32,8 +32,8 @@
       <effectiveTime value="20260315070000-0700"/>
       <subject typeCode="SUBJ">
         <investigationEvent classCode="INVSTG" moodCode="EVN">
-          <id root="2.16.840.1.113883.3.989.2.1.3.1" extension="SR-CASE-EXAMPLE-TCF03"/>
-          <id root="2.16.840.1.113883.3.989.2.1.3.2" extension="CASE-20260430-1Z6X"/>
+          <id root="2.16.840.1.113883.3.989.2.1.3.1" extension="SR-CASE-20260501-TCF03"/>
+          <id root="2.16.840.1.113883.3.989.2.1.3.2" extension="CASE-20260501-F03V"/>
           <id root="2.16.840.1.113883.3.989.2.1.3.4" extension="2"/>
           <code code="PAT_ADV_EVNT" codeSystem="2.16.840.1.113883.5.4"/>
           <text>Case Narrative Including Clinical Course, Therapeutic Measures, Outcome and Additional Relevant Information</text>
@@ -335,7 +335,7 @@
               <component typeCode="COMP">
                 <causalityAssessment classCode="OBS" moodCode="EVN">
                   <code code="C53253" codeSystem="2.16.840.1.113883.3.26.1.1" displayName="Case Narrative"/>
-                  <value xsi:type="ED">Variant of 2L8T baseline. Expedited flag set to false (A.1.9 = 2, non-expedited) for TC-F03. localReportTypeCode omitted.</value>
+                  <value xsi:type="ED">Variant of 2L8T baseline. TC-F03 fix v2: localCriteriaForExpedited=false, localCriteriaReportType=code 2 (Non-Expedited AE). SR-CASE-20260501-TCF03.</value>
                 </causalityAssessment>
               </component>
             </adverseEventAssessment>
@@ -355,7 +355,7 @@
           <component typeCode="COMP">
             <observationEvent classCode="OBS" moodCode="EVN">
               <code code="C54588" codeSystem="2.16.840.1.113883.3.26.1.1" displayName="localCriteriaReportType"/>
-              <value xsi:type="CE" code="1" codeSystem="2.16.840.1.113883.3.989.5.1.2.2.1.1.1" displayName="15-Day"/>
+              <value xsi:type="CE" code="2" codeSystem="2.16.840.1.113883.3.989.5.1.2.2.1.1.1" displayName="Non-Expedited AE"/>
             </observationEvent>
           </component>
           <component typeCode="COMP">

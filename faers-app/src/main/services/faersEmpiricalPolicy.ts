@@ -220,17 +220,24 @@ export const IND_POLICY: Record<string, IndPolicyEntry> = {
     evidence: 'IND-T01 v4 ACK3 ci260427204838 CA+AE 2026-04-27 — confirmed correct by ACK sender field'
   },
   crossReportedInd: {
-    // OPEN-01 update (2026-05-07): the FDA.C.5.6.r warning ("invalid for the
-    // Center specified in N.2.r.3") is fired by every IND submission that
-    // emits OID 2.16.840.1.113883.3.989.5.1.2.2.1.2.3 — the postmarket FAERS
-    // report-number OID, which is invalid for CDER_IND. Per the v2 gap doc
-    // §8 risk assessment, the IND_May7 batch was rebuilt with this OID
-    // stripped from T01/T02/T04/T05/T06/T07 and swapped to OID
-    // ...2.1.2.1 (FDA.C.5.4.r.1, IND application number) for T03's two
-    // cross-referenced INDs. Round-trip confirmation pending.
-    value: 'absent (OID …2.1.2.3 stripped); cross-references go on …2.1.2.1',
-    verdict: 'untested',
-    evidence: 'OPEN-01 surgery 2026-05-07: T01/T02/T04-T07 stripped, T03 OID swapped …2.1.2.3 → …2.1.2.1; awaiting CA+AE round-trip. Prior CA+AE on present-with-warning state (IND-T01 v4 ACK ci260427204838) remains the fallback if the warning-free emission round-trips badly.'
+    // OPEN-01 CLOSED (2026-05-09): IND_May7 v5 ACK3 round-trip complete.
+    // All 7 CA+AE — C.5.6.r warning persists on every case regardless of OID.
+    //
+    // The May7 surgery stripped OID …2.1.2.3 from T01/T02/T04-T07 entirely and
+    // swapped it to …2.1.2.1 for T03. The warning fired on all 7 identically.
+    // Conclusion: the warning is triggered by the PRESENCE of the C.5.6.r
+    // cross-reference element, not by the OID value. It is a channel-inherent
+    // informational warning for CDER_IND submissions — it cannot be suppressed.
+    //
+    // Correct expected ACK for IND submissions with cross-referenced IND
+    // numbers: CA+AE (never CA+AA). T03 correctly fires two warnings (one
+    // per cross-ref element), confirming the repeating-element pattern.
+    //
+    // OID recommendation: revert to standard generator OID — the OID value
+    // has no effect on the warning or acceptance outcome.
+    value: 'present (any OID); C.5.6.r warning is channel-inherent — cannot be suppressed',
+    verdict: 'proven_safe',
+    evidence: 'OPEN-01 closed 2026-05-09: IND_May7 v5 7×CA+AE (ci260507054727/37/46/56/806/815/825). OID-stripped and OID-swapped variants both fired C.5.6.r warning identically. Prior evidence: IND-T01..T07 regen #3 portal CA+AE (ci260430003632..4355). Warning is informational only — no rejection path.'
   },
   requiredIntervention: {
     value: 'nullFlavor="NI"',
