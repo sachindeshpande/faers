@@ -1,0 +1,45 @@
+{
+  "input": "/Users/sachindeshpande/Projects/RegAI/workspace/faers/test/test_submission/examples/cases/TC-B02-medhistory-narrative.json",
+  "output": "../test/test_submission/from_app/TC-B02-medhistory-narrative.xml",
+  "caseId": "CASE-20260429-27DK",
+  "stages": [
+    {
+      "stage": "import",
+      "ok": true,
+      "detail": "CASE-20260429-27DK"
+    },
+    {
+      "stage": "validate",
+      "ok": true
+    },
+    {
+      "stage": "generate",
+      "ok": true,
+      "detail": "27304 bytes"
+    },
+    {
+      "stage": "write",
+      "ok": true,
+      "detail": "../test/test_submission/from_app/TC-B02-medhistory-narrative.xml"
+    },
+    {
+      "stage": "structural",
+      "ok": true
+    },
+    {
+      "stage": "lint",
+      "ok": true,
+      "detail": "60 PASS / 0 WARN / 0 FAIL"
+    },
+    {
+      "stage": "5pass",
+      "ok": true,
+      "detail": "errors=0 warnings=20 pass=true"
+    },
+    {
+      "stage": "markExported",
+      "ok": true
+    }
+  ],
+  "warnings": []
+}

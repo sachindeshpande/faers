@@ -1,0 +1,45 @@
+{
+  "input": "/Users/sachindeshpande/Projects/RegAI/workspace/faers/test/test_submission/examples/cases/TC-A05-ethnicity-hispanic.json",
+  "output": "../test/test_submission/from_app/TC-A05-ethnicity-hispanic.xml",
+  "caseId": "CASE-20260429-WXFY",
+  "stages": [
+    {
+      "stage": "import",
+      "ok": true,
+      "detail": "CASE-20260429-WXFY"
+    },
+    {
+      "stage": "validate",
+      "ok": true
+    },
+    {
+      "stage": "generate",
+      "ok": true,
+      "detail": "27080 bytes"
+    },
+    {
+      "stage": "write",
+      "ok": true,
+      "detail": "../test/test_submission/from_app/TC-A05-ethnicity-hispanic.xml"
+    },
+    {
+      "stage": "structural",
+      "ok": true
+    },
+    {
+      "stage": "lint",
+      "ok": true,
+      "detail": "60 PASS / 0 WARN / 0 FAIL"
+    },
+    {
+      "stage": "5pass",
+      "ok": true,
+      "detail": "errors=0 warnings=23 pass=true"
+    },
+    {
+      "stage": "markExported",
+      "ok": true
+    }
+  ],
+  "warnings": []
+}

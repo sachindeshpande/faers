@@ -1,0 +1,4 @@
+# Never commit credentials or submission logs with PII
+.env
+submit_batch.log
+submission_log.json
