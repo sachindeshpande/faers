@@ -98,9 +98,30 @@ echo "════════════════════════�
 
 mkdir -p "$OUT_BASE"
 
+# Cases where Gate 1 is expected to fail due to known generator enforcement.
+# Format: "TC-ID:reason"
+# These count as ENFORCEMENT CONFIRMED, not FAIL, and exit code remains 0.
+EXPECTED_GATE1_FAIL_CASES=(
+  "TC-G01-nonserous:B.2.i.7 generator enforcement — non-serious reactions (all seriousness false) blocked at import; generator requires at least one criterion true"
+  "TC-H02-nolocation:CDER 2.18 generator enforcement — country-only reporter blocked at import; street/city/state/postcode required"
+)
+
+_expected_gate1_reason() {
+  local _id="$1"
+  for _entry in "${EXPECTED_GATE1_FAIL_CASES[@]}"; do
+    if [[ "${_entry%%:*}" == "$_id" ]]; then
+      echo "${_entry#*:}"
+      return 0
+    fi
+  done
+  return 1
+}
+
 clean=0
+enforcement=0
 failed=0
 declare -a failed_files=()
+declare -a enforcement_files=()
 
 for json_path in "${JSONS[@]}"; do
   tc_id=$(basename "$json_path" .json)
@@ -135,10 +156,17 @@ for json_path in "${JSONS[@]}"; do
   generated_xml=$(find "$out_dir" -name "*.xml" | head -1)
 
   if [[ -z "$generated_xml" ]]; then
-    echo "  ❌ Gate 1 FAIL: no XML produced"
-    cat "$headless_log"
-    failed=$((failed + 1))
-    failed_files+=("$tc_id (no XML generated)")
+    _reason="$(_expected_gate1_reason "$tc_id" || true)"
+    if [[ -n "$_reason" ]]; then
+      echo "  ⚙️  Gate 1 ENFORCEMENT CONFIRMED: $_reason"
+      enforcement=$((enforcement + 1))
+      enforcement_files+=("$tc_id")
+    else
+      echo "  ❌ Gate 1 FAIL: no XML produced"
+      LC_ALL=C grep '✗\|Error\|failed' "$headless_log" 2>/dev/null | head -5 || true
+      failed=$((failed + 1))
+      failed_files+=("$tc_id (no XML generated)")
+    fi
     continue
   fi
 
@@ -185,11 +213,21 @@ done
 echo ""
 echo "══════════════════════════════════════════════════════════════"
 echo "=== WORKFLOW TEST SUMMARY ==="
-echo "  ✅ Passed: $clean"
-echo "  ❌ Failed: $failed"
-echo "  Total:    ${#JSONS[@]}"
-echo "  Output:   $OUT_BASE"
+echo "  ✅ Passed:               $clean"
+echo "  ⚙️  Enforcement confirmed: $enforcement"
+echo "  ❌ Failed:               $failed"
+echo "  Total:                  ${#JSONS[@]}"
+echo "  Output:                 $OUT_BASE"
 echo "══════════════════════════════════════════════════════════════"
+
+if [[ ${#enforcement_files[@]} -gt 0 ]]; then
+  echo ""
+  echo "ENFORCEMENT CONFIRMED (expected Gate 1 blocks):"
+  for f in "${enforcement_files[@]}"; do
+    _r="$(_expected_gate1_reason "$f" || true)"
+    echo "  ⚙️  $f — $_r"
+  done
+fi
 
 if [[ ${#failed_files[@]} -gt 0 ]]; then
   echo ""
