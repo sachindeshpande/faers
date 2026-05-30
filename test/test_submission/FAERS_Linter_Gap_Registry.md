@@ -1,6 +1,6 @@
 # FAERS XML Linter — Gap Registry
 **Project:** DeepQuence FAERS AERS TEST Submission  
-**Last updated:** 2026-05-29  
+**Last updated:** 2026-05-29 (Sections 33-46 added; 17 OPEN gaps closed)  
 **Purpose:** Authoritative record of all schema/business-rule gaps identified during TC-M01 through TC-M12. Use this document to update workflow code, add linter sections, and brief reviewers.
 
 ---
@@ -47,6 +47,24 @@ Each gap has:
 | GAP-F26 | Drug organizer — dual format | FDA FAERS 2.18 accepts BOTH: (A) legacy code="suspect"/"concomitant" on .1.13, AND (B) code=4 on .1.20 + causalityAssessment code=20. Must not mix. Section 30 updated to accept both. | Sec 30 | TC-M11/M12 (v11 CR+AR → v12 reverts to legacy, which is accepted) |
 | GAP-F27 | C.2.r sourceReport unconditional | Section 16 gated on is_followup=True, skipping initial reports | Sec 31 | TC-M07 "Tags Missing: C.2.r" |
 | GAP-F28 | H-section author codes | H.3.r=code1/sender, H.4=code1/sender, H.2=code3/sourceReporter | Sec 32 | TC-M09 H.3.r fix |
+| GAP-O01 | C.2.r.4 reporter qual value-set | qualification code ∈ {1,2,3,4,5} on OID `.3.989.2.1.1.6` inside SPRT code=2 block | Sec 31 (sub-check) | Identified 2026-05-29 |
+| GAP-O02 | C.1.3 ICH report type value | value CE code ∈ {1,2,3,4} on OID `.3.989.2.1.1.2`; missing or wrong code rejected | Sec 33 | Identified 2026-05-29 |
+| GAP-O03 | C.1.4 effectiveTime IVL_TS | investigationEvent effectiveTime must have `<low>` child (IVL_TS format) | Sec 34 | Identified 2026-05-29 |
+| GAP-O05 | C.2.r.4 OID inside sourceReport block | `asQualifiedEntity/code` codeSystem must be OID `.3.989.2.1.1.6` | Sec 31 (sub-check) | Identified 2026-05-29 |
+| GAP-O06 | C.1.9 initialReport sender code | `author/assignedEntity/code[@code="1"]` on OID `.3.989.2.1.1.3` in SPRT code=1 block | Sec 35 | Identified 2026-05-29 |
+| GAP-O07 | E.i.3.1 termHighlighted value-set | code ∈ {1,2,3} on OID `.3.989.2.1.1.10`; code=3="No but SERIOUS" common | Sec 39 | Identified 2026-05-29 |
+| GAP-O10 | G.k.8 Action Taken value-set | code ∈ {0,1,2,3,4,5,6} on OID `.3.989.2.1.1.15` | Sec 36 | Identified 2026-05-29 |
+| GAP-O11 | Dechallenge value-set | code ∈ {1,2,3,4} on OID `.3.989.2.1.1.16`; 4=NA | Sec 37 | Identified 2026-05-29 |
+| GAP-O12 | Rechallenge value-set | code ∈ {1,2,3,4} on OID `.3.989.2.1.1.17` | Sec 38 | Identified 2026-05-29 |
+| GAP-O15 | processingCode code="P" | `<processingCode code="P"/>` required in PORR block | Sec 41 | Identified 2026-05-29 |
+| GAP-O16 | acceptAckCode code="AL" | `<acceptAckCode code="AL"/>` required; controls whether gateway sends ACK | Sec 41 | Identified 2026-05-29 |
+| GAP-O17 | C.1.3 value codeSystem | value element codeSystem must be `.3.989.2.1.1.2`, not `.3.989.2.1.1.23` | Sec 33 | Identified 2026-05-29 |
+| GAP-O21 | Batch creationTime UTC offset | creationTime value must include UTC offset (YYYYMMDDHHMMSS±HHMM) | Sec 42 | Identified 2026-05-29 |
+| GAP-O22 | responseModeCode code="D" | content validated (not just presence) | Sec 43 | Identified 2026-05-29 |
+| GAP-O23 | interactionId@extension values | wrapper="MCCI_IN200100UV01"; PORR="PORR_IN049016UV" | Sec 43-44 | Identified 2026-05-29 |
+| GAP-O24 | statusCode code="active" | `<statusCode code="active"/>` must be present under investigationEvent | Sec 40 | Identified 2026-05-29 |
+| GAP-O25 | Patient name (D.1) | `player1/name` initials must be non-empty | Sec 45 | Identified 2026-05-29 |
+| GAP-O26 | administrativeGenderCode | code ∈ {0,1,2} on codeSystem `1.0.5218` | Sec 46 | Identified 2026-05-29 |
 
 ---
 
@@ -56,28 +74,16 @@ Each gap has:
 
 | ID | Field | E2B(R3) Tag | Description | Complexity |
 |----|-------|------------|-------------|------------|
-| GAP-O01 | C.2.r.4 reporter qual value-set | C.2.r.4 | qualification code ∈ {1-5} on OID `.3.989.2.1.1.6`; invalid code → "Element value not allowed" | Low |
-| GAP-O02 | C.1.3 ICH report type value | C.1.3 | value CE code ∈ {1,2,3,4} on OID `.3.989.2.1.1.2`; missing value or wrong code rejected | Low |
-| GAP-O03 | C.1.4 effectiveTime format | C.1.4 | investigationEvent effectiveTime must have `<low>` child (IVL_TS), not flat `value=""` | Low |
 | GAP-O04 | causalityAssessment code=20 value-set | G.k.1 | value CE code ∈ {1=Suspect,2=Concomitant,3=Interacting} on OID `.3.989.2.1.1.13`; any other code rejected | Low |
-| GAP-O05 | C.2.r.4 OID inside sourceReport block | C.2.r.4 | `asQualifiedEntity/code` in the SPRT sourceReport block must use OID `.3.989.2.1.1.6` | Medium |
-| GAP-O06 | C.1.9 initialReport sender code | C.1.8.2 | `controlActEvent/author/assignedEntity/code[@code="1"]` on OID `.3.989.2.1.1.3` required in initialReport block | Low |
 
 ### MEDIUM Severity — Silent Wrong Behaviour / Reviewer Flag
 
 | ID | Field | E2B(R3) Tag | Description | Complexity |
 |----|-------|------------|-------------|------------|
-| GAP-O07 | E.i.3.1 termHighlighted value-set | E.i.3.1 | code ∈ {1,2,3} on OID `.3.989.2.1.1.10`; code=3="No but SERIOUS" commonly used | Low |
 | GAP-O08 | C.1.7 / C.1.7.1 conditional | C.1.7+C.1.7.1 | If C.1.7=false → reportType must be code=2; mismatch violates Business Rule R0027 | Low |
 | GAP-O09 | Drug name in kindOfProduct | G.k.2.2 | `kindOfProduct/name` must be present for every drug; missing → G.k.2.2 empty | Low |
-| GAP-O10 | G.k.8 Action Taken value-set | G.k.8 | code ∈ {0,1,2,3,4,5,6} on OID `.3.989.2.1.1.15` | Low |
-| GAP-O11 | Dechallenge value-set | G.k.9.i | code ∈ {1,2,3,4} on OID `.3.989.2.1.1.16`; 4=NA | Low |
-| GAP-O12 | Rechallenge value-set | G.k.9.ii | code ∈ {1,2,3,4} on OID `.3.989.2.1.1.17` | Low |
 | GAP-O13 | H.5.r case summary author | H.5.r | author code=2 (reporter) on OID `.3.989.2.1.1.21` | Low |
 | GAP-O14 | Drug organizer placement | G.k | drug organizers must be inside `primaryRole/subjectOf2`, not floating | Medium |
-| GAP-O15 | processingCode code="P" | N.2.r | `<processingCode code="P"/>` required in PORR block | Low |
-| GAP-O16 | acceptAckCode code="AL" | N.2.r | `<acceptAckCode code="AL"/>` required; controls whether gateway sends ACK | Low |
-| GAP-O17 | C.1.3 value codeSystem | C.1.3 | value element codeSystem must be `.3.989.2.1.1.2`, not `.3.989.2.1.1.23` (wrong-OID copy) | Low |
 | GAP-O18 | causalityAssessment code=39 structure | G.k.9.i.2 | code=39 must have BOTH subject1 (adverseEffect) and subject2 (product); partial block silently fails | Low |
 | GAP-O19 | Every drug UUID has code=20 block | G.k.1 | each drug substanceAdministration UUID must have ≥1 interventionCharacterization block | Medium |
 | GAP-O20 | causalityAssessment code=20 no subject1 | G.k.1 | code=20 must NOT contain subject1 (only subject2); having both is a schema violation | Low |
@@ -86,12 +92,6 @@ Each gap has:
 
 | ID | Field | E2B(R3) Tag | Description | Complexity |
 |----|-------|------------|-------------|------------|
-| GAP-O21 | Batch creationTime UTC offset | N.1.5 | creationTime value must include UTC offset (YYYYMMDDHHMMSS±HHMM); bare date normalised by gateway but non-compliant | Low |
-| GAP-O22 | responseModeCode code="D" | N.1 | content validated (not just presence); all scenarios use D | Low |
-| GAP-O23 | interactionId@extension values | N.1/N.2 | wrapper must be "MCCI_IN200100UV01"; PORR must be "PORR_IN049016UV" | Low |
-| GAP-O24 | statusCode code="active" | investigationEvent | `<statusCode code="active"/>` must be present; missing causes gateway parse fail | Low |
-| GAP-O25 | Patient name (D.1) | D.1 | `player1/name` (initials) must be present | Low |
-| GAP-O26 | administrativeGenderCode | D.5 | codeSystem=`1.0.5218`, code ∈ {1=Male, 2=Female, 0=Unknown} | Low |
 | GAP-O27 | PORR id extension format | N.2.r.1 | extension should be UUID or controlled string; spaces cause gateway parsing issues | Low |
 
 ---
