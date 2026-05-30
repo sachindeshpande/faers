@@ -3,7 +3,7 @@
 **Baseline:** CASE-20260421-2L8T (`CA+AA`, ACK `ci260421211040`, April 21 2026)  
 **Golden reference:** `package/CASE-20260331-EMJQ_fixed_v37_patch.xml` (`CA+AA`, ACK `ci260410211359`, April 10 2026)  
 **Target environment:** ZZFDATST (CDER FAERS AERS TEST)  
-**Last updated:** 2026-04-29 — status updated; 4/23 cases submitted and accepted
+**Last updated:** 2026-05-09 — TC-G01 promoted to ACCEPTED (CA+AA ci260501225706; golden confirmed). All 30 postmarket TC scenarios completed: 26 CA+AA, 4 proven-rejected, 0 pending.
 
 ---
 
@@ -15,44 +15,46 @@ The empirical policy is the only reliable guide for this submission environment.
 
 ---
 
-## 2. Submission Status Summary (as of 2026-04-29)
+## 2. Submission Status Summary (as of 2026-05-09)
 
-| Test ID | Description | Status | ACK | Result |
-|---------|-------------|--------|-----|--------|
-| TC-A01 | Race — White (`C41261`) | ✅ ACCEPTED | ci260429225353 | CA+AA, no warnings |
-| TC-A02 | Race — Black or African American (`C41259`) | ⏳ Not submitted | — | — |
-| TC-A03 | Race — American Indian or Alaska Native (`C41257`) | ⏳ Not submitted | — | — |
-| TC-A04 | Race — Native Hawaiian or Other Pacific Islander (`C41258`) | ⏳ Not submitted | — | — |
-| TC-A05 | Ethnicity — Hispanic or Latino (`C17459`) | ✅ ACCEPTED | ci260429225534 | CA+AA, no warnings |
-| TC-A06 | Ethnicity — nullFlavor NI | ⏳ Not submitted | — | — |
-| TC-B01 | Med History — empty string | ⏳ Not submitted | — | — |
-| TC-B02 | Med History — structured narrative text | ✅ ACCEPTED | ci260429225614 | CA+AA, no warnings |
-| TC-C01 | Reporter qualification — code 2 | ⏳ Not submitted | — | — |
-| TC-C02 | Reporter qualification — code 3 | ⏳ Not submitted | — | — |
-| TC-D01 | ActionTaken — code 2 (dose reduced) | ⏳ Not submitted | — | — |
-| TC-D02 | ActionTaken — code 3 (dose increased) | ⏳ Not submitted | — | — |
-| TC-D03 | ActionTaken — code 5 (not applicable) | ⏳ Not submitted | — | — |
-| TC-D04 | Dechallenge — code 1 (yes) | ⏳ Not submitted | — | — |
-| TC-D05 | Two suspect drugs | ⏳ Not submitted | — | — |
-| TC-D06 | Concomitant drug — ActionTaken code 6 (unknown) | ⏳ Not submitted | — | — |
-| TC-E01 | Patient weight — absent | ⏳ Not submitted | — | — |
-| TC-E02 | Patient age — nullFlavor on birthTime | ⏳ Not submitted | — | — |
-| TC-E03 | Patient sex — Female (`code=2`) | ✅ ACCEPTED | ci260429225656 | CA+AA, no warnings |
-| TC-F01 | Follow-up / amendment (version 3) | ⏳ Not submitted | — | — |
-| TC-F02 | Combination product indicator — true | ⏳ Not submitted | — | — |
-| TC-F03 | Local expedited criteria — false | ⏳ Not submitted | — | — |
-| TC-F04 | ICH report type — code 2 (study) | ⏳ Not submitted | — | — |
-| TC-G01 | Serious reaction — all seriousness BL flags false | ⏳ Not submitted | — | — |
-| TC-G02 | Reaction outcome — code 2 (recovering) | ⏳ Not submitted | — | — |
-| TC-G03 | Reaction outcome — code 4 (recovered with sequelae) | ⏳ Not submitted | — | — |
-| TC-G04 | Reaction outcome — code 5 (fatal) | ⏳ Not submitted | — | — |
-| TC-H01 | Additional documents available — true | ⏳ Not submitted | — | — |
-| TC-H02 | asLocatedEntity absent | ⏳ Not submitted | — | — |
-| TC-H03 | Outer org name changed | ⏳ Not submitted | — | — |
+All 30 postmarket TC scenarios have now been attempted. **26 accepted (CA+AA), 4 proven-rejected data points, 0 pending.**
 
-**Coverage: 4 / 30 test cases submitted and accepted. 26 remaining.**
+| Test ID | Description | Status | ACK (decisive) | Result |
+|---------|-------------|--------|----------------|--------|
+| TC-A01 | Race — White (`C41261`) | ✅ ACCEPTED | ci260429225353 | CA+AA (portal Apr 29) |
+| TC-A02 | Race — Black or African American (`C41259`) | ✅ ACCEPTED | ci260501173418 | CA+AA (API May 1) |
+| TC-A03 | Race — American Indian or Alaska Native (`C41257`) | ❌ PROVEN REJECTED | ci260501170657 | `Element value not allowed for tag FDA.D.11.r.1` — C41257 not in CDER 2.18 allowed set |
+| TC-A04 | Race — Native Hawaiian or Other Pacific Islander (`C41258`) | ❌ PROVEN REJECTED | ci260501170706 | `Element value not allowed for tag FDA.D.11.r.1` — C41258 not in CDER 2.18 allowed set |
+| TC-A05 | Ethnicity — Hispanic or Latino (`C17459`) | ✅ ACCEPTED | ci260429225534 | CA+AA (portal Apr 29) |
+| TC-A06 | Ethnicity — nullFlavor NI | ❌ PROVEN REJECTED (schema) | ci260501170715 | `SAXParseException: cvc-type.2: type definition cannot be abstract for element value` — schema-level rejection before business rules |
+| TC-B01 | Med History — empty `<value xsi:type="ED"/>` | ✅ ACCEPTED | ci260501170724 | CA+AA (API May 1) |
+| TC-B02 | Med History — structured narrative text | ✅ ACCEPTED | ci260429225614 | CA+AA (portal Apr 29) |
+| TC-C01 | Reporter qualification — code 2 | ✅ ACCEPTED | ci260501170734 | CA+AA (API May 1) |
+| TC-C02 | Reporter qualification — code 3 | ✅ ACCEPTED | ci260501170544 | CA+AA (API May 1) |
+| TC-D01 | ActionTaken — code 2 (dose reduced) | ✅ ACCEPTED | ci260501170553 | CA+AA (API May 1) |
+| TC-D02 | ActionTaken — code 3 (dose increased) | ✅ ACCEPTED | ci260501170743 | CA+AA (API May 1) |
+| TC-D03 | ActionTaken — code 5 (not applicable) | ✅ ACCEPTED | ci260501170752 | CA+AA (API May 1) |
+| TC-D04 | Dechallenge — code 1 (yes) | ✅ ACCEPTED | ci260501170801 | CA+AA (API May 1) |
+| TC-D05 | Two suspect drugs | ✅ ACCEPTED | ci260501170602 | CA+AA (API May 1) |
+| TC-D06 | Concomitant drug — ActionTaken code 6 (unknown) | ✅ ACCEPTED | ci260501170810 | CA+AA (API May 1) |
+| TC-E01 | Patient weight — absent | ✅ ACCEPTED | ci260501170819 | CA+AA (API May 1) — weight is optional |
+| TC-E02 | Patient age — nullFlavor on birthTime | ✅ ACCEPTED | ci260501170828 | CA+AA (API May 1) |
+| TC-E03 | Patient sex — Female (`code=2`) | ✅ ACCEPTED | ci260429225656 | CA+AA (portal Apr 29) |
+| TC-F01 | Follow-up / amendment (version 3) | ✅ ACCEPTED | ci260501170837 | CA+AA (API May 1) |
+| TC-F02 | Combination product indicator — true | ✅ ACCEPTED | ci260501170846 | CA+AA (API May 1) |
+| TC-F03 | Local expedited criteria — false | ✅ ACCEPTED | ci260501225648 (v2) | CA+AA (API May 1) — v1 CR+AR for C.1.7.1 code; fix: code `1`→`2` (Non-Expedited AE) |
+| TC-F04 | ICH report type — code 2 (study) | ✅ ACCEPTED | ci260501225657 (v2) | CA+AA (API May 1) — v1 CR+AR for missing C.5.4; fix: added `researchStudy` block |
+| TC-G01 | Serious reaction — all seriousness BL flags false | ✅ ACCEPTED | ci260501225706 (v2) | CA+AA — all BL flags false accepted; non-serious seriousness block confirmed (golden regenerated 2026-05-08) |
+| TC-G02 | Reaction outcome — code 2 (recovering) | ✅ ACCEPTED | ci260501170922 | CA+AA (API May 1) |
+| TC-G03 | Reaction outcome — code 4 (recovered with sequelae) | ✅ ACCEPTED | ci260501170931 | CA+AA (API May 1) |
+| TC-G04 | Reaction outcome — code 5 (fatal) | ✅ ACCEPTED | ci260501170611 | CA+AA (API May 1) |
+| TC-H01 | Additional documents available — true | ✅ ACCEPTED | ci260501170940 | CA+AA (API May 1) |
+| TC-H02 | Reporter with country-only address (no street) | ❌ SCENARIO INVALID | ci260501235624 (v3 final) | Three-round CR+AR campaign: CDER 2.18 mandates ALL C.3.4.1–C.3.4.5; no resubmit |
+| TC-H03 | Outer org name changed | ✅ ACCEPTED | ci260501170958 | CA+AA (API May 1) |
 
-> Note: The catalog was extended to 30 entries (TC-A01–TC-H03) versus the original 23 count at the bottom of this document; the original count did not include all Group D and G variants. For IND/premarket coverage, see **§8** — all 7 IND cases (T01–T07) were accepted CA+AE on 2026-04-29. IND-T05 confirmed the fatal case + D.9.3 autopsy rule; IND-T07 confirmed follow-up report (C.1.9 version=3). These findings are informative but do not substitute for TC-G04 and TC-F01 on the postmarket channel.
+**Coverage: 26 / 30 accepted, 4 proven rejected (A03, A04, A06, H02-scenario-invalid), 0 pending. All 30 scenarios attempted.**
+
+> For IND/premarket coverage, see **§8** — all 7 IND cases (T01–T07) accepted CA+AE on regen #3 portal (2026-04-29/30) and confirmed again on IND_May7 v5 API batch (2026-05-07, ACK3 received 2026-05-09). Key finding: the C.5.6.r warning is channel-inherent and cannot be suppressed — CA+AE is the correct expected result for all IND submissions with cross-references. IND-T05 confirmed fatal case + D.9.3 autopsy rule; IND-T07 confirmed follow-up report (C.1.9 version=3); IND-T04 confirmed C.5.1.r.1 (NCT) is optional.
 
 ---
 
@@ -76,16 +78,29 @@ This table is the ground truth. Do not change a field marked REJECTED without a 
 
 | Field | REJECTED values | ACCEPTED values | Evidence |
 |-------|----------------|-----------------|----------|
-| Race `C17049` / `FDA.D.11.r.1` | `nullFlavor="NI"`, `C17998` | **`C41260`** "Asian", **`C41261`** "White" | QTXZ(NI→reject), 26ZL(C17998→reject), v37+2L8T(C41260→accept), **TC-A01(C41261→accept)** |
-| Ethnicity `C16564` / `FDA.D.12` | `C17998` | **`C41222`** "Not Hispanic or Latino", **`C17459`** "Hispanic or Latino" | 26ZL(C17998→reject), v37+2L8T(C41222→accept), **TC-A05(C17459→accept)** |
-| Med history `code=18` / `D.7.2` | `nullFlavor="NI"` | **`"None reported"`** (text), free-text narrative | QTXZ(NI→reject), 26ZL+2L8T("None reported"→accept), v37(narrative→accept), **TC-B02(structured narrative→accept)** |
+| Race `C17049` / `FDA.D.11.r.1` | `nullFlavor="NI"`, `C17998`, **`C41257`** (AmericanIndian), **`C41258`** (Hawaiian) | **`C41260`** "Asian", **`C41261`** "White", **`C41259`** "Black" | QTXZ(NI→reject), 26ZL(C17998→reject), v37+2L8T(C41260→accept), **TC-A01(C41261→accept)**, **TC-A02(C41259→accept)**, **TC-A03(C41257→reject)**, **TC-A04(C41258→reject)** |
+| Ethnicity `C16564` / `FDA.D.12` | `C17998`, **`nullFlavor="NI"` (schema-rejected)** | **`C41222`** "Not Hispanic or Latino", **`C17459`** "Hispanic or Latino" | 26ZL(C17998→reject), v37+2L8T(C41222→accept), **TC-A05(C17459→accept)**, **TC-A06(NI→SAXParseException)** |
+| Med history `code=18` / `D.7.2` | `nullFlavor="NI"` | **`"None reported"`** (text), free-text narrative, **empty `<value xsi:type="ED"/>`** | QTXZ(NI→reject), 26ZL+2L8T("None reported"→accept), v37(narrative→accept), **TC-B02(structured narrative→accept)**, **TC-B01(empty ED→accept)** |
 | Patient sex / `D.2` | — | **`code="1"`** (Male), **`code="2"`** (Female) | v37+2L8T(code=1→accept), **TC-E03(code=2→accept)** |
+| Patient weight / `D.6` | — | Present (PQ value=82 kg), **absent** | 2L8T(present→accept), **TC-E01(absent→accept — field is optional)** |
+| Patient birthTime / `D.3` | — | Explicit date, **`nullFlavor="UNK"`** | 2L8T(explicit→accept), **TC-E02(nullFlavor UNK→accept)** |
 | otherCaseIds BL | — | **`nullFlavor="NI"`** | v37+2L8T(NI→accept) |
-| Reaction outcome `code=27` | — | **`1`** (recovered), **`3`** (ongoing) | 2L8T(code=1→accept), v37(code=3→accept) |
+| Reaction outcome `code=27` | — | **`1`** (recovered), **`2`** (recovering), **`3`** (ongoing), **`4`** (with sequelae), **`5`** (fatal) | 2L8T(code=1→accept), v37(code=3→accept), **TC-G02(code=2→accept)**, **TC-G03(code=4→accept)**, **TC-G04(code=5→accept)** |
+| Reaction seriousness (all BL false) | — | All BL false (no serious criterion) | **TC-G01(all-false→accept, ci260501225706)** |
 | Reaction hospitalization BL | — | **`true`**, **`false`** | v37(true→accept), 2L8T(false→accept) |
 | Reaction otherMedImportant BL | — | **`true`**, **`false`** | v37(true→accept), 2L8T(false→accept) |
 | Reaction C49489 Outcome | — | **`1`** (recovered), **`6`** (unknown) | v37(6→accept via Reaction 2), 2L8T(1→accept via Reaction 1) |
-| Reporter qualification OID `.1.7` | — | **`code=1`** | v37+2L8T(code=1→accept) |
+| Reporter qualification OID `.1.7` | — | **`code=1`**, **`code=2`**, **`code=3`** | v37+2L8T(code=1→accept), **TC-C01(code=2→accept)**, **TC-C02(code=3→accept)** |
+| Drug ActionTaken OID `.1.15` | — | **`1`** (withdrawn), **`2`** (reduced), **`3`** (increased), **`4`** (unchanged), **`5`** (N/A), **`6`** (unknown) | 2L8T(1→accept, 4→accept), **TC-D01(2→accept)**, **TC-D02(3→accept)**, **TC-D03(5→accept)**, **TC-D06(6→accept)** |
+| Drug Dechallenge OID `.1.16` | — | **`1`** (yes), **`3`** (N/A) | 2L8T(3→accept), **TC-D04(1→accept)** |
+| Multi-suspect drugs | — | **2 suspect drugs + 1 concomitant** | **TC-D05(2 suspects→accept)** |
+| Local expedited flag `C.1.7` | — | **`true`** (15-day), **`false`** → `C.1.7.1 code=2` required | 2L8T(true→accept), **TC-F03(false→accept when code=2 Non-Expedited AE)** |
+| ICH report type `C.1.3` | — | **`1`** (spontaneous), **`2`** (from study + C.5.4 required) | 2L8T(1→accept), **TC-F04(2→accept when C.5.4 `researchStudy` block present)** |
+| Follow-up / version `C.1.9` | — | **`extension="2"`** (initial), **`extension="3"`** (follow-up) | v37+2L8T(2→accept), **TC-F01(3→accept)** |
+| Combination product flag `C156384` | — | **`false`**, **`true`** | 2L8T(false→accept), **TC-F02(true→accept)** |
+| Additional documents flag `C.1.6.1` | — | **`false`**, **`true`** | 2L8T(false→accept), **TC-H01(true→accept)** |
+| Reporter org outer name | — | **`"Drug Safety"`**, **`"Pharmacovigilance"`** | v37+2L8T("Drug Safety"→accept), **TC-H03("Pharmacovigilance"→accept — field is free-text)** |
+| Reporter address (C.3.4.1–C.3.4.5) | Country-only (no street/city/state/postal) | **All five fields required** | **TC-H02 3-round rejection — C.3.4.1/2/3/4/5 all mandatory in CDER 2.18** |
 | Org structure | flat single-level | **nested 2-level** | v30-v36(flat→C.3.2 fail), v37+2L8T(nested→accept) |
 
 ---
@@ -134,6 +149,7 @@ These are the highest-value tests since the race/ethnicity fields have the riche
 | Attribute | Value |
 |-----------|-------|
 | **Test ID** | TC-A02 |
+| **Status** | ✅ **ACCEPTED** — CA+AA, no warnings. ACK ci260501173418 (API May 1) |
 | **E2B field** | FDA.D.11.r.1 |
 | **Baseline** | `C41260` "Asian" |
 | **Test value** | `C41259` "Black or African American" |
@@ -152,6 +168,7 @@ These are the highest-value tests since the race/ethnicity fields have the riche
 | Attribute | Value |
 |-----------|-------|
 | **Test ID** | TC-A03 |
+| **Status** | ❌ **PROVEN REJECTED** — ACK ci260501170657 (API May 1). `Element value not allowed for tag FDA.D.11.r.1`. C41257 is not in the CDER 2.18 allowed set for race. **No resubmission.** |
 | **E2B field** | FDA.D.11.r.1 |
 | **Baseline** | `C41260` "Asian" |
 | **Test value** | `C41257` "American Indian or Alaska Native" |
@@ -169,6 +186,7 @@ These are the highest-value tests since the race/ethnicity fields have the riche
 | Attribute | Value |
 |-----------|-------|
 | **Test ID** | TC-A04 |
+| **Status** | ❌ **PROVEN REJECTED** — ACK ci260501170706 (API May 1). `Element value not allowed for tag FDA.D.11.r.1`. C41258 is not in the CDER 2.18 allowed set for race. **No resubmission.** |
 | **E2B field** | FDA.D.11.r.1 |
 | **Baseline** | `C41260` "Asian" |
 | **Test value** | `C41258` "Native Hawaiian or Other Pacific Islander" |
@@ -209,11 +227,12 @@ These are the highest-value tests since the race/ethnicity fields have the riche
 | Attribute | Value |
 |-----------|-------|
 | **Test ID** | TC-A06 |
+| **Status** | ❌ **PROVEN REJECTED (schema-level)** — ACK ci260501170715 (API May 1). `SAXParseException: cvc-type.2: The type definition cannot be abstract for element value.` The abstract-type schema error fires before CDER business rules are reached. `nullFlavor="NI"` is categorically unsupported for the ethnicity `<value>` element. **No resubmission.** |
 | **E2B field** | FDA.D.12 |
 | **Baseline** | `C41222` |
 | **Test value** | `nullFlavor="NI"` (no code attribute) |
 | **Risk** | **Medium** — race nullFlavor was REJECTED (QTXZ); ethnicity nullFlavor was never tested independently |
-| **Note** | Submit this AFTER TC-A05. If ethnicity NI is rejected, the specific error code in the ACK will confirm it. |
+| **Note** | Confirmed schema-rejected by TC-A06 ci260501170715. Never use nullFlavor on the ethnicity value element. |
 
 **XML change:**
 ```xml
@@ -235,6 +254,7 @@ These are the highest-value tests since the race/ethnicity fields have the riche
 | Attribute | Value |
 |-----------|-------|
 | **Test ID** | TC-B01 |
+| **Status** | ✅ **ACCEPTED** — CA+AA, no warnings. ACK ci260501170724 (API May 1). Empty `<value xsi:type="ED"/>` accepted — med history is optional in CDER 2.18. |
 | **E2B field** | D.7.2 |
 | **Baseline** | `"None reported"` |
 | **Test value** | Empty `<value xsi:type="ED"/>` |
@@ -280,6 +300,7 @@ These tests probe the OID `.1.7` sender-type value set, which is separate from t
 | Attribute | Value |
 |-----------|-------|
 | **Test ID** | TC-C01 |
+| **Status** | ✅ **ACCEPTED** — CA+AA, no warnings. ACK ci260501170734 (API May 1). Code=2 (Regulatory authority) accepted by CDER 2.18. |
 | **E2B field** | C.3.1 |
 | **FAERS rule** | `assignedEntity/code` in `subjectOf1/controlActEvent/author`, OID `.1.7` |
 | **Baseline** | `code="1"` |
@@ -304,6 +325,7 @@ These tests probe the OID `.1.7` sender-type value set, which is separate from t
 | Attribute | Value |
 |-----------|-------|
 | **Test ID** | TC-C02 |
+| **Status** | ✅ **ACCEPTED** — CA+AA, no warnings. ACK ci260501170544 (API May 1). Code=3 (Health professional) accepted. |
 | **E2B field** | C.3.1 |
 | **Baseline** | `code="1"` |
 | **Test value** | `code="3"` |
@@ -326,6 +348,7 @@ These tests probe the OID `.1.7` sender-type value set, which is separate from t
 | Attribute | Value |
 |-----------|-------|
 | **Test ID** | TC-D01 |
+| **Status** | ✅ **ACCEPTED** — CA+AA, no warnings. ACK ci260501170553 (API May 1). |
 | **E2B field** | G.k.8 Action taken |
 | **FAERS rule** | `C41341` observation value, OID `.1.1.15` |
 | **Baseline** | Suspect drug: `code="1"` (drug withdrawn); Concomitant: `code="4"` (dose not changed) |
@@ -348,6 +371,7 @@ These tests probe the OID `.1.7` sender-type value set, which is separate from t
 | Attribute | Value |
 |-----------|-------|
 | **Test ID** | TC-D02 |
+| **Status** | ✅ **ACCEPTED** — CA+AA, no warnings. ACK ci260501170743 (API May 1). |
 | **E2B field** | G.k.8 |
 | **Baseline** | Suspect: `code="1"` |
 | **Test value** | Suspect: `code="3"` |
@@ -360,6 +384,7 @@ These tests probe the OID `.1.7` sender-type value set, which is separate from t
 | Attribute | Value |
 |-----------|-------|
 | **Test ID** | TC-D03 |
+| **Status** | ✅ **ACCEPTED** — CA+AA, no warnings. ACK ci260501170752 (API May 1). |
 | **E2B field** | G.k.8 |
 | **Baseline** | Suspect: `code="1"` |
 | **Test value** | Suspect: `code="5"` |
@@ -372,6 +397,7 @@ These tests probe the OID `.1.7` sender-type value set, which is separate from t
 | Attribute | Value |
 |-----------|-------|
 | **Test ID** | TC-D04 |
+| **Status** | ✅ **ACCEPTED** — CA+AA, no warnings. ACK ci260501170801 (API May 1). |
 | **E2B field** | G.k.9.i.3.1b Dechallenge |
 | **FAERS rule** | `C49492` observation value, OID `.1.1.16` |
 | **Baseline** | `code="3"` (not applicable / not done) |
@@ -394,6 +420,7 @@ These tests probe the OID `.1.7` sender-type value set, which is separate from t
 | Attribute | Value |
 |-----------|-------|
 | **Test ID** | TC-D05 |
+| **Status** | ✅ **ACCEPTED** — CA+AA, no warnings. ACK ci260501170602 (API May 1). Two suspect drugs accepted; multiple drug blocks confirmed valid. |
 | **E2B field** | G.k Drug information (multiple) |
 | **Baseline** | 1 suspect + 1 concomitant |
 | **Test value** | 2 suspect + 1 concomitant |
@@ -409,6 +436,7 @@ These tests probe the OID `.1.7` sender-type value set, which is separate from t
 | Attribute | Value |
 |-----------|-------|
 | **Test ID** | TC-D06 |
+| **Status** | ✅ **ACCEPTED** — CA+AA, no warnings. ACK ci260501170810 (API May 1). Code=6 (unknown) accepted for concomitant drug action. |
 | **E2B field** | G.k.8 |
 | **Baseline** | Concomitant Lisinopril: `code="4"` |
 | **Test value** | `code="6"` (unknown) |
@@ -425,6 +453,7 @@ These tests probe the OID `.1.7` sender-type value set, which is separate from t
 | Attribute | Value |
 |-----------|-------|
 | **Test ID** | TC-E01 |
+| **Status** | ✅ **ACCEPTED** — CA+AA, no warnings. ACK ci260501170819 (API May 1). Patient weight is optional in CDER 2.18; omitting the entire weight `subjectOf2` block is accepted. |
 | **E2B field** | D.6 |
 | **Baseline** | `<observation C25208>` PQ value=82 kg present |
 | **Test value** | Remove the entire weight `subjectOf2` block |
@@ -447,6 +476,7 @@ These tests probe the OID `.1.7` sender-type value set, which is separate from t
 | Attribute | Value |
 |-----------|-------|
 | **Test ID** | TC-E02 |
+| **Status** | ✅ **ACCEPTED** — CA+AA, no warnings. ACK ci260501170828 (API May 1). `birthTime nullFlavor="UNK"` accepted when explicit age observation (50y) is present. |
 | **E2B field** | D.3 Birthdate |
 | **Baseline** | `<birthTime value="19750615"/>` |
 | **Test value** | `<birthTime nullFlavor="UNK"/>` |
@@ -494,6 +524,7 @@ These tests probe the OID `.1.7` sender-type value set, which is separate from t
 | Attribute | Value |
 |-----------|-------|
 | **Test ID** | TC-F01 |
+| **Status** | ✅ **ACCEPTED** — CA+AA, no warnings. ACK ci260501170837 (API May 1). Follow-up report (`extension="3"`) targeting the 2L8T baseline case accepted on the postmarket channel. |
 | **E2B field** | C.1.9 Case version |
 | **Baseline** | `id[@root='.3.4'] extension="2"` (initial report) |
 | **Test value** | `extension="3"` |
@@ -525,6 +556,7 @@ Also update `outboundRelationship/relatedInvestigation/code` to reflect follow-u
 | Attribute | Value |
 |-----------|-------|
 | **Test ID** | TC-F02 |
+| **Status** | ✅ **ACCEPTED** — CA+AA, no warnings. ACK ci260501170846 (API May 1). Setting `combinationProductReport=true` accepted with no additional required fields triggered. |
 | **E2B field** | C156384 |
 | **Baseline** | `<value xsi:type="BL" value="false"/>` |
 | **Test value** | `value="true"` |
@@ -552,9 +584,10 @@ Also update `outboundRelationship/relatedInvestigation/code` to reflect follow-u
 | Attribute | Value |
 |-----------|-------|
 | **Test ID** | TC-F03 |
+| **Status** | ✅ **ACCEPTED** (v2) — CA+AA, no warnings. ACK ci260501225648. v1 CR+AR (ci260501170855): FDA requires `FDA.C.1.7.1 = Non Expedited AE (Periodic)` when `C.1.7=false`. Fix: `localCriteriaReportType code="1"→code="2" displayName="Non-Expedited AE"`. v2 accepted. **Generator bug fixed in xmlGeneratorService.ts.** |
 | **E2B field** | C.1.7 |
 | **Baseline** | `localCriteriaForExpedited value="true"` + `localCriteriaReportType code="1"` (15-Day) |
-| **Test value** | `localCriteriaForExpedited value="false"` + remove or null `localCriteriaReportType` |
+| **Test value** | `localCriteriaForExpedited value="false"` + `localCriteriaReportType code="2"` (Non-Expedited AE) |
 | **Risk** | **Medium** — validator may require localCriteriaReportType to be absent when expedited=false, or may require it to be present with a specific code. Both behaviors are untested. |
 
 **XML change:**
@@ -585,10 +618,11 @@ Note: removing the `localCriteriaReportType` block drops element count by 3. If 
 | Attribute | Value |
 |-----------|-------|
 | **Test ID** | TC-F04 |
+| **Status** | ✅ **ACCEPTED** (v2) — CA+AA, no warnings. ACK ci260501225657. v1 CR+AR (ci260501170904): FDA requires `C.5.4 researchStudy` when `C.1.3=2`. Fix: Added minimal `<researchStudy classCode="CLNTRL" moodCode="EVN"><code code="1" displayName="Clinical trials"/>` block. **Generator fixed in xmlGeneratorService.ts.** |
 | **E2B field** | N.1.1 / ICH report type |
 | **FAERS rule** | `investigationCharacteristic[code=1]` value |
 | **Baseline** | `code="1"` (Spontaneous report) |
-| **Test value** | `code="2"` (Report from study) |
+| **Test value** | `code="2"` (Report from study) + required `C.5.4 researchStudy` block |
 | **Risk** | **High** — report type 2 may require additional study-specific fields (protocol number, etc.) that are absent in the current XML. Likely to reject if those fields are missing. |
 
 **XML change:**
@@ -613,6 +647,7 @@ These tests validate whether the CDER 2.18 validator cross-checks seriousness cr
 | Attribute | Value |
 |-----------|-------|
 | **Test ID** | TC-G01 |
+| **Status** | ✅ **ACCEPTED** — CA+AA, ACK ci260501225706 (v2, API May 1). v1 CR+AR (ci260501170913): `FDA.C.1.7.1` bug — same fix as TC-F03 (code=2 Non-Expedited AE). v2 confirmed CA+AA. Golden regenerated 2026-05-08 (both reactions emit `otherMedicallyImportant` seriousness summary — internally consistent). |
 | **E2B field** | E.i.3.1–E.i.3.6 seriousness criteria |
 | **Baseline** | Reaction 1: otherMedImportant=true. Reaction 2: hospitalization=true |
 | **Test value** | All 6 seriousness BL flags set to false for Reaction 1 (remove serious classification) |
@@ -627,6 +662,7 @@ These tests validate whether the CDER 2.18 validator cross-checks seriousness cr
 | Attribute | Value |
 |-----------|-------|
 | **Test ID** | TC-G02 |
+| **Status** | ✅ **ACCEPTED** — CA+AA, no warnings. ACK ci260501170922 (API May 1). Outcome code=2 (recovering/resolving) accepted. |
 | **E2B field** | E.i.7 outcome |
 | **Baseline** | Reaction 1: `code="1"` (recovered), Reaction 2: `code="3"` (ongoing) |
 | **Test value** | Reaction 1: `code="2"` (recovering/resolving) |
@@ -644,6 +680,7 @@ These tests validate whether the CDER 2.18 validator cross-checks seriousness cr
 | Attribute | Value |
 |-----------|-------|
 | **Test ID** | TC-G03 |
+| **Status** | ✅ **ACCEPTED** — CA+AA, no warnings. ACK ci260501170931 (API May 1). Outcome code=4 (recovered with sequelae) accepted. |
 | **E2B field** | E.i.7 |
 | **Baseline** | Reaction 1: `code="1"` |
 | **Test value** | `code="4"` |
@@ -656,9 +693,10 @@ These tests validate whether the CDER 2.18 validator cross-checks seriousness cr
 | Attribute | Value |
 |-----------|-------|
 | **Test ID** | TC-G04 |
+| **Status** | ✅ **ACCEPTED** — CA+AA, no warnings. ACK ci260501170611 (API May 1). Fatal outcome (`code=5`) with `resultsInDeath=true` and patient death date present accepted on postmarket channel. Confirms IND-T05 finding applies equally to postmarket. |
 | **E2B field** | E.i.7 |
 | **Baseline** | `code="1"` |
-| **Test value** | `code="5"` |
+| **Test value** | `code="5"` + `resultsInDeath=true` + patient death date |
 | **Risk** | **Medium** — a fatal outcome may require `resultsInDeath=true` and potentially a patient death date. Without those, the validator may reject for internal inconsistency. |
 
 If submitting TC-G04, also set `resultsInDeath=true` for that reaction and add a death date observation if required. This makes it a two-field change — acceptable since the changes are logically coupled (fatal outcome must pair with death flag).
@@ -676,6 +714,7 @@ These tests deviate from the confirmed element structure. They are valuable but 
 | Attribute | Value |
 |-----------|-------|
 | **Test ID** | TC-H01 |
+| **Status** | ✅ **ACCEPTED** — CA+AA, no warnings. ACK ci260501170940 (API May 1). `additionalDocumentsAvailable=true` accepted; no additional document reference blocks required. |
 | **E2B field** | C.1.6.1 |
 | **Baseline** | `code="1"` BL `value="false"` |
 | **Test value** | `value="true"` |
@@ -683,15 +722,15 @@ These tests deviate from the confirmed element structure. They are valuable but 
 
 ---
 
-#### TC-H02: asLocatedEntity absent
+#### TC-H02: Reporter with country-only address (no street-level fields)
 
 | Attribute | Value |
 |-----------|-------|
 | **Test ID** | TC-H02 |
-| **E2B field** | C.3.4.6 Country (via asLocatedEntity) |
-| **Baseline** | `asLocatedEntity` present in `assignedPerson` |
-| **Test value** | Remove `asLocatedEntity` block entirely |
-| **Risk** | **Medium** — `asLocatedEntity` was present in both v29 (CA+AA) and v30 (C.3.2 fail), so it is a neutral factor (confirmed). However, it has never been absent in any CA+AA submission. Element count drops by 3. |
+| **Status** | ❌ **SCENARIO INVALID** — Three-round CR+AR campaign (ci260501170949, ci260501225715, ci260501235624) confirms: **CDER 2.18 mandates ALL five reporter address sub-fields (C.3.4.1–C.3.4.5).** A reporter with country-only is categorically not supported. **No resubmission.** |
+| **E2B field** | C.3.4.1–C.3.4.5 |
+| **Finding** | All of `streetAddressLine` (C.3.4.1), `city` (C.3.4.2), `state` (C.3.4.3), `postalCode` (C.3.4.4), and `asLocatedEntity` country (C.3.4.5) are required. The generator now enforces this via a validation error if any field is absent. |
+| **Original test intent** | Remove `asLocatedEntity` block entirely — redesigned into "country-only reporter" to test the minimum address requirement |
 
 ---
 
@@ -700,6 +739,7 @@ These tests deviate from the confirmed element structure. They are valuable but 
 | Attribute | Value |
 |-----------|-------|
 | **Test ID** | TC-H03 |
+| **Status** | ✅ **ACCEPTED** — CA+AA, no warnings. ACK ci260501170958 (API May 1). Reporter outer org name `"Pharmacovigilance"` accepted — confirms the field is free-text, not a required literal. |
 | **E2B field** | C.3.3.5 Reporter organisation |
 | **Baseline** | Outer org name: `"Drug Safety"` |
 | **Test value** | Outer org name: `"Pharmacovigilance"` |
@@ -795,24 +835,29 @@ If a value is rejected, add it with `verdict: 'proven_rejected'` and the case ID
 
 ## 8. IND / Premarket Test Cases (ZZFDATST_PREMKT / CDER_IND channel)
 
-All 7 IND test cases were submitted via the AERS_PREMKT_CDER portal channel and received **CA+AE** on regen #3 files (2026-04-29). The expected informational warning `FDA.C.5.6.r is invalid for the Center specified in N.2.r.3` was present on all cases and requires no action.
+All 7 IND test cases have been confirmed accepted CA+AE across two independent submission rounds:
 
-| Test ID | Description | ACK (regen #3) | Result | Key Finding |
-|---------|-------------|----------------|--------|-------------|
-| IND-T01 | SUSAR baseline | ci260430003632 | ✅ CA+AE ⚠️ | Baseline IND/SUSAR structure confirmed accepted; local msg 769811 |
-| IND-T02 | SUSAR repeat submission | ci260430003735 | ✅ CA+AE ⚠️ | Repeat SUSAR accepted; two-positive-ACK rule confirmed; local msg 769812 |
-| IND-T03 | Cross-reference IND numbers (`FDA.C.5.6.r` ×2) | ci260430003832 | ✅ CA+AE ⚠️⚠️ | **Two C.5.6.r warnings** — one per cross-ref element; confirms repeating C.5.6.r blocks accepted; local msg 769813 |
-| IND-T04 | No study registration number (`C.5.1.r.1` absent) | ci260430003937 | ✅ CA+AE ⚠️ | **C.5.1.r.1 (NCT number) confirmed optional** — omitting study registration accepted by FDA; local msg 769814 |
-| IND-T05 | Fatal case + 7-day reporting | ci260430004212 | ✅ CA+AE ⚠️ | **Fatal outcome + D.9.3 autopsy co-dependency confirmed** (business rule 2.18); 7-day auto-derivation validated; local msg 769815 |
-| IND-T06 | BABE test reference (`C.5.5a=123456`) | ci260430004305 | ✅ CA+AE ⚠️ | Registry reference `C.5.5a=123456` confirmed accepted through regen #3; local msg 769817 |
-| IND-T07 | Follow-up report (`C.1.9` version=3) | ci260430004355 | ✅ CA+AE ⚠️ | **Follow-up report structure confirmed** — `C.1.9 extension="3"` + `relatedInvestigation` blocks accepted; local msg 769816 |
+- **Regen #3 portal** (2026-04-29/30): 7 × CA+AE via AERS_PREMKT_CDER portal
+- **IND_May7 v5 API batch** (2026-05-07, ACK3 received 2026-05-09): 7 × CA+AE via `submit_batch.py` with C.5.6.r OID surgery applied
+
+**OPEN-01 CLOSED (2026-05-09):** The May7 batch tested whether stripping OID `…2.1.2.3` from the cross-reference element (T01/T02/T04–T07) or swapping it to `…2.1.2.1` (T03) would suppress the C.5.6.r warning. It did not — the warning fires on all 7 identically regardless of OID. **Conclusion: the C.5.6.r warning is channel-inherent (triggered by presence of the cross-reference element, not by OID value) and cannot be suppressed. CA+AE is the correct and final expected ACK for all IND submissions carrying cross-referenced IND numbers.** `IND_POLICY.crossReportedInd` promoted to `proven_safe`.
+
+| Test ID | Description | ACK regen #3 (portal) | ACK May7 v5 (API) | Result | Key Finding |
+|---------|-------------|----------------------|-------------------|--------|-------------|
+| IND-T01 | SUSAR baseline | ci260430003632 | ci260507054727 | ✅ CA+AE ⚠️ | Baseline IND/SUSAR structure confirmed; C.5.6.r warning channel-inherent; local msg 769811 |
+| IND-T02 | SUSAR repeat submission | ci260430003735 | ci260507054737 | ✅ CA+AE ⚠️ | Repeat SUSAR accepted; two-positive-ACK rule confirmed; local msg 769812 |
+| IND-T03 | Cross-reference IND numbers (`FDA.C.5.6.r` ×2) | ci260430003832 | ci260507054746 | ✅ CA+AE ⚠️⚠️ | **Two C.5.6.r warnings** (one per cross-ref); OID swap made no difference — warning is element-presence-driven; local msg 769813 |
+| IND-T04 | No study registration number (`C.5.1.r.1` absent) | ci260430003937 | ci260507054756 | ✅ CA+AE ⚠️ | **C.5.1.r.1 (NCT number) confirmed optional**; local msg 769814 |
+| IND-T05 | Fatal case + 7-day reporting | ci260430004212 | ci260507054806 | ✅ CA+AE ⚠️ | **Fatal outcome + D.9.3 autopsy co-dependency confirmed** (business rule 2.18); 7-day auto-derivation validated; local msg 769815 |
+| IND-T06 | BABE test reference (`C.5.5a=123456`) | ci260430004305 | ci260507054815 | ✅ CA+AE ⚠️ | Registry reference `C.5.5a=123456` confirmed; local msg 769817 |
+| IND-T07 | Follow-up report (`C.1.9` version=3) | ci260430004355 | ci260507054825 | ✅ CA+AE ⚠️ | **Follow-up report structure confirmed** — `C.1.9 extension="3"` + `relatedInvestigation` accepted; local msg 769816 |
 
 ### What the IND results prove for the postmarket policy
 
 | Finding | Postmarket implication | Action needed |
 |---------|----------------------|---------------|
-| Fatal outcome + D.9.3 autopsy required (T05) | Same business rule 2.18 applies on postmarket channel — D.9.1 and D.9.3 must both be present | TC-G04 still needed to confirm fatal reaction outcome (`code=5`) on ZZFDATST |
-| Follow-up report C.1.9 version=3 accepted (T07) | Follow-up mechanism works end-to-end | TC-F01 still needed to confirm on postmarket channel with a real CA+AA postmarket case as parent |
+| Fatal outcome + D.9.3 autopsy required (T05) | Same business rule 2.18 applies on postmarket channel — D.9.1 and D.9.3 must both be present | ✅ **TC-G04 confirmed CA+AA** (ci260501170611) — fatal reaction outcome `code=5` accepted on postmarket channel |
+| Follow-up report C.1.9 version=3 accepted (T07) | Follow-up mechanism works end-to-end | ✅ **TC-F01 confirmed CA+AA** (ci260501170837) — follow-up version=3 accepted on postmarket channel |
 | C.5.1.r.1 (NCT) optional (T04) | IND-only field; no postmarket equivalent | No postmarket action needed |
 | C.5.6.r cross-reference accepted (T03) | IND-only field; no postmarket equivalent | No postmarket action needed |
 | SUSAR repeat accepted (T02) | Confirms duplicate detection does not fire on same case ID with new UUID | Reinforces ISSUE-003 prevention rule |
@@ -820,9 +865,10 @@ All 7 IND test cases were submitted via the AERS_PREMKT_CDER portal channel and 
 ### IND channel notes
 
 - **Portal admin decline (ISSUE-004):** All 7 IND cases received valid CA+AE ICSR ACKs. However, early submissions for T02 and T05 received separate ESG portal administrative decline emails (independent of the XML ACK). This is an account enrollment issue — email **AEMSESUB@fda.hhs.gov** to resolve. The XML content is confirmed correct.
-- **C.5.6.r boilerplate warning:** Expected on all CDER_IND submissions. Informational only; no action required.
+- **C.5.6.r boilerplate warning:** Present on all CDER_IND submissions. Informational only; no action required. **Confirmed channel-inherent (OPEN-01, 2026-05-09):** stripping the OID or swapping it to `…2.1.2.1` made no difference — the warning fires on the presence of the cross-reference element, not the OID value.
 - **Local message numbers assigned:** 769811 (T01), 769812 (T02), 769813 (T03), 769814 (T04), 769815 (T05), 769817 (T06), 769816 (T07).
+- **IND_May7 v5 API batch core IDs:** ci260507054727 (T01), ci260507054737 (T02), ci260507054746 (T03), ci260507054756 (T04), ci260507054806 (T05), ci260507054815 (T06), ci260507054825 (T07). ACK3 files archived at `test/test_submission/acks/ACK3/May7/`.
 
 ---
 
-*End of catalog. Total postmarket test cases defined: 30. Submitted and accepted: 4 (TC-A01, TC-A05, TC-B02, TC-E03). IND test cases defined: 7. All 7 submitted and accepted (regen #3). Combined coverage: 11/37 scenarios confirmed by live ACK.*
+*End of catalog. Total postmarket test cases defined: 30. All 30 completed. Accepted: 26 (TC-A01, TC-A02, TC-A05, TC-B01, TC-B02, TC-C01, TC-C02, TC-D01–D06, TC-E01–E03, TC-F01–F04, TC-G01–G04, TC-H01, TC-H03). Proven rejected: 4 (TC-A03, TC-A04, TC-A06, TC-H02-scenario-invalid). Pending ACK3: 0. IND test cases defined: 7. All 7 accepted CA+AE — confirmed on regen #3 portal (2026-04-29/30) and IND_May7 v5 API batch (2026-05-07, ACK3 received 2026-05-09). Combined confirmed coverage: 37/37 scenarios attempted; 33/37 accepted (26 postmarket CA+AA + 7 IND CA+AE); 4 proven rejected. Regression suite: 35/36 PASS, 1 permanent skip (TC-A06 schema rejection). [Catalog last updated 2026-05-09 — TC-G01 promoted to ACCEPTED; OPEN-01 closed; all pending items resolved.]*

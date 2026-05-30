@@ -98,13 +98,13 @@
 | IND-T06-babe-test-reference.xml | SR-CASE-EXAMPLE-INDT06 | ci260429034546 | ✅ CA+AE ⚠️ | `FDA.C.5.6.r is invalid for the Center specified in N.2.r.3` | Pre-regen; C.5.5a=123456 registry fix confirmed. C.5.6.r warning expected (cross-ref field present in T06) | Accepted |
 | IND-T06-babe-test-reference.xml *(regen #3, UUID …9832bb8e68f2)* | SR-CASE-EXAMPLE-INDT06 | ci260430004305 | ✅ CA+AE ⚠️ | C.5.6.r boilerplate — no action | C.5.5a=123456 fix confirmed through regen #3; local msg 769817 | ✅ Accepted |
 | IND-T07-followup-report.xml *(regen #3, UUID …efb3fcbdd36b)* | SR-CASE-EXAMPLE-INDT07 | ci260430004355 | ✅ CA+AE ⚠️ | C.5.6.r boilerplate — no action | Follow-up report + C.1.9 version auto-derivation confirmed by FDA; local msg 769816 | ✅ Accepted |
-| IND-T01 *(IND_May7 v5, UUID …99d4ab11f9fa)* | SR-CASE-20260506-V3-INDT01 | ⏳ pending | — | (target: no C.5.6.r warning) | OPEN-01 surgery 2026-05-07 — OID …2.1.2.3 stripped | Submitted |
-| IND-T02 *(IND_May7 v5, UUID …291d6a0daf34)* | SR-CASE-20260506-V3-INDT02 | ⏳ pending | — | (target: no C.5.6.r warning) | OPEN-01 — OID …2.1.2.3 stripped | Submitted |
-| IND-T03 *(IND_May7 v5, UUID …7ad0e5ff1328)* | SR-CASE-20260506-V3-INDT03 | ⏳ pending | — | (target: no C.5.6.r warning) | OPEN-01 — OID …2.1.2.3 → …2.1.2.1 swap, cross-refs preserved | Submitted |
-| IND-T04 *(IND_May7 v5, UUID …0e7579e4d578)* | SR-CASE-20260506-V3-INDT04 | ⏳ pending | — | (target: no C.5.6.r warning) | OPEN-01 — OID …2.1.2.3 stripped | Submitted |
-| IND-T05 *(IND_May7 v5, UUID …de9f5d5ee8a8)* | SR-CASE-20260506-V3-INDT05 | ⏳ pending | — | (target: no C.5.6.r warning) | OPEN-01 — OID …2.1.2.3 stripped | Submitted |
-| IND-T06 *(IND_May7 v5, UUID …f61e56edeb3f)* | SR-CASE-20260506-V3-INDT06 | ⏳ pending | — | (target: no C.5.6.r warning) | OPEN-01 — OID …2.1.2.3 stripped | Submitted |
-| IND-T07 *(IND_May7 v5, UUID …3ecdb40e968a)* | SR-CASE-20260506-V3-INDT07 | ⏳ pending | — | (target: no C.5.6.r warning) | OPEN-01 — OID …2.1.2.3 stripped | Submitted |
+| IND-T01 *(IND_May7 v5, UUID …99d4ab11f9fa)* | SR-CASE-20260506-V3-INDT01 | ci260507054727 | ✅ CA+AE ⚠️ | C.5.6.r warning — **channel-inherent, OID-independent** | OPEN-01 CLOSED 2026-05-09: warning fires regardless of OID | ✅ Accepted |
+| IND-T02 *(IND_May7 v5, UUID …291d6a0daf34)* | SR-CASE-20260506-V3-INDT02 | ci260507054737 | ✅ CA+AE ⚠️ | C.5.6.r warning — channel-inherent | Confirms OID strip made no difference | ✅ Accepted |
+| IND-T03 *(IND_May7 v5, UUID …7ad0e5ff1328)* | SR-CASE-20260506-V3-INDT03 | ci260507054746 | ✅ CA+AE ⚠️⚠️ | Two C.5.6.r warnings — OID swap …2.1.2.3→…2.1.2.1 made no difference | Warning triggered by element presence, not OID | ✅ Accepted |
+| IND-T04 *(IND_May7 v5, UUID …0e7579e4d578)* | SR-CASE-20260506-V3-INDT04 | ci260507054756 | ✅ CA+AE ⚠️ | C.5.6.r warning — channel-inherent | Consistent with all others | ✅ Accepted |
+| IND-T05 *(IND_May7 v5, UUID …de9f5d5ee8a8)* | SR-CASE-20260506-V3-INDT05 | ci260507054806 | ✅ CA+AE ⚠️ | C.5.6.r warning — channel-inherent | Consistent | ✅ Accepted |
+| IND-T06 *(IND_May7 v5, UUID …f61e56edeb3f)* | SR-CASE-20260506-V3-INDT06 | ci260507054815 | ✅ CA+AE ⚠️ | C.5.6.r warning — channel-inherent | Consistent | ✅ Accepted |
+| IND-T07 *(IND_May7 v5, UUID …3ecdb40e968a)* | SR-CASE-20260506-V3-INDT07 | ci260507054825 | ✅ CA+AE ⚠️ | C.5.6.r warning — channel-inherent | Consistent | ✅ Accepted |
 
 ---
 
