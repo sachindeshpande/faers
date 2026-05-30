@@ -1452,23 +1452,36 @@ def run(xml_path):
     }
     try:
         _ie31 = root.find(f'.//{{{NS}}}investigationEvent')
-        _sprt_blocks = []
+        _sprt_any    = []   # ALL outboundRelationship[@typeCode="SPRT"] blocks (any code)
+        _sprt_blocks = []   # Only code=2 (sourceReport / C.2.r) blocks — for detail checks
         if _ie31 is not None:
             for _ob31 in _ie31.findall(f'{{{NS}}}outboundRelationship[@typeCode="SPRT"]'):
                 _ri31 = _ob31.find(f'{{{NS}}}relatedInvestigation')
                 if _ri31 is None:
                     continue
                 _rc31 = _ri31.find(f'{{{NS}}}code')
+                _sprt_any.append(_ob31)
                 if ga(_rc31,"code") == "2" and _SPRT_OID in (ga(_rc31,"codeSystem") or ""):
                     _sprt_blocks.append(_ob31)
+        # Empirical evidence: 27 older golden files have only SPRT code=1 (initialReport)
+        # and all received CA+AA.  The TC-M07 rejection was because NO SPRT block existed.
+        # Requirement: at least ONE SPRT block (code=1 initialReport OR code=2 sourceReport).
+        _sprt_codes_found = []
+        for _ob31a in _sprt_any:
+            _ri31a = _ob31a.find(f'{{{NS}}}relatedInvestigation')
+            _rc31a = _ri31a.find(f'{{{NS}}}code') if _ri31a is not None else None
+            _c31a  = ga(_rc31a, "code") if _rc31a is not None else "?"
+            _sprt_codes_found.append(_c31a)
         chk(
-            "C.2.r sourceReport outboundRelationship[SPRT code=2] present",
-            len(_sprt_blocks) > 0,
-            f"No outboundRelationship[@typeCode='SPRT']/relatedInvestigation/code[@code='2'] "
-            f"found under investigationEvent. This is required for ALL submissions "
-            "(initial and follow-up). Absence causes 'Tags Missing: C.2.r' rejection."
-            if not _sprt_blocks else f"found {len(_sprt_blocks)} sourceReport block(s)"
+            "At least one SPRT outboundRelationship (initialReport code=1 or sourceReport code=2) present",
+            len(_sprt_any) > 0,
+            f"No outboundRelationship[@typeCode='SPRT'] found under investigationEvent. "
+            f"At least one SPRT block (code=1 initialReport or code=2 sourceReport) is required. "
+            "Absence causes 'Tags Missing: C.2.r / C.1.9' rejection."
+            if not _sprt_any else
+            f"found {len(_sprt_any)} SPRT block(s) with code(s)={_sprt_codes_found}"
         )
+        # Detail checks for C.2.r sourceReport (code=2) blocks — only when present
         for _si, _sprt31 in enumerate(_sprt_blocks, 1):
             _pn31 = _sprt31.find(f'{{{NS}}}priorityNumber')
             chk(
@@ -1600,6 +1613,339 @@ def run(xml_path):
 
     except Exception as _e32:
         warn("Section 32 H-section author check error", str(_e32))
+
+    # ── 33. C.1.3 ICH report type value code + codeSystem ────────────────────
+    print("\n[ SECTION 33: C.1.3 value code {1,2,3,4} + codeSystem (GAP-O02, GAP-O17) ]")
+    _C13_VAL_CODES = {"1","2","3","4"}
+    _C13_VAL_OID   = "2.16.840.1.113883.3.989.2.1.1.2"
+    _C13_LABELS    = {"1":"Spontaneous","2":"Report from study","3":"Other","4":"Not available"}
+    try:
+        _c13_ic = None
+        for _obs in root.findall(f'.//{{{NS}}}investigationCharacteristic[@classCode="OBS"][@moodCode="EVN"]'):
+            _ic_code = _obs.find(f'{{{NS}}}code')
+            if ga(_ic_code,"code") == "1" and "1.1.23" in (ga(_ic_code,"codeSystem") or ""):
+                _c13_ic = _obs
+                break
+        if _c13_ic is None:
+            warn("Section 33","ICH report type investigationCharacteristic (code=1 on .1.1.23) not found — skipping C.1.3 value checks")
+        else:
+            _c13_val = _c13_ic.find(f'{{{NS}}}value')
+            chk(
+                "C.1.3 (ICH report type) value element present",
+                _c13_val is not None,
+                "No <value> element in ICH report type investigationCharacteristic"
+                if _c13_val is None else "present"
+            )
+            if _c13_val is not None:
+                _c13_code = ga(_c13_val,"code") or ""
+                _c13_cs   = ga(_c13_val,"codeSystem") or ""
+                chk(
+                    "C.1.3 value code ∈ {1=Spontaneous,2=Study,3=Other,4=NA} on OID .3.989.2.1.1.2",
+                    _c13_code in _C13_VAL_CODES,
+                    f"code={_c13_code!r} not in valid set {{1,2,3,4}}" if _c13_code not in _C13_VAL_CODES
+                    else f"code={_c13_code!r} ({_C13_LABELS.get(_c13_code,'?')})"
+                )
+                chk(
+                    "C.1.3 value codeSystem = .3.989.2.1.1.2 (not .3.989.2.1.1.23)",
+                    _C13_VAL_OID in _c13_cs,
+                    f"codeSystem={_c13_cs!r} — expected '.3.989.2.1.1.2'. "
+                    "Using .3.989.2.1.1.23 (the outer code OID) on the value is a copy-paste error."
+                    if _C13_VAL_OID not in _c13_cs else f"OID correct ({_c13_cs})"
+                )
+    except Exception as _e33:
+        warn("Section 33 C.1.3 value check error",str(_e33))
+
+    # ── 34. C.1.4 effectiveTime IVL_TS + low element ─────────────────────────
+    print("\n[ SECTION 34: C.1.4 investigationEvent effectiveTime (IVL_TS + low) (GAP-O03) ]")
+    try:
+        _ie34 = root.find(f'.//{{{NS}}}investigationEvent')
+        _et34 = _ie34.find(f'{{{NS}}}effectiveTime') if _ie34 is not None else None
+        chk(
+            "C.1.4 investigationEvent effectiveTime present",
+            _et34 is not None,
+            "No <effectiveTime> in investigationEvent" if _et34 is None else "present"
+        )
+        if _et34 is not None:
+            _XSI = "http://www.w3.org/2001/XMLSchema-instance"
+            _et_type = ga(_et34,f"{{{_XSI}}}type") or ""
+            _et_low  = _et34.find(f'{{{NS}}}low')
+            chk(
+                "C.1.4 effectiveTime xsi:type=IVL_TS",
+                "IVL_TS" in _et_type,
+                f"xsi:type={_et_type!r} — must be 'IVL_TS'. A flat value= without IVL_TS "
+                "type is rejected by FDA FAERS 2.18."
+                if "IVL_TS" not in _et_type else "xsi:type=IVL_TS ✓"
+            )
+            chk(
+                "C.1.4 effectiveTime has <low value=> child (onset date)",
+                _et_low is not None and ga(_et_low,"value") is not None,
+                "Missing <low value='YYYYMMDD'/> inside effectiveTime IVL_TS"
+                if not (_et_low is not None and ga(_et_low,"value") is not None)
+                else f"low={ga(_et_low,'value')!r} ✓"
+            )
+    except Exception as _e34:
+        warn("Section 34 C.1.4 effectiveTime check error",str(_e34))
+
+    # ── 35. C.1.9 initialReport first-sender code ─────────────────────────────
+    print("\n[ SECTION 35: C.1.9 initialReport first-sender (author code=1 on .3.989.2.1.1.3) (GAP-O06) ]")
+    _SENDER_OID_35 = "2.16.840.1.113883.3.989.2.1.1.3"
+    try:
+        _ie35 = root.find(f'.//{{{NS}}}investigationEvent')
+        _init_blocks_35 = []
+        if _ie35 is not None:
+            for _ob35 in _ie35.findall(f'{{{NS}}}outboundRelationship[@typeCode="SPRT"]'):
+                _ri35 = _ob35.find(f'{{{NS}}}relatedInvestigation')
+                if _ri35 is None:
+                    continue
+                _rc35 = _ri35.find(f'{{{NS}}}code')
+                if ga(_rc35,"code") == "1" and "1.1.22" in (ga(_rc35,"codeSystem") or ""):
+                    _init_blocks_35.append((_ob35, _ri35))
+        chk(
+            "C.1.9 initialReport outboundRelationship[SPRT code=1] present",
+            len(_init_blocks_35) > 0,
+            "No outboundRelationship[@typeCode='SPRT']/relatedInvestigation/code[@code='1'] "
+            "found. C.1.9 initial-report first-sender block is required for all submissions."
+            if not _init_blocks_35 else f"found {len(_init_blocks_35)} initialReport block(s)"
+        )
+        for _si35, (_ob35, _ri35) in enumerate(_init_blocks_35, 1):
+            _auth35 = _ri35.find(f'.//{{{NS}}}assignedEntity/{{{NS}}}code')
+            chk(
+                f"C.1.9[{_si35}] first-sender assignedEntity/code present",
+                _auth35 is not None,
+                "assignedEntity/code not found inside initialReport subjectOf2/controlActEvent/author"
+                if _auth35 is None else "present"
+            )
+            if _auth35 is not None:
+                _ac35  = ga(_auth35,"code") or ""
+                _acs35 = ga(_auth35,"codeSystem") or ""
+                chk(
+                    f"C.1.9[{_si35}] first-sender code=1 (regulator) on OID .3.989.2.1.1.3",
+                    _ac35 == "1" and _SENDER_OID_35 in _acs35,
+                    f"code={_ac35!r} codeSystem={_acs35!r} — expected code='1' on OID '.3.989.2.1.1.3'"
+                    if not (_ac35 == "1" and _SENDER_OID_35 in _acs35) else "code='1' (regulator) ✓"
+                )
+    except Exception as _e35:
+        warn("Section 35 C.1.9 initialReport check error",str(_e35))
+
+    # ── 36-38. G.k.8 action taken + G.k.9.i/ii dechallenge/rechallenge ───────
+    print("\n[ SECTION 36-38: G.k.8 action taken + G.k.9.i dechallenge + G.k.9.ii rechallenge "
+          "(GAP-O10,O11,O12) ]")
+    _GK_ACT_CODES  = {"0","1","2","3","4","5","6"}
+    _GK_ACT_LABELS = {"0":"Unknown","1":"Drug withdrawn","2":"Dose reduced","3":"Dose increased",
+                      "4":"Dose not changed","5":"Not applicable","6":"Unknown"}
+    _GK_DC_CODES   = {"1","2","3","4"}
+    _GK_DC_LABELS  = {"1":"Pos dechallenge","2":"No","3":"Unknown","4":"N/A"}
+    _GK_RC_CODES   = {"1","2","3","4"}
+    _GK_RC_LABELS  = {"1":"Pos rechallenge","2":"No","3":"Unknown","4":"N/A"}
+    try:
+        _act_obs = [
+            _o for _o in root.findall(f'.//{{{NS}}}observation[@classCode="OBS"][@moodCode="EVN"]')
+            if ga(_o.find(f'{{{NS}}}code'),"code") == "C41341"
+            and "3.26.1.1" in (ga(_o.find(f'{{{NS}}}code'),"codeSystem") or "")
+        ]
+        _dc_obs = [
+            _o for _o in root.findall(f'.//{{{NS}}}observation[@classCode="OBS"][@moodCode="EVN"]')
+            if ga(_o.find(f'{{{NS}}}code'),"code") == "C49492"
+        ]
+        _rc_obs = [
+            _o for _o in root.findall(f'.//{{{NS}}}observation[@classCode="OBS"][@moodCode="EVN"]')
+            if ga(_o.find(f'{{{NS}}}code'),"code") == "C49494"
+        ]
+        if not _act_obs:
+            info("Section 36: G.k.8 action taken","no action-taken observations found (optional field)")
+        for _i36, _obs36 in enumerate(_act_obs, 1):
+            _v36  = _obs36.find(f'{{{NS}}}value')
+            _vc36 = ga(_v36,"code") or ""
+            _vcs36= ga(_v36,"codeSystem") or ""
+            chk(
+                f"G.k.8[{_i36}] action taken code ∈ {{0-6}} on OID .3.989.2.1.1.15",
+                _vc36 in _GK_ACT_CODES and "1.1.15" in _vcs36,
+                f"code={_vc36!r} codeSystem={_vcs36!r} — expected code in {{0-6}} on OID '.3.989.2.1.1.15'"
+                if not (_vc36 in _GK_ACT_CODES and "1.1.15" in _vcs36)
+                else f"code={_vc36!r} ({_GK_ACT_LABELS.get(_vc36,'?')})"
+            )
+        if not _dc_obs:
+            info("Section 37: G.k.9.i dechallenge","no dechallenge observations found (optional field)")
+        for _i37, _obs37 in enumerate(_dc_obs, 1):
+            _v37  = _obs37.find(f'{{{NS}}}value')
+            _vc37 = ga(_v37,"code") or ""
+            _vcs37= ga(_v37,"codeSystem") or ""
+            chk(
+                f"G.k.9.i[{_i37}] dechallenge code ∈ {{1-4}} on OID .3.989.2.1.1.16",
+                _vc37 in _GK_DC_CODES and "1.1.16" in _vcs37,
+                f"code={_vc37!r} codeSystem={_vcs37!r} — expected code in {{1,2,3,4}} on OID '.3.989.2.1.1.16'"
+                if not (_vc37 in _GK_DC_CODES and "1.1.16" in _vcs37)
+                else f"code={_vc37!r} ({_GK_DC_LABELS.get(_vc37,'?')})"
+            )
+        if not _rc_obs:
+            info("Section 38: G.k.9.ii rechallenge","no rechallenge observations found (optional field)")
+        for _i38, _obs38 in enumerate(_rc_obs, 1):
+            _v38  = _obs38.find(f'{{{NS}}}value')
+            _vc38 = ga(_v38,"code") or ""
+            _vcs38= ga(_v38,"codeSystem") or ""
+            chk(
+                f"G.k.9.ii[{_i38}] rechallenge code ∈ {{1-4}} on OID .3.989.2.1.1.17",
+                _vc38 in _GK_RC_CODES and "1.1.17" in _vcs38,
+                f"code={_vc38!r} codeSystem={_vcs38!r} — expected code in {{1,2,3,4}} on OID '.3.989.2.1.1.17'"
+                if not (_vc38 in _GK_RC_CODES and "1.1.17" in _vcs38)
+                else f"code={_vc38!r} ({_GK_RC_LABELS.get(_vc38,'?')})"
+            )
+    except Exception as _e36:
+        warn("Section 36-38 G.k.8/G.k.9 value-set check error",str(_e36))
+
+    # ── 39. E.i.3.1 termHighlighted value-set ────────────────────────────────
+    print("\n[ SECTION 39: E.i.3.1 termHighlighted by reporter (code=37 on .1.1.19) (GAP-O07) ]")
+    _TH_VAL_OID  = "2.16.840.1.113883.3.989.2.1.1.10"
+    _TH_CODES    = {"1","2","3"}
+    _TH_LABELS   = {"1":"Yes, highlighted","2":"No","3":"No but SERIOUS"}
+    try:
+        _th_obs = [
+            _o for _o in root.findall(f'.//{{{NS}}}observation[@classCode="OBS"][@moodCode="EVN"]')
+            if ga(_o.find(f'{{{NS}}}code'),"code") == "37"
+            and "1.1.19" in (ga(_o.find(f'{{{NS}}}code'),"codeSystem") or "")
+        ]
+        if not _th_obs:
+            info("Section 39: E.i.3.1 termHighlighted","no termHighlighted observations found (optional field)")
+        for _i39, _obs39 in enumerate(_th_obs, 1):
+            _v39  = _obs39.find(f'{{{NS}}}value')
+            _vc39 = ga(_v39,"code") or ""
+            _vcs39= ga(_v39,"codeSystem") or ""
+            chk(
+                f"E.i.3.1[{_i39}] termHighlighted code ∈ {{1=Yes,2=No,3=No but SERIOUS}} on OID .3.989.2.1.1.10",
+                _vc39 in _TH_CODES and _TH_VAL_OID in _vcs39,
+                f"code={_vc39!r} codeSystem={_vcs39!r} — expected code in {{1,2,3}} on OID '.3.989.2.1.1.10'"
+                if not (_vc39 in _TH_CODES and _TH_VAL_OID in _vcs39)
+                else f"code={_vc39!r} ({_TH_LABELS.get(_vc39,'?')})"
+            )
+    except Exception as _e39:
+        warn("Section 39 termHighlighted check error",str(_e39))
+
+    # ── 40. statusCode code="active" in investigationEvent ───────────────────
+    print("\n[ SECTION 40: investigationEvent statusCode code=active (GAP-O24) ]")
+    try:
+        _ie40  = root.find(f'.//{{{NS}}}investigationEvent')
+        _sc40  = _ie40.find(f'{{{NS}}}statusCode') if _ie40 is not None else None
+        chk(
+            "investigationEvent/statusCode[@code='active'] present",
+            _sc40 is not None and ga(_sc40,"code") == "active",
+            "statusCode missing or code!='active' — absence causes gateway parse failure"
+            if not (_sc40 is not None and ga(_sc40,"code") == "active") else "code='active' ✓"
+        )
+    except Exception as _e40:
+        warn("Section 40 statusCode check error",str(_e40))
+
+    # ── 41. PORR processingCode="P" + acceptAckCode="AL" ─────────────────────
+    print("\n[ SECTION 41: PORR processingCode=P + acceptAckCode=AL (GAP-O15, GAP-O16) ]")
+    try:
+        _pc41  = root.find(f'.//{{{NS}}}processingCode')
+        _aac41 = root.find(f'.//{{{NS}}}acceptAckCode')
+        chk(
+            "PORR processingCode present and code='P'",
+            _pc41 is not None and ga(_pc41,"code") == "P",
+            "processingCode missing or code!='P' — required in every PORR block"
+            if not (_pc41 is not None and ga(_pc41,"code") == "P") else "code='P' ✓"
+        )
+        chk(
+            "PORR acceptAckCode present and code='AL'",
+            _aac41 is not None and ga(_aac41,"code") == "AL",
+            "acceptAckCode missing or code!='AL' — controls whether gateway sends ACK; "
+            "wrong value may suppress ACK delivery"
+            if not (_aac41 is not None and ga(_aac41,"code") == "AL") else "code='AL' ✓"
+        )
+    except Exception as _e41:
+        warn("Section 41 processingCode/acceptAckCode check error",str(_e41))
+
+    # ── 42. creationTime UTC offset format ────────────────────────────────────
+    print("\n[ SECTION 42: creationTime UTC offset (YYYYMMDDHHMMSS±HHMM required) (GAP-O21) ]")
+    _UTC_PAT = re.compile(r'\d{14}[+-]\d{4}$')
+    try:
+        _ct_els = root.findall(f'.//{{{NS}}}creationTime')
+        _ct_root = root.find(f'{{{NS}}}creationTime')
+        if _ct_root is not None and _ct_root not in _ct_els:
+            _ct_els = [_ct_root] + _ct_els
+        if not _ct_els:
+            warn("Section 42","no creationTime elements found")
+        for _i42, _ct42 in enumerate(_ct_els, 1):
+            _ctv = ga(_ct42,"value") or ""
+            chk(
+                f"creationTime[{_i42}] includes UTC offset (YYYYMMDDHHMMSS±HHMM)",
+                bool(_UTC_PAT.match(_ctv)),
+                f"value={_ctv!r} — must be 14 digits + UTC offset (e.g. '20260101120000-0500'). "
+                "Bare date or timestamp without offset is non-compliant."
+                if not _UTC_PAT.match(_ctv) else f"value={_ctv!r} ✓"
+            )
+    except Exception as _e42:
+        warn("Section 42 creationTime format check error",str(_e42))
+
+    # ── 43-44. responseModeCode + interactionId extension values ──────────────
+    print("\n[ SECTION 43-44: responseModeCode=D + interactionId extensions (GAP-O22, GAP-O23) ]")
+    try:
+        _rmc43 = root.find(f'{{{NS}}}responseModeCode') or root.find(f'.//{{{NS}}}responseModeCode')
+        chk(
+            "responseModeCode present and code='D'",
+            _rmc43 is not None and ga(_rmc43,"code") == "D",
+            "responseModeCode missing or code!='D'" if not (_rmc43 is not None and ga(_rmc43,"code") == "D")
+            else "code='D' ✓"
+        )
+        _wiid43 = root.find(f'{{{NS}}}interactionId')
+        chk(
+            "Wrapper interactionId extension='MCCI_IN200100UV01'",
+            _wiid43 is not None and ga(_wiid43,"extension") == "MCCI_IN200100UV01",
+            f"extension={ga(_wiid43,'extension')!r} — expected 'MCCI_IN200100UV01'"
+            if not (_wiid43 is not None and ga(_wiid43,"extension") == "MCCI_IN200100UV01")
+            else "extension='MCCI_IN200100UV01' ✓"
+        )
+        _porr_iid43 = None
+        for _iid43 in root.findall(f'.//{{{NS}}}interactionId'):
+            if "PORR" in (ga(_iid43,"extension") or ""):
+                _porr_iid43 = _iid43
+                break
+        _pext43 = ga(_porr_iid43,"extension") if _porr_iid43 is not None else None
+        _pext43_disp = repr(_pext43) if _pext43 is not None else "NOT FOUND"
+        chk(
+            "PORR interactionId extension='PORR_IN049016UV'",
+            _porr_iid43 is not None and _pext43 == "PORR_IN049016UV",
+            f"PORR interactionId extension={_pext43_disp} — expected 'PORR_IN049016UV'"
+            if not (_porr_iid43 is not None and _pext43 == "PORR_IN049016UV")
+            else "extension='PORR_IN049016UV' ✓"
+        )
+    except Exception as _e43:
+        warn("Section 43-44 responseModeCode/interactionId check error",str(_e43))
+
+    # ── 45-46. Patient name (D.1) + administrativeGenderCode (D.5) ───────────
+    print("\n[ SECTION 45-46: Patient name (D.1) + administrativeGenderCode (D.5) (GAP-O25, GAP-O26) ]")
+    _GENDER_OID_46   = "1.0.5218"
+    _GENDER_CODES_46 = {"0","1","2"}
+    _GENDER_LABELS_46 = {"0":"Unknown","1":"Male","2":"Female"}
+    try:
+        _player45 = root.find(f'.//{{{NS}}}player1')
+        _pname45  = _player45.find(f'{{{NS}}}name') if _player45 is not None else None
+        chk(
+            "Patient name (D.1) present in player1/name",
+            _pname45 is not None and (_pname45.text or "").strip() != "",
+            "player1/name absent or empty — D.1 patient initials/identifier required"
+            if not (_pname45 is not None and (_pname45.text or "").strip() != "")
+            else f"name={(_pname45.text or '').strip()!r} ✓"
+        )
+        _agc46 = root.find(f'.//{{{NS}}}administrativeGenderCode')
+        chk(
+            "administrativeGenderCode (D.5) present",
+            _agc46 is not None,
+            "administrativeGenderCode missing — D.5 patient sex is required"
+            if _agc46 is None else "present"
+        )
+        if _agc46 is not None:
+            _gc46  = ga(_agc46,"code") or ""
+            _gcs46 = ga(_agc46,"codeSystem") or ""
+            chk(
+                "administrativeGenderCode code ∈ {0=Unknown,1=Male,2=Female} on codeSystem 1.0.5218",
+                _gc46 in _GENDER_CODES_46 and _GENDER_OID_46 in _gcs46,
+                f"code={_gc46!r} codeSystem={_gcs46!r} — expected code in {{0,1,2}} on codeSystem '1.0.5218'"
+                if not (_gc46 in _GENDER_CODES_46 and _GENDER_OID_46 in _gcs46)
+                else f"code={_gc46!r} ({_GENDER_LABELS_46.get(_gc46,'?')}) ✓"
+            )
+    except Exception as _e45:
+        warn("Section 45-46 patient name/gender check error",str(_e45))
 
     # ── Summary ──────────────────────────────────────────────────────────────
     fails  = [r for r in _results if r[0]==FAIL]
