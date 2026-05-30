@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:mif2="urn:hl7-org:v3/mif2" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns="urn:hl7-org:v3" xmlns:mif="urn:hl7-org:v3/mif" targetNamespace="urn:hl7-org:v3" elementFormDefault="qualified">
+<xs:annotation>
+<xs:documentation>Source Information Rendered by: RoseTree 4.2.50</xs:documentation>
+</xs:annotation>
+<xs:include schemaLocation="../coreschemas/infrastructureRoot.xsd"/>
+<xs:include schemaLocation="MCCI_MT200100UV.xsd"/>
+<xs:element name="MCCI_IN200100UV01">
+<xs:complexType>
+<xs:complexContent>
+<xs:extension base="MCCI_MT200100UV.Batch">
+<xs:attribute name="ITSVersion" type="xs:string" use="required" fixed="XML_1.0"/>
+</xs:extension>
+</xs:complexContent>
+</xs:complexType>
+</xs:element>
+</xs:schema>
