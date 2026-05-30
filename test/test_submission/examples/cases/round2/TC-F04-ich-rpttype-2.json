@@ -1,17 +1,18 @@
 {
   "$schema": "faers-case-import-v1",
-  "exampleId": "TC-G01-nonserous",
-  "description": "Test catalog TC-G01: all seriousness flags false on all reactions (non-serious case). Both reactions have all seriousness sub-fields set to false. Tests the XML generator emitting A.1.2 = 2 (non-serious) and all E.i.3.x = 2.",
+  "exampleId": "TC-F04-ich-rpttype-2",
+  "description": "Test catalog TC-F04: ICH Report Type = 2 (Report from study, C.1.3=2). reportType changed to 'Study', which drives the investigationCharacteristic code=1 value to code=2 ('Report from study') and adds the C.5.4 study type block (Clinical trials, code=1). Minimal patch on 2L8T baseline.",
   "baseline": "2L8T",
   "case": {
-    "safetyReportId": "SR-CASE-EXAMPLE-TCG01",
-    "worldwideCaseId": "SR-CASE-EXAMPLE-TCG01",
-    "reportType": "Spontaneous",
+    "safetyReportId": "SR-CASE-EXAMPLE-TCF04",
+    "worldwideCaseId": "SR-CASE-EXAMPLE-TCF04",
+    "reportType": "Study",
     "initialOrFollowup": "Initial",
     "receiptDate": "2026-03-15",
     "receiveDate": "2026-03-15",
-    "expeditedReport": false,
-    "caseNarrative": "Variant of 2L8T baseline. All seriousness criteria set to false on both reactions (non-serious case) for TC-G01. Non-serious reports are non-expedited (C.1.7=false)."
+    "expeditedReport": true,
+    "localReportTypeCode": 1,
+    "caseNarrative": "Variant of 2L8T baseline. ICH Report Type changed to 2 (Report from study) for TC-F04. C.1.3=2, C.5.4=1 (Clinical trials)."
   },
   "patient": {
     "initials": "T.P.",
@@ -71,12 +72,7 @@
       "endDate": "2026-03-10",
       "outcomeCode": 1,
       "seriousness": {
-        "death": false,
-        "lifeThreatening": false,
-        "hospitalization": false,
-        "disability": false,
-        "congenitalAnomaly": false,
-        "otherMedicallyImportant": false
+        "otherMedicallyImportant": true
       }
     },
     {
@@ -85,12 +81,7 @@
       "startDate": "2026-03-05",
       "outcomeCode": 3,
       "seriousness": {
-        "death": false,
-        "lifeThreatening": false,
-        "hospitalization": false,
-        "disability": false,
-        "congenitalAnomaly": false,
-        "otherMedicallyImportant": false
+        "hospitalization": true
       }
     }
   ],

@@ -1,17 +1,19 @@
 {
   "$schema": "faers-case-import-v1",
-  "exampleId": "TC-G01-nonserous",
-  "description": "Test catalog TC-G01: all seriousness flags false on all reactions (non-serious case). Both reactions have all seriousness sub-fields set to false. Tests the XML generator emitting A.1.2 = 2 (non-serious) and all E.i.3.x = 2.",
+  "exampleId": "TC-F02-comboproduct",
+  "description": "Test catalog TC-F02: Combination Product Report Indicator = true (C156384 BL value=true). Minimal patch on 2L8T baseline \u2014 only case.combinationProduct changes. Drives the combination product observation in the XML.",
   "baseline": "2L8T",
   "case": {
-    "safetyReportId": "SR-CASE-EXAMPLE-TCG01",
-    "worldwideCaseId": "SR-CASE-EXAMPLE-TCG01",
+    "safetyReportId": "SR-CASE-EXAMPLE-TCF02",
+    "worldwideCaseId": "SR-CASE-EXAMPLE-TCF02",
     "reportType": "Spontaneous",
     "initialOrFollowup": "Initial",
     "receiptDate": "2026-03-15",
     "receiveDate": "2026-03-15",
-    "expeditedReport": false,
-    "caseNarrative": "Variant of 2L8T baseline. All seriousness criteria set to false on both reactions (non-serious case) for TC-G01. Non-serious reports are non-expedited (C.1.7=false)."
+    "expeditedReport": true,
+    "localReportTypeCode": 1,
+    "combinationProduct": true,
+    "caseNarrative": "Variant of 2L8T baseline. Combination Product Report Indicator set to true (C156384) for TC-F02."
   },
   "patient": {
     "initials": "T.P.",
@@ -71,12 +73,7 @@
       "endDate": "2026-03-10",
       "outcomeCode": 1,
       "seriousness": {
-        "death": false,
-        "lifeThreatening": false,
-        "hospitalization": false,
-        "disability": false,
-        "congenitalAnomaly": false,
-        "otherMedicallyImportant": false
+        "otherMedicallyImportant": true
       }
     },
     {
@@ -85,12 +82,7 @@
       "startDate": "2026-03-05",
       "outcomeCode": 3,
       "seriousness": {
-        "death": false,
-        "lifeThreatening": false,
-        "hospitalization": false,
-        "disability": false,
-        "congenitalAnomaly": false,
-        "otherMedicallyImportant": false
+        "hospitalization": true
       }
     }
   ],
