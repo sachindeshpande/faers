@@ -1,0 +1,17 @@
+# macOS
+.DS_Store
+
+# Node
+node_modules/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Playwright / test artifacts
+faers-app/playwright-report/
+faers-app/test-results/
+
+# LibreOffice / OpenOffice lock files
+.~lock.*#
