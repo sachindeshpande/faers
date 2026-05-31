@@ -252,6 +252,27 @@ def run(json_path: str, xml_path: str) -> int:
                 f"found {found!r}"
             )
 
+    # ── 5b. Autopsy (D.9.3) ─────────────────────────────────────────────────
+    autopsy_val = patient.get("autopsyPerformed")
+    if patient.get("death") and autopsy_val is not None:
+        expected_bl = "true" if autopsy_val else "false"
+        autopsy_obs = None
+        for obs in _find_all(root, "observation"):
+            code_el = obs.find(f"{{{NS}}}code")
+            if _ga(code_el, "code") == "5" and _ga(code_el, "codeSystem") == "2.16.840.1.113883.3.989.2.1.1.19":
+                autopsy_obs = obs
+                break
+        if autopsy_obs is not None:
+            val_el = autopsy_obs.find(f"{{{NS}}}value")
+            found_bl = _ga(val_el, "value")
+            _chk(
+                f"patient.autopsyPerformed={autopsy_val} → observation[code=5]/value/@value={expected_bl!r}",
+                found_bl == expected_bl,
+                f"found {found_bl!r}"
+            )
+        else:
+            _chk("patient.autopsyPerformed → observation[code=5] present", False, "not found in XML")
+
     # ── 6. Reactions: MedDRA codes ───────────────────────────────────────────
     print("\n[ Reactions ]")
     # Collect all value codes with SNOMED/NCI codeSystem that look like MedDRA (8 digits)

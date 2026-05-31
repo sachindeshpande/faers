@@ -1057,7 +1057,7 @@ export class XMLGeneratorService {
       lines.push('                    </observation>');
       lines.push('                  </subjectOf2>');
       // D.9.3: Was Autopsy Done? — required when D.9.1 is present (GAP-IND-004)
-      const autopsyDone = (caseData as any).autopsyDone ?? false;
+      const autopsyDone = caseData.autopsyPerformed ?? false;
       lines.push('                  <subjectOf2 typeCode="SBJ">');
       lines.push('                    <observation classCode="OBS" moodCode="EVN">');
       lines.push('                      <code code="5" codeSystem="2.16.840.1.113883.3.989.2.1.1.19" displayName="autopsy"/>');
