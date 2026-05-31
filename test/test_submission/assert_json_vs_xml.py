@@ -101,6 +101,19 @@ ROLE_MAP = {
     "Interacting": "interacting",
 }
 
+# Route of administration → EDQM/NCI code (mirrors xmlGeneratorService.getRouteCode)
+ROUTE_CODE_MAP = {
+    "Oral": "C38288",
+    "Intravenous": "C38276",
+    "Intramuscular": "C38273",
+    "Subcutaneous": "C38299",
+    "Topical": "C38304",
+    "Inhalation": "C38216",
+    "Transdermal": "C38305",
+    "Rectal": "C38295",
+    "Other": "C38290",
+}
+
 
 def run(json_path: str, xml_path: str) -> int:
     # ── Load files ───────────────────────────────────────────────────────────
@@ -275,9 +288,35 @@ def run(json_path: str, xml_path: str) -> int:
         if code:
             xml_org_codes.add(code.lower())
 
+    # Collect routeCode codes, doseQuantity center values, and approval id extensions
+    # from the XML for bulk lookup.
+    xml_route_codes: set[str] = set()
+    for rc in _find_all(root, "routeCode"):
+        code = _ga(rc, "code")
+        if code:
+            xml_route_codes.add(code)
+
+    xml_dose_values: set[str] = set()
+    for ctr in _find_all(root, "center"):
+        v = _ga(ctr, "value")
+        if v:
+            xml_dose_values.add(v)
+
+    xml_approval_ids: set[str] = set()
+    for approval in _find_all(root, "approval"):
+        id_el = approval.find(f"{{{NS}}}id")
+        ext = _ga(id_el, "extension")
+        if ext:
+            xml_approval_ids.add(ext)
+
     for i, drug in enumerate(drugs):
         name = drug.get("productName")
         role = drug.get("role")
+        dose_val = drug.get("doseValue")
+        dose_unit = drug.get("doseUnit")
+        route = drug.get("route")
+        auth_num = drug.get("authorizationNumber") or drug.get("indAuthorizationNumber")
+
         if name:
             _chk(
                 f"drugs[{i}] productName={name!r} present in XML names",
@@ -290,6 +329,26 @@ def run(json_path: str, xml_path: str) -> int:
                 f"drugs[{i}] role={role!r} (organizer code={expected_role!r}) present",
                 expected_role in xml_org_codes,
                 f"organizer codes found: {sorted(xml_org_codes)}"
+            )
+        if dose_val is not None:
+            expected_dose = str(int(dose_val)) if float(dose_val) == int(dose_val) else str(dose_val)
+            _chk(
+                f"drugs[{i}] doseValue={dose_val} → doseQuantity/center/@value",
+                expected_dose in xml_dose_values or str(dose_val) in xml_dose_values,
+                f"center values found: {sorted(xml_dose_values)}"
+            )
+        if route:
+            expected_rc = ROUTE_CODE_MAP.get(route, "C38290")
+            _chk(
+                f"drugs[{i}] route={route!r} → routeCode code={expected_rc!r}",
+                expected_rc in xml_route_codes,
+                f"routeCode codes found: {sorted(xml_route_codes)}"
+            )
+        if auth_num:
+            _chk(
+                f"drugs[{i}] authorizationNumber={auth_num!r} → approval/id/@extension",
+                auth_num in xml_approval_ids,
+                f"approval id extensions found: {sorted(xml_approval_ids)}"
             )
 
     # ── 8. ICH Report Type (C.1.3) ───────────────────────────────────────────

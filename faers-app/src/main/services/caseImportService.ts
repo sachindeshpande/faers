@@ -38,6 +38,7 @@ import {
   SenderType,
   type Case,
   type CaseDrug,
+  type CaseDrugDosage,
   type CaseReaction,
   type CaseReporter,
   type UpdateCaseDTO
@@ -394,6 +395,23 @@ function mapDrug(
     ? mapDrugCharacterization(d.role, `drugs[${idx}].role`, warnings)
     : DrugCharacterization.Suspect; // Sensible default — every case has at least one suspect.
 
+  // Build a dosage record from flat dose/route fields (G.k.4.r.1a/1b, G.k.4.r.10).
+  // These are declared in the import schema but were previously not forwarded to the
+  // drug's dosages sub-table, so dose/route were silently dropped from the XML.
+  // drugId is set to 0 here; DrugRepository.create() overwrites it with the real
+  // row id when it calls createDosage(newDrugId, dosage).
+  const dosageEntry: CaseDrugDosage | undefined =
+    (d.doseValue !== undefined || d.doseUnit !== undefined || d.route !== undefined)
+      ? {
+          drugId: 0,            // placeholder — overwritten by DrugRepository
+          dose: d.doseValue,
+          doseUnit: d.doseUnit,
+          dosageText: d.dose,   // free-text "50mg" also stored as G.k.4.r.8
+          route: d.route,
+          sortOrder: 0
+        }
+      : undefined;
+
   return {
     caseId,
     characterization,
@@ -417,9 +435,13 @@ function mapDrug(
     manufacturerName: d.manufacturerName,
     lotNumber: d.lotNumber,
     expirationDate: d.expirationDate,
-    // SUSAR / IND — per-drug fields (spec §3.2).
-    indAuthorizationNumber: d.indAuthorizationNumber,
-    fdaAdditionalDrugInfo: d.fdaAdditionalDrugInfo
+    // G.k.3.1 — authorization/application number (NDA, ANDA, BLA, IND).
+    // Postmarket cases use `authorizationNumber`; IND cases use `indAuthorizationNumber`.
+    // Both route to the same approval block in the XML generator. Prefer the more-specific
+    // IND field; fall back to the generic authorizationNumber.
+    indAuthorizationNumber: d.indAuthorizationNumber ?? d.authorizationNumber,
+    fdaAdditionalDrugInfo: d.fdaAdditionalDrugInfo,
+    dosages: dosageEntry ? [dosageEntry] : undefined
   };
 }
 
