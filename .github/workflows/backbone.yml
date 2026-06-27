@@ -1,0 +1,85 @@
+# Backbone Invariant Check (backbone-only)
+#
+# Asserts the v37-proven structural backbone (BB-01…BB-15) against the COMMITTED
+# regression XML corpus and the canonical v37 reference. See
+# test/test_submission/FAERS_USP_Golden_Checklist.md for what each invariant means.
+#
+# Why this gate exists:
+#   - lint catches business-rule problems.
+#   - golden regression catches drift vs known-good outputs, but can silently pass
+#     if generator AND goldens drift in lockstep.
+#   - this gate asserts the structural backbone independently of goldens, so a
+#     co-drift can never sneak through.
+#
+# NOTE — backbone-only by design (for now):
+#   The golden-regression step (`golden_regression_test.py`) is intentionally NOT
+#   wired here. That script regenerates XML via the Electron headless CLI and
+#   currently reports structural diffs because the generator is mid-refactor and
+#   has diverged from the curated goldens (tracked separately). Add a
+#   "Generate + diff regression" job back once the generator output and the
+#   goldens are reconciled. This gate runs against the committed corpus and needs
+#   no build — runtime is well under 5 seconds.
+
+name: Backbone Invariant Check
+
+on:
+  pull_request:
+    paths:
+      - "faers-app/src/main/services/xmlGeneratorService.ts"
+      - "test/test_submission/regression/xml/**"
+      - "test/test_submission/validate_backbone.py"
+      - "test/test_submission/package/CASE-20260331-EMJQ_fixed_v37_patch.xml"
+      - ".github/workflows/backbone.yml"
+  push:
+    branches: [main]
+
+jobs:
+  backbone:
+    runs-on: ubuntu-latest
+    env:
+      # Single source of truth for the MedDRA version the generator targets.
+      # Keep in lockstep with xmlGeneratorService.ts MEDDRA_VERSION and the
+      # validate_backbone.py default. Bump all three together on a MedDRA upgrade.
+      FAERS_MEDDRA_VERSION: "25.0"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install lxml
+        run: pip install lxml
+
+      - name: Run backbone invariants over the committed corpus
+        run: |
+          python3 test/test_submission/validate_backbone.py \
+            --all test/test_submission/regression/xml/
+
+      - name: Generate JSON report
+        if: always()
+        run: |
+          python3 test/test_submission/validate_backbone.py --json \
+            --all test/test_submission/regression/xml/ \
+            > backbone-report.json || true
+
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backbone-report
+          path: backbone-report.json
+          retention-days: 14
+
+      - name: Verify v37 canonical reference still passes
+        if: hashFiles('test/test_submission/package/CASE-20260331-EMJQ_fixed_v37_patch.xml') != ''
+        # Project is pinned to MedDRA 25.0 (matches v37 and the corpus), so this
+        # passes the default. The flag is kept explicit so the v37 reference check
+        # stays correct even if FAERS_MEDDRA_VERSION is bumped later.
+        run: |
+          python3 test/test_submission/validate_backbone.py \
+            --meddra-version 25.0 \
+            test/test_submission/package/CASE-20260331-EMJQ_fixed_v37_patch.xml

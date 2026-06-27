@@ -204,8 +204,14 @@ def localname(tag: str) -> str:
 
 def parse_xml(path: Path):
     if LXML:
-        # type: ignore[union-attr]
-        return ET.parse(str(path)).getroot()
+        # Strip XML comments and processing instructions on parse. The generator
+        # emits traceability comments (e.g. <!-- G.k.1 drug role ... -->) that the
+        # curated goldens lack; comments are not data, so excluding them keeps the
+        # structural diff meaningful. It also avoids lxml comment nodes, whose
+        # `.tag` is a callable (not a string) and would crash localname().
+        parser = ET.XMLParser(remove_comments=True, remove_pis=True)  # type: ignore[union-attr]
+        return ET.parse(str(path), parser).getroot()
+    # stdlib ElementTree drops comments/PIs by default — no parser needed.
     return ET.parse(path).getroot()
 
 
