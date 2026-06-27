@@ -1,11 +1,11 @@
 {
   "$schema": "faers-case-import-v1",
   "exampleId": "IND-T01-susar-baseline",
-  "description": "Baseline SUSAR / IND safety report (spec §7, Phase 1 IND-T01). Drives ZZFDATST_PREMKT routing, CDER_IND message receiver, C.1.3=2 (Report from study), C.5.4=1 (Clinical trials), FDA.C.5.5a IND number 123456, and a single suspect IND drug with G.k.3.1=IND123456. All IND values start UNTESTED — promote to proven_safe in IND_POLICY only after CA+AA from ZZFDATST_PREMKT.",
+  "description": "Baseline SUSAR / IND safety report (spec \u00a77, Phase 1 IND-T01). Drives ZZFDATST_PREMKT routing, CDER_IND message receiver, C.1.3=2 (Report from study), C.5.4=1 (Clinical trials), FDA.C.5.5a IND number 123456, and a single suspect IND drug with G.k.3.1=IND123456. All IND values start UNTESTED \u2014 promote to proven_safe in IND_POLICY only after CA+AA from ZZFDATST_PREMKT.",
   "baseline": "Scenario 3 (FAERS2022Scenario3.xml)",
   "case": {
-    "safetyReportId": "SR-CASE-EXAMPLE-INDT01",
-    "worldwideCaseId": "SR-CASE-EXAMPLE-INDT01",
+    "safetyReportId": "SR-CASE-20260603-INDT01",
+    "worldwideCaseId": "SR-CASE-20260603-INDT01",
     "reportType": "Study",
     "initialOrFollowup": "Initial",
     "receiptDate": "2026-03-15",
@@ -24,7 +24,9 @@
     "sponsorStudyNumber": "CT-00-01",
     "studyName": "Phase II Study of Testdrugimab in Rheumatoid Arthritis",
     "studyRegistrationNumber": "NCT00000001",
-    "crossReferencedIndNumbers": ["654321"]
+    "crossReferencedIndNumbers": [
+      "654321"
+    ]
   },
   "patient": {
     "initials": "T.P.",
@@ -45,8 +47,17 @@
     "department": "Drug Safety",
     "givenName": "Sachin",
     "familyName": "Deshpande",
-    "address": { "street": "123 Test St", "city": "Sunnyvale", "state": "CA", "postalCode": "94085", "country": "US" },
-    "contact": { "phone": "+1-408-555-0100", "email": "sachin@deepquence.com" }
+    "address": {
+      "street": "123 Test St",
+      "city": "Sunnyvale",
+      "state": "CA",
+      "postalCode": "94085",
+      "country": "US"
+    },
+    "contact": {
+      "phone": "+1-408-555-0100",
+      "email": "sachin@deepquence.com"
+    }
   },
   "reporter": {
     "qualification": "Physician",
@@ -55,8 +66,17 @@
     "familyName": "Doe",
     "organization": "City General Hospital",
     "department": "Drug Safety",
-    "address": { "street": "100 Main St", "city": "Anytown", "state": "CA", "postalCode": "94085", "country": "US" },
-    "contact": { "phone": "+1-408-555-0100", "email": "jane.doe@example.com" }
+    "address": {
+      "street": "100 Main St",
+      "city": "Anytown",
+      "state": "CA",
+      "postalCode": "94085",
+      "country": "US"
+    },
+    "contact": {
+      "phone": "+1-408-555-0100",
+      "email": "jane.doe@example.com"
+    }
   },
   "reactions": [
     {

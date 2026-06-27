@@ -440,6 +440,8 @@ function mapDrug(
     // Both route to the same approval block in the XML generator. Prefer the more-specific
     // IND field; fall back to the generic authorizationNumber.
     indAuthorizationNumber: d.indAuthorizationNumber ?? d.authorizationNumber,
+    // G.k.3.2 — country of authorisation. Required by FAERS 2.18 when G.k.3.1 present.
+    authorizationCountry: d.authorizationCountry,
     fdaAdditionalDrugInfo: d.fdaAdditionalDrugInfo,
     dosages: dosageEntry ? [dosageEntry] : undefined
   };

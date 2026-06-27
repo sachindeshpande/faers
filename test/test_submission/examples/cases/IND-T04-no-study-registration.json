@@ -1,11 +1,11 @@
 {
   "$schema": "faers-case-import-v1",
   "exampleId": "IND-T04-no-study-registration",
-  "description": "IND-T01 without C.5.1.r.1 studyRegistrationNumber. Tests that the NCT-registration block is correctly omitted when absent (spec §4.4 requires elision, not nullFlavor, for optional researchStudy fields). Verifies spec §8 empirical question: 'Is C.5.1.r.1 truly optional?'",
+  "description": "IND-T01 without C.5.1.r.1 studyRegistrationNumber. Tests that the NCT-registration block is correctly omitted when absent (spec \u00a74.4 requires elision, not nullFlavor, for optional researchStudy fields). Verifies spec \u00a78 empirical question: 'Is C.5.1.r.1 truly optional?'",
   "baseline": "IND-T01",
   "case": {
-    "safetyReportId": "SR-CASE-EXAMPLE-INDT04",
-    "worldwideCaseId": "SR-CASE-EXAMPLE-INDT04",
+    "safetyReportId": "SR-CASE-20260603-INDT04",
+    "worldwideCaseId": "SR-CASE-20260603-INDT04",
     "reportType": "Study",
     "initialOrFollowup": "Initial",
     "receiptDate": "2026-03-15",
@@ -23,7 +23,9 @@
     "indNumber": "123456",
     "sponsorStudyNumber": "CT-00-01",
     "studyName": "Phase II Study of Testdrugimab in Rheumatoid Arthritis",
-    "crossReferencedIndNumbers": ["654321"]
+    "crossReferencedIndNumbers": [
+      "654321"
+    ]
   },
   "patient": {
     "initials": "T.P.",
@@ -44,8 +46,17 @@
     "department": "Drug Safety",
     "givenName": "Sachin",
     "familyName": "Deshpande",
-    "address": { "street": "123 Test St", "city": "Sunnyvale", "state": "CA", "postalCode": "94085", "country": "US" },
-    "contact": { "phone": "+1-408-555-0100", "email": "sachin@deepquence.com" }
+    "address": {
+      "street": "123 Test St",
+      "city": "Sunnyvale",
+      "state": "CA",
+      "postalCode": "94085",
+      "country": "US"
+    },
+    "contact": {
+      "phone": "+1-408-555-0100",
+      "email": "sachin@deepquence.com"
+    }
   },
   "reporter": {
     "qualification": "Physician",
@@ -54,8 +65,17 @@
     "familyName": "Doe",
     "organization": "City General Hospital",
     "department": "Drug Safety",
-    "address": { "street": "100 Main St", "city": "Anytown", "state": "CA", "postalCode": "94085", "country": "US" },
-    "contact": { "phone": "+1-408-555-0100", "email": "jane.doe@example.com" }
+    "address": {
+      "street": "100 Main St",
+      "city": "Anytown",
+      "state": "CA",
+      "postalCode": "94085",
+      "country": "US"
+    },
+    "contact": {
+      "phone": "+1-408-555-0100",
+      "email": "jane.doe@example.com"
+    }
   },
   "reactions": [
     {
@@ -63,16 +83,26 @@
       "meddraCode": "10019675",
       "startDate": "2026-03-05",
       "outcomeCode": 3,
-      "seriousness": { "hospitalization": true }
+      "seriousness": {
+        "hospitalization": true
+      }
     }
   ],
   "drugs": [
     {
-      "role": "Suspect", "productName": "Testdrugimab",
-      "dose": "50mg", "doseValue": 50, "doseUnit": "mg", "route": "Subcutaneous",
-      "indication": "Rheumatoid arthritis", "indicationMeddraCode": "10039073",
-      "startDate": "2026-01-15", "endDate": "2026-03-10",
-      "actionTakenCode": 1, "dechallengeCode": 3, "rechallengeCode": 3,
+      "role": "Suspect",
+      "productName": "Testdrugimab",
+      "dose": "50mg",
+      "doseValue": 50,
+      "doseUnit": "mg",
+      "route": "Subcutaneous",
+      "indication": "Rheumatoid arthritis",
+      "indicationMeddraCode": "10039073",
+      "startDate": "2026-01-15",
+      "endDate": "2026-03-10",
+      "actionTakenCode": 1,
+      "dechallengeCode": 3,
+      "rechallengeCode": 3,
       "manufacturerName": "DeepQuence",
       "indAuthorizationNumber": "IND123456"
     }

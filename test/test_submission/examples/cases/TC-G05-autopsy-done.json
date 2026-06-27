@@ -1,11 +1,11 @@
 {
   "$schema": "faers-case-import-v1",
   "exampleId": "TC-G05-autopsy-done",
-  "description": "Test catalog TC-G05: fatal outcome with autopsyPerformed=true. Verifies D.9.3 autopsy observation emits value=true (regression for autopsyDone→autopsyPerformed field-name fix).",
+  "description": "Test catalog TC-G05: fatal outcome with autopsyPerformed=true. Verifies D.9.3 autopsy observation emits value=true (regression for autopsyDone\u2192autopsyPerformed field-name fix).",
   "baseline": "2L8T",
   "case": {
-    "safetyReportId": "SR-CASE-EXAMPLE-TCG05",
-    "worldwideCaseId": "SR-CASE-EXAMPLE-TCG05",
+    "safetyReportId": "SR-CASE-20260603-TCG05",
+    "worldwideCaseId": "SR-CASE-20260603-TCG05",
     "reportType": "Spontaneous",
     "initialOrFollowup": "Initial",
     "receiptDate": "2026-03-15",
@@ -35,8 +35,17 @@
     "department": "Drug Safety",
     "givenName": "Sachin",
     "familyName": "Deshpande",
-    "address": { "street": "123 Test St", "city": "Sunnyvale", "state": "CA", "postalCode": "94085", "country": "US" },
-    "contact": { "phone": "+1-408-555-0100", "email": "sachin@deepquence.com" }
+    "address": {
+      "street": "123 Test St",
+      "city": "Sunnyvale",
+      "state": "CA",
+      "postalCode": "94085",
+      "country": "US"
+    },
+    "contact": {
+      "phone": "+1-408-555-0100",
+      "email": "sachin@deepquence.com"
+    }
   },
   "reporter": {
     "qualification": "Physician",
@@ -45,8 +54,17 @@
     "familyName": "Doe",
     "organization": "City General Hospital",
     "department": "Drug Safety",
-    "address": { "street": "100 Main St", "city": "Anytown", "state": "CA", "postalCode": "94085", "country": "US" },
-    "contact": { "phone": "+1-408-555-0100", "email": "jane.doe@example.com" }
+    "address": {
+      "street": "100 Main St",
+      "city": "Anytown",
+      "state": "CA",
+      "postalCode": "94085",
+      "country": "US"
+    },
+    "contact": {
+      "phone": "+1-408-555-0100",
+      "email": "jane.doe@example.com"
+    }
   },
   "reactions": [
     {
@@ -67,19 +85,35 @@
   ],
   "drugs": [
     {
-      "role": "Suspect", "productName": "Testdrugimab",
-      "dose": "50mg", "doseValue": 50, "doseUnit": "mg", "route": "Subcutaneous",
-      "indication": "Rheumatoid arthritis", "indicationMeddraCode": "10039073",
-      "startDate": "2026-01-15", "endDate": "2026-03-10",
-      "actionTakenCode": 1, "dechallengeCode": 3, "rechallengeCode": 3,
-      "authorizationType": "NDA", "authorizationNumber": "NDA123456"
+      "role": "Suspect",
+      "productName": "Testdrugimab",
+      "dose": "50mg",
+      "doseValue": 50,
+      "doseUnit": "mg",
+      "route": "Subcutaneous",
+      "indication": "Rheumatoid arthritis",
+      "indicationMeddraCode": "10039073",
+      "startDate": "2026-01-15",
+      "endDate": "2026-03-10",
+      "actionTakenCode": 1,
+      "dechallengeCode": 3,
+      "rechallengeCode": 3,
+      "authorizationType": "NDA",
+      "authorizationNumber": "NDA123456"
     },
     {
-      "role": "Concomitant", "productName": "Lisinopril",
-      "dose": "10mg", "doseValue": 10, "doseUnit": "mg", "route": "Oral",
-      "indication": "Hypertension", "indicationMeddraCode": "10020772",
+      "role": "Concomitant",
+      "productName": "Lisinopril",
+      "dose": "10mg",
+      "doseValue": 10,
+      "doseUnit": "mg",
+      "route": "Oral",
+      "indication": "Hypertension",
+      "indicationMeddraCode": "10020772",
       "startDate": "2025-06-01",
-      "actionTakenCode": 4, "dechallengeCode": 4, "rechallengeCode": 4
+      "actionTakenCode": 4,
+      "dechallengeCode": 4,
+      "rechallengeCode": 4
     }
   ]
 }

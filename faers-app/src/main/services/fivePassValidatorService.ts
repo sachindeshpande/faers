@@ -612,7 +612,13 @@ function indStructuralChecks(root: XmlNode): ValidatorFinding[] {
   }
 
   // ── Follow-up report structure checks (GAP-IND-005) ──────────────────────
-  // Detect follow-up: outboundRelationship/relatedInvestigation with displayName="followUpReport"
+  // Detect follow-up: the generator (xmlGeneratorService.ts §574) intentionally
+  // NEVER emits displayName="followUpReport" — that would collide with the
+  // sourceReport block's code="2" on OID .1.22. Instead, follow-up is signalled
+  // structurally by the PRESENCE of a sourceReport outboundRelationship (code=2 /
+  // displayName="sourceReport"), which is always emitted for follow-up reports
+  // and never for initial reports. Version id extension="3" is a secondary signal
+  // but is not checked here (it could be any value ≥3 for subsequent amendments).
   const relatedInvestigations: Array<{ code: XmlNode | undefined; parent: XmlNode }> = [];
   walk(root, (n) => {
     if (n.name === 'outboundRelationship') {
@@ -630,7 +636,8 @@ function indStructuralChecks(root: XmlNode): ValidatorFinding[] {
   const riDisplayNames = relatedInvestigations.map(
     (r) => r.code?.attrs.displayName ?? r.code?.attrs.code ?? ''
   );
-  const isFollowUp = riDisplayNames.includes('followUpReport');
+  // Follow-up if a sourceReport block is present (never present on initial reports).
+  const isFollowUp = riDisplayNames.includes('sourceReport');
 
   if (isFollowUp) {
     // C.1.8.2: initialReport block required

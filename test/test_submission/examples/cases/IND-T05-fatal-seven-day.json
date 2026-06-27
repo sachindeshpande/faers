@@ -1,11 +1,11 @@
 {
   "$schema": "faers-case-import-v1",
   "exampleId": "IND-T05-fatal-seven-day",
-  "description": "Fatal SUSAR → 7-day expedited report per 21 CFR 312.32. Reaction outcome=5 (Fatal), seriousness.death=true, patient.death=true. indReportType intentionally omitted — the importer auto-derives '7_day' from the seriousness signal (this branch's C-item). Verifies spec §8: 'Does fatal SUSAR need death fields differently than postmarket?'",
+  "description": "Fatal SUSAR \u2192 7-day expedited report per 21 CFR 312.32. Reaction outcome=5 (Fatal), seriousness.death=true, patient.death=true. indReportType intentionally omitted \u2014 the importer auto-derives '7_day' from the seriousness signal (this branch's C-item). Verifies spec \u00a78: 'Does fatal SUSAR need death fields differently than postmarket?'",
   "baseline": "IND-T01",
   "case": {
-    "safetyReportId": "SR-CASE-EXAMPLE-INDT05",
-    "worldwideCaseId": "SR-CASE-EXAMPLE-INDT05",
+    "safetyReportId": "SR-CASE-20260603-INDT05",
+    "worldwideCaseId": "SR-CASE-20260603-INDT05",
     "reportType": "Study",
     "initialOrFollowup": "Initial",
     "receiptDate": "2026-03-15",
@@ -23,7 +23,9 @@
     "sponsorStudyNumber": "CT-00-01",
     "studyName": "Phase II Study of Testdrugimab in Rheumatoid Arthritis",
     "studyRegistrationNumber": "NCT00000001",
-    "crossReferencedIndNumbers": ["654321"]
+    "crossReferencedIndNumbers": [
+      "654321"
+    ]
   },
   "patient": {
     "initials": "T.P.",
@@ -46,8 +48,17 @@
     "department": "Drug Safety",
     "givenName": "Sachin",
     "familyName": "Deshpande",
-    "address": { "street": "123 Test St", "city": "Sunnyvale", "state": "CA", "postalCode": "94085", "country": "US" },
-    "contact": { "phone": "+1-408-555-0100", "email": "sachin@deepquence.com" }
+    "address": {
+      "street": "123 Test St",
+      "city": "Sunnyvale",
+      "state": "CA",
+      "postalCode": "94085",
+      "country": "US"
+    },
+    "contact": {
+      "phone": "+1-408-555-0100",
+      "email": "sachin@deepquence.com"
+    }
   },
   "reporter": {
     "qualification": "Physician",
@@ -56,8 +67,17 @@
     "familyName": "Doe",
     "organization": "City General Hospital",
     "department": "Drug Safety",
-    "address": { "street": "100 Main St", "city": "Anytown", "state": "CA", "postalCode": "94085", "country": "US" },
-    "contact": { "phone": "+1-408-555-0100", "email": "jane.doe@example.com" }
+    "address": {
+      "street": "100 Main St",
+      "city": "Anytown",
+      "state": "CA",
+      "postalCode": "94085",
+      "country": "US"
+    },
+    "contact": {
+      "phone": "+1-408-555-0100",
+      "email": "jane.doe@example.com"
+    }
   },
   "reactions": [
     {
@@ -78,11 +98,19 @@
   ],
   "drugs": [
     {
-      "role": "Suspect", "productName": "Testdrugimab",
-      "dose": "50mg", "doseValue": 50, "doseUnit": "mg", "route": "Subcutaneous",
-      "indication": "Rheumatoid arthritis", "indicationMeddraCode": "10039073",
-      "startDate": "2026-01-15", "endDate": "2026-03-10",
-      "actionTakenCode": 1, "dechallengeCode": 3, "rechallengeCode": 3,
+      "role": "Suspect",
+      "productName": "Testdrugimab",
+      "dose": "50mg",
+      "doseValue": 50,
+      "doseUnit": "mg",
+      "route": "Subcutaneous",
+      "indication": "Rheumatoid arthritis",
+      "indicationMeddraCode": "10039073",
+      "startDate": "2026-01-15",
+      "endDate": "2026-03-10",
+      "actionTakenCode": 1,
+      "dechallengeCode": 3,
+      "rechallengeCode": 3,
       "manufacturerName": "DeepQuence",
       "indAuthorizationNumber": "IND123456"
     }

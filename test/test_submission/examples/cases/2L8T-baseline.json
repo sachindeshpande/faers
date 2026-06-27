@@ -1,11 +1,11 @@
 {
   "$schema": "faers-case-import-v1",
   "exampleId": "2L8T-baseline",
-  "description": "Proven-accepted 2L8T baseline. Race=C41260 (Asian), Ethnicity=C41222 (Not Hispanic or Latino), med history = 'None reported'. Use this as the starting point for test-catalog variants — each TC example below is a minimal patch over this shape.",
+  "description": "Proven-accepted 2L8T baseline. Race=C41260 (Asian), Ethnicity=C41222 (Not Hispanic or Latino), med history = 'None reported'. Use this as the starting point for test-catalog variants \u2014 each TC example below is a minimal patch over this shape.",
   "baseline": "2L8T (CA+AA, 2026-04-21)",
   "case": {
-    "safetyReportId": "SR-CASE-EXAMPLE-2L8T",
-    "worldwideCaseId": "SR-CASE-EXAMPLE-2L8T",
+    "safetyReportId": "SR-CASE-20260603-2L8T",
+    "worldwideCaseId": "SR-CASE-20260603-2L8T",
     "reportType": "Spontaneous",
     "initialOrFollowup": "Initial",
     "receiptDate": "2026-03-15",

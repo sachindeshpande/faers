@@ -9,6 +9,14 @@
 
 ---
 
+## Status (as of 2026-06-01)
+
+**Implementation: ✅ Complete** — Manual USP XML export workflow and ESG NextGen API auto-submission both implemented. Services: `exportFilenameService.ts`, `statusTransitionService.ts`, `submissionLogService.ts`, `esgApiService.ts`, `esgAuthService.ts`, `esgPollingService.ts`, `esgSubmissionService.ts`. UI: `SubmissionDashboard`, `SubmissionHistoryPanel`, `RecordAcknowledgmentDialog`, `RecordSubmissionDialog`, `SubmitToFdaDialog`, `AcknowledgmentDisplay`. Live ESG NextGen AS2 API round-trips confirmed against ZZFDATST (postmarket) and ZZFDATST_PREMKT (premarket) gateways.
+
+**Note on §2.4 test routing identifiers:** The correct test gateway names are `ZZFDATST` (postmarket) and `ZZFDATST_PREMKT` (premarket). The values `ZZFDA` and `ZZFDA_PREMKT` in §2.4 are the **production** identifiers.
+
+---
+
 ## 1. Phase Overview
 
 ### 1.1 Objective
@@ -17,12 +25,12 @@ Enable users to submit ICSRs to FDA through the ESG NextGen Unified Submission P
 
 ### 1.2 Success Criteria
 
-- [ ] Users can generate FDA-ready XML export packages
-- [ ] Export packages meet FDA formatting requirements
-- [ ] Users can track which cases have been submitted
-- [ ] Users can record FDA acknowledgment information
-- [ ] Submission history is maintained for each case
-- [ ] Dashboard shows submission status overview
+- [x] Users can generate FDA-ready XML export packages
+- [x] Export packages meet FDA formatting requirements
+- [x] Users can track which cases have been submitted
+- [x] Users can record FDA acknowledgment information
+- [x] Submission history is maintained for each case
+- [x] Dashboard shows submission status overview
 
 ### 1.3 Out of Scope for Phase 2
 
@@ -86,7 +94,7 @@ Before submitting to FDA, validate your XML using:
 2. **ESG NextGen Test Submission**
    - Use same ESG NextGen portal
    - Use test routing identifiers in your XML:
-     - Batch Receiver (N.1.4): `ZZFDA` (postmarket) or `ZZFDA_PREMKT` (premarket)
+     - Batch Receiver (N.1.4): `ZZFDATST` (postmarket test) or `ZZFDATST_PREMKT` (premarket test) — **not** `ZZFDA`/`ZZFDA_PREMKT` which are production identifiers
    - Receive test acknowledgments
    - Once FDA approves test, switch to production routing
 
@@ -719,35 +727,35 @@ Audit trail is append-only and cannot be modified
 - Verify filename follows FDA conventions
 - Use FDA E2B(R3) Validator: https://faers2-validator.preprod.fda.gov/LSMV/Validator
 - Test upload to FDA ESG NextGen USP (test environment)
-- **Verify test XML has Batch Receiver = ZZFDA**
-- **Verify production XML has Batch Receiver = FDA_AERS**
+- **Verify test XML has Batch Receiver = ZZFDATST (postmarket) or ZZFDATST_PREMKT (premarket)**
+- **Verify production XML has Batch Receiver = FDA_AERS (postmarket) or ZZFDA_PREMKT (premarket)**
 
 ---
 
 ## 8. Acceptance Criteria Summary
 
 ### 8.1 Must Have
-- [ ] Generate FDA-compliant XML export package
-- [ ] Proper FDA filename conventions
-- [ ] Pre-export validation with error/warning display
-- [ ] Extended case status tracking
-- [ ] Record submission confirmation
-- [ ] Record FDA acknowledgment (accept/reject)
-- [ ] Submission history log per case
-- [ ] Return to draft for corrections
-- [ ] **Test/Production environment selection**
-- [ ] **Correct routing identifiers per environment (ZZFDA vs FDA_AERS)**
-- [ ] **Visual indicator of current environment**
-- [ ] **Production mode confirmation before first use**
+- [x] Generate FDA-compliant XML export package
+- [x] Proper FDA filename conventions
+- [x] Pre-export validation with error/warning display
+- [x] Extended case status tracking
+- [x] Record submission confirmation
+- [x] Record FDA acknowledgment (accept/reject)
+- [x] Submission history log per case
+- [x] Return to draft for corrections
+- [x] **Test/Production environment selection**
+- [x] **Correct routing identifiers per environment (ZZFDATST/ZZFDATST_PREMKT vs FDA_AERS/ZZFDA_PREMKT)**
+- [x] **Visual indicator of current environment**
+- [x] **Production mode confirmation before first use**
 
 ### 8.2 Should Have
-- [ ] Submission dashboard with status overview
-- [ ] Case list columns for submission info
-- [ ] Needs attention highlighting
+- [x] Submission dashboard with status overview
+- [x] Case list columns for submission info
+- [x] Needs attention highlighting
 - [ ] Export to ZIP option
 - [ ] README with instructions in export
-- [ ] Sender defaults configuration
-- [ ] **Premarket/Postmarket selection**
+- [x] Sender defaults configuration
+- [x] **Premarket/Postmarket selection**
 - [ ] **Test filename suffix (_TEST)**
 
 ### 8.3 Nice to Have

@@ -1,0 +1,34 @@
+To: Deepak [FDA FAERS contact]
+Subject: G.k.4.r.9.1 structural clarification before resubmission — Case SR-CASE-20260615-SC6MEGAv3
+
+Hi Deepak,
+
+Thank you for the feedback on our previous submission. Before we resubmit, I wanted to clarify one point to avoid another rejection cycle on the same field.
+
+Your last ACK flagged G.k.4.r.9.1 (Pharmaceutical Dose Form, free text) as missing. In our updated XML we have encoded it as <originalText> inside <formCode> within the nested dosing substanceAdministration (outboundRelationship2 typeCode="COMP"), which is the pattern shown in FAERS2022Scenario6.xml at line 25215. The relevant structure looks like this:
+
+<outboundRelationship2 typeCode="COMP">
+  <substanceAdministration classCode="SBADM" moodCode="EVN">
+    ...
+    <consumable typeCode="CSM">
+      <instanceOfKind classCode="INST">
+        <kindOfProduct classCode="MMAT" determinerCode="KIND">
+          <formCode code="C42967" displayName="Injection"
+                    codeSystem="0.4.0.127.0.16.1.1.2.1"
+                    codeSystemVersion="2014.10.30">
+            <originalText>Solution for injection in auto-injector</originalText>
+          </formCode>
+        </kindOfProduct>
+      </instanceOfKind>
+    </consumable>
+  </substanceAdministration>
+</outboundRelationship2>
+
+My question: Is this the location FDA expects for G.k.4.r.9.1, or does FDA require it at a different path in the XML — for example, within the main drug substanceAdministration block rather than the nested dosing record?
+
+We want to make sure we are aligned with FDA's expectation before resubmitting.
+
+Thank you for your time.
+
+Best regards,
+Sachin

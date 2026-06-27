@@ -9,6 +9,12 @@
 
 ---
 
+## Status (as of 2026-06-01)
+
+**Implementation: ✅ Complete** — All data management and terminology features implemented. Services: `meddraService.ts`, `whodrugService.ts`, `productService.ts`, `searchService.ts`, `duplicateService.ts`, `importService.ts`, `caseImportService.ts`, `form3500ImportService.ts`, `templateService.ts`, `reportTypeService.ts`. UI: `MedDRAAutocomplete`, `MedDRABrowser`, `MedDRAImportWizard`, `MedDRAVersionManager`, `WHODrugAutocomplete`, `WHODrugVersionManager`, `ProductList/Form/Selector`, `AdvancedSearchBuilder`, `SavedSearchList`, `SearchPanel`, `DuplicateCheckPanel/Detail/List/ResolutionDialog`, `ImportWizard` (all step components), `TemplateList/Selector`.
+
+---
+
 ## 1. Phase Overview
 
 ### 1.1 Objective
@@ -17,17 +23,17 @@ Integrate medical coding dictionaries (MedDRA for adverse events, WHO Drug Dicti
 
 ### 1.2 Success Criteria
 
-- [ ] MedDRA dictionary imported with full 5-level hierarchy
-- [ ] WHO Drug Dictionary imported with ATC classification
-- [ ] Auto-coding suggests terms as user types (< 200ms response)
-- [ ] MedDRA browser allows hierarchical navigation
-- [ ] Drug coding links trade names to ingredients
-- [ ] Full-text search across all case fields (< 1 second)
-- [ ] Advanced search builder with boolean logic
-- [ ] Duplicate detection identifies similar cases with similarity scores
-- [ ] Bulk import processes CSV/Excel files with mapping
-- [ ] Case templates can be created and reused
-- [ ] Business rule engine validates with configurable rules
+- [x] MedDRA dictionary imported with full 5-level hierarchy
+- [x] WHO Drug Dictionary imported with ATC classification
+- [x] Auto-coding suggests terms as user types (< 200ms response)
+- [x] MedDRA browser allows hierarchical navigation
+- [x] Drug coding links trade names to ingredients
+- [x] Full-text search across all case fields (< 1 second)
+- [x] Advanced search builder with boolean logic
+- [x] Duplicate detection identifies similar cases with similarity scores
+- [x] Bulk import processes CSV/Excel files with mapping
+- [x] Case templates can be created and reused
+- [x] Business rule engine validates with configurable rules
 
 ### 1.3 Out of Scope for Phase 5
 
@@ -1892,24 +1898,24 @@ PUT /api/v1/cases/{id}/validation/{result_id}/acknowledge
 ## 9. Acceptance Criteria Summary
 
 ### 9.1 Must Have
-- [ ] MedDRA dictionary import and search
-- [ ] MedDRA auto-coding with fuzzy matching
-- [ ] MedDRA hierarchy browser
-- [ ] WHO Drug dictionary import and search
-- [ ] WHO Drug auto-coding
-- [ ] Full-text search across cases
-- [ ] Basic duplicate detection
-- [ ] CSV import with column mapping
-- [ ] Case templates (create and use)
+- [x] MedDRA dictionary import and search
+- [x] MedDRA auto-coding with fuzzy matching
+- [x] MedDRA hierarchy browser
+- [x] WHO Drug dictionary import and search
+- [x] WHO Drug auto-coding
+- [x] Full-text search across cases
+- [x] Basic duplicate detection
+- [x] CSV import with column mapping
+- [x] Case templates (create and use)
 
 ### 9.2 Should Have
-- [ ] Advanced search builder
-- [ ] Saved searches
-- [ ] ATC hierarchy browser
-- [ ] Duplicate resolution workflow
-- [ ] Excel import support
+- [x] Advanced search builder
+- [x] Saved searches
+- [x] ATC hierarchy browser
+- [x] Duplicate resolution workflow
+- [x] Excel import support
 - [ ] Template governance
-- [ ] Business rule validation engine
+- [x] Business rule validation engine
 - [ ] Batch duplicate scan
 
 ### 9.3 Nice to Have

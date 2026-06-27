@@ -9,6 +9,12 @@
 
 ---
 
+## Status (as of 2026-06-01)
+
+**Implementation: ✅ Complete** — All non-expedited, follow-up, batch, and PSR features implemented. Services: `psrService.ts`, `batchService.ts`, `annualReportService.ts`, `followupService.ts`. UI: `PSRDashboard`, `PSRDetail`, `PSRList`, `PSRScheduleConfig`, `CreatePSRWizard`, `BatchList`, `BatchDetail`, `CreateBatchWizard`, `AnnualReportGenerator`, `CaseVersionTimeline`, `CreateFollowupDialog`, `NullifyDialog`.
+
+---
+
 ## 1. Phase Overview
 
 ### 1.1 Objective
@@ -17,14 +23,14 @@ Extend the application to support the complete postmarketing safety reporting li
 
 ### 1.2 Success Criteria
 
-- [ ] Non-expedited cases can be created with appropriate workflow
-- [ ] Follow-up reports link to and version original cases
-- [ ] Multiple cases can be submitted in a single batch
-- [ ] PSR schedules can be configured per product
-- [ ] PSR automatically aggregates non-expedited cases for a period
-- [ ] PSR descriptive portion can be generated from templates
-- [ ] Both PSR components (ICSRs + narrative) tracked together
-- [ ] Nullification reports can be created for duplicates/errors
+- [x] Non-expedited cases can be created with appropriate workflow
+- [x] Follow-up reports link to and version original cases
+- [x] Multiple cases can be submitted in a single batch
+- [x] PSR schedules can be configured per product
+- [x] PSR automatically aggregates non-expedited cases for a period
+- [x] PSR descriptive portion can be generated from templates
+- [x] Both PSR components (ICSRs + narrative) tracked together
+- [x] Nullification reports can be created for duplicates/errors
 
 ### 1.3 Out of Scope for Phase 4
 
@@ -1336,25 +1342,25 @@ POST /api/v1/psrs/{id}/submit
 ## 9. Acceptance Criteria Summary
 
 ### 9.1 Must Have
-- [ ] Report type selection (expedited/non-expedited)
-- [ ] Seriousness and expectedness assessment
-- [ ] Non-expedited case workflow
-- [ ] Follow-up report creation linked to original
-- [ ] Case version tracking and history
-- [ ] Batch submission for multiple cases
-- [ ] Batch XML generation
-- [ ] Product master management
-- [ ] PSR schedule configuration
-- [ ] PSR case aggregation
-- [ ] PSR status tracking
+- [x] Report type selection (expedited/non-expedited)
+- [x] Seriousness and expectedness assessment
+- [x] Non-expedited case workflow
+- [x] Follow-up report creation linked to original
+- [x] Case version tracking and history
+- [x] Batch submission for multiple cases
+- [x] Batch XML generation
+- [x] Product master management
+- [x] PSR schedule configuration
+- [x] PSR case aggregation
+- [x] PSR status tracking
 
 ### 9.2 Should Have
-- [ ] Report type suggestion based on criteria
+- [x] Report type suggestion based on criteria
 - [ ] Version comparison (diff view)
-- [ ] Nullification reports
-- [ ] PSR descriptive portion generation
-- [ ] PSR dashboard with deadlines
-- [ ] Batch validation before submission
+- [x] Nullification reports
+- [x] PSR descriptive portion generation
+- [x] PSR dashboard with deadlines
+- [x] Batch validation before submission
 
 ### 9.3 Nice to Have
 - [ ] PSR document templates (PADER/PBRER)

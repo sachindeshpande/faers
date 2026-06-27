@@ -1,11 +1,11 @@
 {
   "$schema": "faers-case-import-v1",
   "exampleId": "IND-T07-followup-report",
-  "description": "Follow-up IND safety report (spec §7 IND-T07). initialOrFollowup='FollowUp' and followupInfoDate captures when the sponsor received the additional information. In the real workflow the parentCaseId references a prior accepted SUSAR (IND-T01); here the JSON is standalone — the importer creates a Draft tagged as a follow-up without requiring the parent to exist.",
+  "description": "Follow-up IND safety report (spec \u00a77 IND-T07). initialOrFollowup='FollowUp' and followupInfoDate captures when the sponsor received the additional information. In the real workflow the parentCaseId references a prior accepted SUSAR (IND-T01); here the JSON is standalone \u2014 the importer creates a Draft tagged as a follow-up without requiring the parent to exist.",
   "baseline": "IND-T01",
   "case": {
-    "safetyReportId": "SR-CASE-EXAMPLE-INDT07",
-    "worldwideCaseId": "SR-CASE-EXAMPLE-INDT07",
+    "safetyReportId": "SR-CASE-20260603-INDT07",
+    "worldwideCaseId": "SR-CASE-20260603-INDT07",
     "reportType": "Study",
     "initialOrFollowup": "FollowUp",
     "receiptDate": "2026-04-15",
@@ -24,7 +24,9 @@
     "sponsorStudyNumber": "CT-00-01",
     "studyName": "Phase II Study of Testdrugimab in Rheumatoid Arthritis",
     "studyRegistrationNumber": "NCT00000001",
-    "crossReferencedIndNumbers": ["654321"]
+    "crossReferencedIndNumbers": [
+      "654321"
+    ]
   },
   "patient": {
     "initials": "T.P.",
@@ -45,8 +47,17 @@
     "department": "Drug Safety",
     "givenName": "Sachin",
     "familyName": "Deshpande",
-    "address": { "street": "123 Test St", "city": "Sunnyvale", "state": "CA", "postalCode": "94085", "country": "US" },
-    "contact": { "phone": "+1-408-555-0100", "email": "sachin@deepquence.com" }
+    "address": {
+      "street": "123 Test St",
+      "city": "Sunnyvale",
+      "state": "CA",
+      "postalCode": "94085",
+      "country": "US"
+    },
+    "contact": {
+      "phone": "+1-408-555-0100",
+      "email": "sachin@deepquence.com"
+    }
   },
   "reporter": {
     "qualification": "Physician",
@@ -55,8 +66,17 @@
     "familyName": "Doe",
     "organization": "City General Hospital",
     "department": "Drug Safety",
-    "address": { "street": "100 Main St", "city": "Anytown", "state": "CA", "postalCode": "94085", "country": "US" },
-    "contact": { "phone": "+1-408-555-0100", "email": "jane.doe@example.com" }
+    "address": {
+      "street": "100 Main St",
+      "city": "Anytown",
+      "state": "CA",
+      "postalCode": "94085",
+      "country": "US"
+    },
+    "contact": {
+      "phone": "+1-408-555-0100",
+      "email": "jane.doe@example.com"
+    }
   },
   "reactions": [
     {
@@ -65,16 +85,26 @@
       "startDate": "2026-03-05",
       "endDate": "2026-04-08",
       "outcomeCode": 1,
-      "seriousness": { "hospitalization": true }
+      "seriousness": {
+        "hospitalization": true
+      }
     }
   ],
   "drugs": [
     {
-      "role": "Suspect", "productName": "Testdrugimab",
-      "dose": "50mg", "doseValue": 50, "doseUnit": "mg", "route": "Subcutaneous",
-      "indication": "Rheumatoid arthritis", "indicationMeddraCode": "10039073",
-      "startDate": "2026-01-15", "endDate": "2026-03-10",
-      "actionTakenCode": 1, "dechallengeCode": 1, "rechallengeCode": 3,
+      "role": "Suspect",
+      "productName": "Testdrugimab",
+      "dose": "50mg",
+      "doseValue": 50,
+      "doseUnit": "mg",
+      "route": "Subcutaneous",
+      "indication": "Rheumatoid arthritis",
+      "indicationMeddraCode": "10039073",
+      "startDate": "2026-01-15",
+      "endDate": "2026-03-10",
+      "actionTakenCode": 1,
+      "dechallengeCode": 1,
+      "rechallengeCode": 3,
       "manufacturerName": "DeepQuence",
       "indAuthorizationNumber": "IND123456"
     }

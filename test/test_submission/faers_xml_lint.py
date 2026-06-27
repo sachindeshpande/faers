@@ -530,6 +530,9 @@ def run(xml_path):
         for _ri in _orb.findall(Q('relatedInvestigation')):
             _c = _ri.find(Q('code'))
             if _c is not None:
+                # Skip nullFlavor entries (e.g. C.1.10.r uses nullFlavor="NA" legitimately)
+                if ga(_c, 'nullFlavor'):
+                    continue
                 _oid_code_pairs.append((ga(_c,'codeSystem'), ga(_c,'code')))
     _dupes = [p for p, cnt in _Counter(_oid_code_pairs).items() if cnt > 1]
     chk("No duplicate OID+code in outboundRelationship/relatedInvestigation/code [GAP-IND-005]",
@@ -625,8 +628,8 @@ def run(xml_path):
             numeric = ext[3:] if ext.upper().startswith("IND") else ext
             if numeric:
                 drug_ind_numerics.add(numeric)
+    c55a_vals = {ga(sr.find(Q("id")), "extension") for sr in c55a_regs}
     if c55a_regs and drug_ind_numerics:
-        c55a_vals = {ga(sr.find(Q("id")), "extension") for sr in c55a_regs}
         overlap   = c55a_vals & drug_ind_numerics
         _detail_19 = (
             "" if len(overlap) > 0 else
@@ -1927,13 +1930,19 @@ def run(xml_path):
             if not (_pname45 is not None and (_pname45.text or "").strip() != "")
             else f"name={(_pname45.text or '').strip()!r} ✓"
         )
+        # Aggregate reports (D.1 = "AGGREGATE") do not carry individual patient sex.
+        # FDA Scenario4 reference XML omits administrativeGenderCode entirely.
+        _is_aggregate = (_pname45 is not None and (_pname45.text or "").strip().upper() == "AGGREGATE")
         _agc46 = root.find(f'.//{{{NS}}}administrativeGenderCode')
-        chk(
-            "administrativeGenderCode (D.5) present",
-            _agc46 is not None,
-            "administrativeGenderCode missing — D.5 patient sex is required"
-            if _agc46 is None else "present"
-        )
+        if not _is_aggregate:
+            chk(
+                "administrativeGenderCode (D.5) present",
+                _agc46 is not None,
+                "administrativeGenderCode missing — D.5 patient sex is required"
+                if _agc46 is None else "present"
+            )
+        else:
+            info("administrativeGenderCode (D.5): skipped for AGGREGATE patient (no individual patient sex)")
         if _agc46 is not None:
             _gc46  = ga(_agc46,"code") or ""
             _gcs46 = ga(_agc46,"codeSystem") or ""

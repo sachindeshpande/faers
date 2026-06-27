@@ -51,10 +51,18 @@ export const FAERS_POLICY: Record<string, FieldPolicy> = {
     observationCode: 'C17049',
     rejectsNullFlavorNI: true,
     entries: [
-      { value: 'C41260', verdict: 'proven_safe',     evidence: 'v37, 2L8T ACK3' },
+      // FDA-authoritative value set (fda_e2b_r3_core_regional_data_elements_business_rules_v1.6/v1.7.xlsx row 169):
+      //   C16352=African American, C41259=American Indian or Alaska Native,
+      //   C41260=Asian, C41219=Native Hawaiian or Other Pacific Islander, C41261=White
+      // The ICH E2B(R3) IG (D section) does NOT define D.11 — these are FDA regional elements only.
+      { value: 'C41260', verdict: 'proven_safe',     evidence: 'v37, 2L8T ACK3 (Asian)' },
+      { value: 'C41261', verdict: 'proven_safe',     evidence: 'TC-A01 golden CA+AA (White)' },
+      { value: 'C41259', verdict: 'proven_safe',     evidence: 'TC-A02 golden CA+AA (American Indian or Alaska Native per FDA spec); TC-A03 v2 ci260601150309 CA+AA confirmed 2026-06-01.' },
+      { value: 'C41219', verdict: 'proven_safe',     evidence: 'TC-A04 v2 ci260601150313 CA+AA confirmed 2026-06-01 (Native Hawaiian or Other Pacific Islander per FDA spec). test/golden/postmarket/accepted/xml/TC-A04-race-hawaiian.xml' },
+      { value: 'C16352', verdict: 'proven_safe',     evidence: 'TC-A02b ci260601175051 CA+AA confirmed 2026-06-01 (African American per FDA spec). test/golden/postmarket/accepted/xml/TC-A02b-race-black-c16352.xml' },
       { value: 'C17998', verdict: 'proven_rejected',  evidence: '26ZL ACK3' },
-      { value: 'C41257', verdict: 'proven_rejected',  evidence: 'TC-A03 ci260501170657 — "Element value not allowed for tag FDA.D.11.r.1" (test/golden/postmarket/rejected/TC-A03-race-amerindian.{xml,ack})' },
-      { value: 'C41258', verdict: 'proven_rejected',  evidence: 'TC-A04 ci260501170706 — "Element value not allowed for tag FDA.D.11.r.1" (test/golden/postmarket/rejected/TC-A04-race-hawaiian.{xml,ack})' },
+      { value: 'C41257', verdict: 'proven_rejected',  evidence: 'TC-A03 ci260501170657 — "Element value not allowed for tag FDA.D.11.r.1". NOT in FDA value set (test/golden/postmarket/rejected/TC-A03-race-amerindian.{xml,ack})' },
+      { value: 'C41258', verdict: 'proven_rejected',  evidence: 'TC-A04 ci260501170706 — "Element value not allowed for tag FDA.D.11.r.1". NOT in FDA value set (test/golden/postmarket/rejected/TC-A04-race-hawaiian.{xml,ack})' },
       // nullFlavor NI is rejected (QTXZ, 2GZK) — captured structurally above.
     ]
   },

@@ -4,8 +4,8 @@
   "description": "Test catalog TC-F02: Combination Product Report Indicator = true (C156384 BL value=true). Minimal patch on 2L8T baseline \u2014 only case.combinationProduct changes. Drives the combination product observation in the XML.",
   "baseline": "2L8T",
   "case": {
-    "safetyReportId": "SR-CASE-EXAMPLE-TCF02",
-    "worldwideCaseId": "SR-CASE-EXAMPLE-TCF02",
+    "safetyReportId": "SR-CASE-20260603-TCF02",
+    "worldwideCaseId": "SR-CASE-20260603-TCF02",
     "reportType": "Spontaneous",
     "initialOrFollowup": "Initial",
     "receiptDate": "2026-03-15",

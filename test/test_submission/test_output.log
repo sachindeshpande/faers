@@ -1,0 +1,252 @@
+Building headless runner...
+
+> faers-app@1.0.0 build:headless
+> esbuild src/main/headless/cli.ts --bundle --platform=node --format=cjs --packages=external --outfile=out/main/headless.js
+
+
+  out/main/headless.js  331.9kb
+
+⚡ Done in 15ms
+  Using electron: /Users/sachindeshpande/Projects/RegAI/workspace/faers/test/test_submission/../../faers-app/node_modules/.bin/electron
+
+══════════════════════════════════════════════════════════════
+  FAERS Workflow Regression Test
+  Cases dir:   /Users/sachindeshpande/Projects/RegAI/workspace/faers/test/test_submission/examples/cases
+  App dir:     /Users/sachindeshpande/Projects/RegAI/workspace/faers/test/test_submission/../../faers-app
+  Files:       37 JSON(s)
+  Quick mode:  NO (all 3 gates)
+══════════════════════════════════════════════════════════════
+
+────────────────────────────────────────────
+  Processing: 2L8T-baseline
+  ✅ Gate 1 PASS: XML generated → 2L8T-baseline.xml
+  ✅ Gate 2 PASS: 0 FAIL, 1 WARN (linter)
+  ✅ Gate 3 PASS: 19 assertion(s) passed
+
+────────────────────────────────────────────
+  Processing: IND-T01-susar-baseline
+  ✅ Gate 1 PASS: XML generated → IND-T01-susar-baseline.xml
+  ✅ Gate 2 PASS: 0 FAIL, 1 WARN (linter)
+  ✅ Gate 3 PASS: 15 assertion(s) passed
+
+────────────────────────────────────────────
+  Processing: IND-T02-susar-repeat
+  ✅ Gate 1 PASS: XML generated → IND-T02-susar-repeat.xml
+  ✅ Gate 2 PASS: 0 FAIL, 1 WARN (linter)
+  ✅ Gate 3 PASS: 15 assertion(s) passed
+
+────────────────────────────────────────────
+  Processing: IND-T03-cross-ref-ind
+  ✅ Gate 1 PASS: XML generated → IND-T03-cross-ref-ind.xml
+  ✅ Gate 2 PASS: 0 FAIL, 1 WARN (linter)
+  ✅ Gate 3 PASS: 15 assertion(s) passed
+
+────────────────────────────────────────────
+  Processing: IND-T04-no-study-registration
+  ✅ Gate 1 PASS: XML generated → IND-T04-no-study-registration.xml
+  ✅ Gate 2 PASS: 0 FAIL, 1 WARN (linter)
+  ✅ Gate 3 PASS: 15 assertion(s) passed
+
+────────────────────────────────────────────
+  Processing: IND-T05-fatal-seven-day
+  ✅ Gate 1 PASS: XML generated → IND-T05-fatal-seven-day.xml
+  ✅ Gate 2 PASS: 0 FAIL, 1 WARN (linter)
+  ✅ Gate 3 PASS: 15 assertion(s) passed
+
+────────────────────────────────────────────
+  Processing: IND-T06-babe-test-reference
+  ✅ Gate 1 PASS: XML generated → IND-T06-babe-test-reference.xml
+  ✅ Gate 2 PASS: 0 FAIL, 1 WARN (linter)
+  ✅ Gate 3 PASS: 21 assertion(s) passed
+
+────────────────────────────────────────────
+  Processing: IND-T07-followup-report
+  ✅ Gate 1 PASS: XML generated → IND-T07-followup-report.xml
+  ✅ Gate 2 PASS: 0 FAIL, 1 WARN (linter)
+  ✅ Gate 3 PASS: 15 assertion(s) passed
+
+────────────────────────────────────────────
+  Processing: TC-A03-race-amerindian
+  ✅ Gate 1 PASS: XML generated → TC-A03-race-amerindian.xml
+  ✅ Gate 2 PASS: 0 FAIL, 1 WARN (linter)
+  ✅ Gate 3 PASS: 19 assertion(s) passed
+
+────────────────────────────────────────────
+  Processing: TC-A04-race-hawaiian
+  ✅ Gate 1 PASS: XML generated → TC-A04-race-hawaiian.xml
+  ✅ Gate 2 PASS: 0 FAIL, 1 WARN (linter)
+  ✅ Gate 3 PASS: 19 assertion(s) passed
+
+────────────────────────────────────────────
+  Processing: TC-B01-medhistory-empty
+  ✅ Gate 1 PASS: XML generated → TC-B01-medhistory-empty.xml
+  ✅ Gate 2 PASS: 0 FAIL, 1 WARN (linter)
+  ✅ Gate 3 PASS: 19 assertion(s) passed
+
+────────────────────────────────────────────
+  Processing: TC-C01-reporter-qual-2
+  ✅ Gate 1 PASS: XML generated → TC-C01-reporter-qual-2.xml
+  ✅ Gate 2 PASS: 0 FAIL, 1 WARN (linter)
+  ✅ Gate 3 PASS: 19 assertion(s) passed
+
+────────────────────────────────────────────
+  Processing: TC-D02-actiontaken-3
+  ✅ Gate 1 PASS: XML generated → TC-D02-actiontaken-3.xml
+  ✅ Gate 2 PASS: 0 FAIL, 1 WARN (linter)
+  ✅ Gate 3 PASS: 19 assertion(s) passed
+
+────────────────────────────────────────────
+  Processing: TC-D03-actiontaken-5
+  ✅ Gate 1 PASS: XML generated → TC-D03-actiontaken-5.xml
+  ✅ Gate 2 PASS: 0 FAIL, 1 WARN (linter)
+  ✅ Gate 3 PASS: 19 assertion(s) passed
+
+────────────────────────────────────────────
+  Processing: TC-D04-dechallenge-1
+  ✅ Gate 1 PASS: XML generated → TC-D04-dechallenge-1.xml
+  ✅ Gate 2 PASS: 0 FAIL, 1 WARN (linter)
+  ✅ Gate 3 PASS: 19 assertion(s) passed
+
+────────────────────────────────────────────
+  Processing: TC-D06-concom-actiontaken-6
+  ✅ Gate 1 PASS: XML generated → TC-D06-concom-actiontaken-6.xml
+  ✅ Gate 2 PASS: 0 FAIL, 1 WARN (linter)
+  ✅ Gate 3 PASS: 19 assertion(s) passed
+
+────────────────────────────────────────────
+  Processing: TC-E01-weight-absent
+  ✅ Gate 1 PASS: XML generated → TC-E01-weight-absent.xml
+  ✅ Gate 2 PASS: 0 FAIL, 1 WARN (linter)
+  ✅ Gate 3 PASS: 18 assertion(s) passed
+
+────────────────────────────────────────────
+  Processing: TC-E02-age-nullflavor
+  ✅ Gate 1 PASS: XML generated → TC-E02-age-nullflavor.xml
+  ✅ Gate 2 PASS: 0 FAIL, 1 WARN (linter)
+  ✅ Gate 3 PASS: 19 assertion(s) passed
+
+────────────────────────────────────────────
+  Processing: TC-F01-followup-v3
+  ✅ Gate 1 PASS: XML generated → TC-F01-followup-v3.xml
+  ✅ Gate 2 PASS: 0 FAIL, 1 WARN (linter)
+  ✅ Gate 3 PASS: 19 assertion(s) passed
+
+────────────────────────────────────────────
+  Processing: TC-F02-comboproduct
+  ✅ Gate 1 PASS: XML generated → TC-F02-comboproduct.xml
+  ✅ Gate 2 PASS: 0 FAIL, 1 WARN (linter)
+  ✅ Gate 3 PASS: 20 assertion(s) passed
+
+────────────────────────────────────────────
+  Processing: TC-F03-nonexpedited
+  ✅ Gate 1 PASS: XML generated → TC-F03-nonexpedited.xml
+  ✅ Gate 2 PASS: 0 FAIL, 1 WARN (linter)
+  ✅ Gate 3 PASS: 19 assertion(s) passed
+
+────────────────────────────────────────────
+  Processing: TC-F04-ich-rpttype-2
+  ✅ Gate 1 PASS: XML generated → TC-F04-ich-rpttype-2.xml
+  ✅ Gate 2 PASS: 0 FAIL, 1 WARN (linter)
+  ✅ Gate 3 PASS: 17 assertion(s) passed
+
+────────────────────────────────────────────
+  Processing: TC-G01-nonserous
+  ⚙️  Gate 1 ENFORCEMENT CONFIRMED: B.2.i.7 generator enforcement — non-serious reactions (all seriousness false) blocked at import; generator requires at least one criterion true
+
+────────────────────────────────────────────
+  Processing: TC-G02-outcome-recovering
+  ✅ Gate 1 PASS: XML generated → TC-G02-outcome-recovering.xml
+  ✅ Gate 2 PASS: 0 FAIL, 1 WARN (linter)
+  ✅ Gate 3 PASS: 19 assertion(s) passed
+
+────────────────────────────────────────────
+  Processing: TC-G03-outcome-sequelae
+  ✅ Gate 1 PASS: XML generated → TC-G03-outcome-sequelae.xml
+  ✅ Gate 2 PASS: 0 FAIL, 1 WARN (linter)
+  ✅ Gate 3 PASS: 19 assertion(s) passed
+
+────────────────────────────────────────────
+  Processing: TC-H01-addldocs-true
+  ✅ Gate 1 PASS: XML generated → TC-H01-addldocs-true.xml
+  ✅ Gate 2 PASS: 0 FAIL, 1 WARN (linter)
+  ✅ Gate 3 PASS: 19 assertion(s) passed
+
+────────────────────────────────────────────
+  Processing: TC-H02-nolocation
+  ⚙️  Gate 1 ENFORCEMENT CONFIRMED: CDER 2.18 generator enforcement — country-only reporter blocked at import; street/city/state/postcode required
+
+────────────────────────────────────────────
+  Processing: TC-H03-orgname-changed
+  ✅ Gate 1 PASS: XML generated → TC-H03-orgname-changed.xml
+  ✅ Gate 2 PASS: 0 FAIL, 1 WARN (linter)
+  ✅ Gate 3 PASS: 19 assertion(s) passed
+
+────────────────────────────────────────────
+  Processing: TC-A01-race-white
+  ✅ Gate 1 PASS: XML generated → TC-A01-race-white.xml
+  ✅ Gate 2 PASS: 0 FAIL, 1 WARN (linter)
+  ✅ Gate 3 PASS: 19 assertion(s) passed
+
+────────────────────────────────────────────
+  Processing: TC-A02-race-black
+  ✅ Gate 1 PASS: XML generated → TC-A02-race-black.xml
+  ✅ Gate 2 PASS: 0 FAIL, 1 WARN (linter)
+  ✅ Gate 3 PASS: 19 assertion(s) passed
+
+────────────────────────────────────────────
+  Processing: TC-A05-ethnicity-hispanic
+  ✅ Gate 1 PASS: XML generated → TC-A05-ethnicity-hispanic.xml
+  ✅ Gate 2 PASS: 0 FAIL, 1 WARN (linter)
+  ✅ Gate 3 PASS: 19 assertion(s) passed
+
+────────────────────────────────────────────
+  Processing: TC-B02-medhistory-narrative
+  ✅ Gate 1 PASS: XML generated → TC-B02-medhistory-narrative.xml
+  ✅ Gate 2 PASS: 0 FAIL, 1 WARN (linter)
+  ✅ Gate 3 PASS: 19 assertion(s) passed
+
+────────────────────────────────────────────
+  Processing: TC-C02-reporter-qual-3
+  ✅ Gate 1 PASS: XML generated → TC-C02-reporter-qual-3.xml
+  ✅ Gate 2 PASS: 0 FAIL, 1 WARN (linter)
+  ✅ Gate 3 PASS: 19 assertion(s) passed
+
+────────────────────────────────────────────
+  Processing: TC-D01-action-dose-reduced
+  ✅ Gate 1 PASS: XML generated → TC-D01-action-dose-reduced.xml
+  ✅ Gate 2 PASS: 0 FAIL, 1 WARN (linter)
+  ✅ Gate 3 PASS: 19 assertion(s) passed
+
+────────────────────────────────────────────
+  Processing: TC-D05-two-suspect-drugs
+  ✅ Gate 1 PASS: XML generated → TC-D05-two-suspect-drugs.xml
+  ✅ Gate 2 PASS: 0 FAIL, 1 WARN (linter)
+  ✅ Gate 3 PASS: 23 assertion(s) passed
+
+────────────────────────────────────────────
+  Processing: TC-E03-patient-female
+  ✅ Gate 1 PASS: XML generated → TC-E03-patient-female.xml
+  ✅ Gate 2 PASS: 0 FAIL, 1 WARN (linter)
+  ✅ Gate 3 PASS: 19 assertion(s) passed
+
+────────────────────────────────────────────
+  Processing: TC-G04-fatal-outcome
+  ✅ Gate 1 PASS: XML generated → TC-G04-fatal-outcome.xml
+  ✅ Gate 2 PASS: 0 FAIL, 1 WARN (linter)
+  ✅ Gate 3 PASS: 18 assertion(s) passed
+
+══════════════════════════════════════════════════════════════
+=== WORKFLOW TEST SUMMARY ===
+  ✅ Passed:               35
+  ⚙️  Enforcement confirmed: 2
+  ❌ Failed:               0
+  Total:                  37
+  Output:                 /tmp/faers_workflow_test_69162
+══════════════════════════════════════════════════════════════
+
+ENFORCEMENT CONFIRMED (expected Gate 1 blocks):
+  ⚙️  TC-G01-nonserous — B.2.i.7 generator enforcement — non-serious reactions (all seriousness false) blocked at import; generator requires at least one criterion true
+  ⚙️  TC-H02-nolocation — CDER 2.18 generator enforcement — country-only reporter blocked at import; street/city/state/postcode required
+
+Logs at: /tmp/faers_workflow_test_69162
+To clean up: rm -rf /tmp/faers_workflow_test_69162

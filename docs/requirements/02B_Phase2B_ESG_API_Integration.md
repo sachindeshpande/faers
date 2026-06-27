@@ -10,6 +10,12 @@
 
 ---
 
+## Status (as of 2026-06-01)
+
+**Implementation: ✅ Complete** — ESG NextGen AS2 API integration fully implemented and empirically verified. Live round-trips confirmed: submission 2L8T received CA+AA from ZZFDATST on 2026-04-21. Post-2L8T additions include a 5-pass empirical pre-submission validator (`fivePassValidatorService.ts`) and a raw ACK XML import/parser (`ackParserService.ts` + `ImportAckDialog`). See `test/golden/` and `faers-app/src/main/services/faersEmpiricalPolicy.ts` for the full empirical-evidence index.
+
+---
+
 ## 1. Phase Overview
 
 ### 1.1 Objective
@@ -664,6 +670,7 @@ Sender Settings:
 - [x] NACK error detail display
 - [ ] Export acknowledgment as PDF
 - [x] Configurable polling and retry settings
+
 
 ### 9.3 Nice to Have
 - [ ] Submission queue for offline support

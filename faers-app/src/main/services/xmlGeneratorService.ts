@@ -79,6 +79,13 @@ const HARDCODED_MEDDRA_FALLBACK: Record<string, string> = {
 };
 
 const MEDDRA_OID = '2.16.840.1.113883.6.163';
+/** MedDRA codeSystemVersion emitted on all reaction and indication values.
+ *  Update when a new MedDRA release is imported into the app's dictionary.
+ *  BRv1.7 compliance: must match the actual imported release version (T2-03).
+ *  Pinned to 25.0 to match the FDA-accepted v37 reference and the golden corpus
+ *  (the only CA+AA submission, ci260410211359, used 25.0). Bump only alongside a
+ *  golden-corpus regeneration and the validator/CI MedDRA pin. */
+const MEDDRA_VERSION = '25.0';
 
 export class XMLGeneratorService {
   private caseRepo: CaseRepository;
@@ -88,6 +95,9 @@ export class XMLGeneratorService {
   private meddraRepo: MedDRARepository;
   // Warnings populated during build for surfacing on the GenerationResult.
   private buildWarnings: string[] = [];
+  /** UUIDs emitted on reaction <id root> elements; populated by buildReaction,
+   *  consumed by buildDrugCausalityBlocks for G.k.9.i code=39 cross-references. */
+  private lastReactionUuids: string[] = [];
 
   constructor(db: DatabaseInstance) {
     this.caseRepo = new CaseRepository(db);
@@ -226,6 +236,7 @@ export class XMLGeneratorService {
     // Reset per-call accumulator for warnings emitted by the build helpers
     // (e.g. the MedDRA auto-resolver flagging drugs with unresolved indications).
     this.buildWarnings = [];
+    this.lastReactionUuids = [];
 
     // Resolve the batch UUID up here so we can return it on the result for
     // the headless CLI's submission log + checklist (GAP-SUB-001/002). Same
@@ -490,10 +501,14 @@ export class XMLGeneratorService {
       : new Date(caseData.createdAt);
     lines.push(`          <availabilityTime value="${this.formatDateTime(availDate)}"/>`);
 
-    // ── COMPONENT 1: Patient + reactions + drugs ───────────────────────
+    // ── COMPONENT 1: Patient + reactions + drugs + G.k causality blocks ──
     lines.push('          <component typeCode="COMP">');
     lines.push('            <adverseEventAssessment classCode="INVSTG" moodCode="EVN">');
     lines.push(this.buildPatient(caseData, reactions, drugs, isPremarket));
+    // G.k.1 (code=20) and G.k.9.i (code=39) causalityAssessment blocks.
+    // Must be inside the same adverseEventAssessment as the drug organizers,
+    // after </subject1>, per Business Rules v1.7 ICSR XPath rows 283 and 358.
+    lines.push(this.buildDrugCausalityBlocks(drugs, isPremarket));
     lines.push('            </adverseEventAssessment>');
     lines.push('          </component>');
 
@@ -519,6 +534,23 @@ export class XMLGeneratorService {
     lines.push(`              <value xsi:type="BL" value="${caseData.additionalDocs ? 'true' : 'false'}"/>`);
     lines.push('            </observationEvent>');
     lines.push('          </component>');
+    // T1-02: BRv1.7 Rule R0009 — C.1.6.1.r (documents held by sender) is required
+    // whenever C.1.6.1 = true. Not currently enforced by ZZFDATST (TC-H01 CA+AA
+    // without it), but is a spec compliance gap. Surface as build warning so
+    // cases with additionalDocs=true know they need to attach document metadata.
+    if (caseData.additionalDocs && caseData.documentsHeldBySender) {
+      lines.push('          <component typeCode="COMP">');
+      lines.push('            <observationEvent classCode="OBS" moodCode="EVN">');
+      lines.push('              <code code="1" codeSystem="2.16.840.1.113883.3.989.2.1.1.19" displayName="documentsHeldBySender"/>');
+      lines.push(`              <value xsi:type="ED">${this.escapeXml(caseData.documentsHeldBySender)}</value>`);
+      lines.push('            </observationEvent>');
+      lines.push('          </component>');
+    } else if (caseData.additionalDocs) {
+      this.buildWarnings.push(
+        'C.1.6.1 additionalDocumentsAvailable=true but documentsHeldBySender is not set — ' +
+        'BRv1.7 Rule R0009 requires C.1.6.1.r when additional documents are available.'
+      );
+    }
 
     // C.1.7 localCriteriaForExpedited + C.1.7.1 localCriteriaReportType
     // FDA FAERS 2.18 business rule (empirically confirmed):
@@ -651,7 +683,33 @@ export class XMLGeneratorService {
       lines.push('            </relatedInvestigation>');
       lines.push('          </outboundRelationship>');
     } else {
-      // Initial report: single initialReport outboundRelationship
+      // Initial report: initialReport (C.1.8.2) + sourceReport (C.2.r.5).
+      // The sourceReport block carries full C.2.r reporter fields and
+      // priorityNumber value="1" (primary source for regulatory purposes).
+      // Confirmed by FAERS2022Scenario1.xml lines 742-806 which shows BOTH
+      // blocks present on initial reports. C.2.r XPaths in Business Rules
+      // v1.7 ICSR XPath sheet resolve through outboundRelationship/
+      // relatedInvestigation[code='2'] — not through subjectOf1.
+      const primaryReporter = reporters[0];
+      const reporterStreet     = primaryReporter?.address  || '';
+      const reporterCity       = primaryReporter?.city     || '';
+      const reporterState      = primaryReporter?.state    || '';
+      const reporterPostalCode = primaryReporter?.postcode || '';
+      const reporterCountry    = primaryReporter?.country  || 'US';
+      const reporterPhone      = primaryReporter?.phone    || '';
+      const reporterEmail      = primaryReporter?.email    || '';
+      const reporterTitle      = primaryReporter?.title
+        || (primaryReporter?.qualification === 1 || primaryReporter?.qualification === 2 ? 'Dr' : 'Mr');
+      const reporterGiven  = primaryReporter?.givenName  || '';
+      const reporterFamily = primaryReporter?.familyName || '';
+      const reporterQualCode = String(primaryReporter?.qualification ?? 1);
+      const reporterQualCodeMap: Record<string, string> = {
+        '1': 'Physician', '2': 'Pharmacist', '3': 'Other Health Professional',
+        '4': 'Lawyer', '5': 'Consumer or non-health professional'
+      };
+      const reporterQualDisplay = reporterQualCodeMap[reporterQualCode] || 'Physician';
+
+      // C.1.8.2: First Sender of This Case
       lines.push('          <outboundRelationship typeCode="SPRT">');
       lines.push('            <relatedInvestigation classCode="INVSTG" moodCode="EVN">');
       lines.push('              <code code="1" codeSystem="2.16.840.1.113883.3.989.2.1.1.22" displayName="initialReport"/>');
@@ -660,6 +718,46 @@ export class XMLGeneratorService {
       lines.push('                  <author typeCode="AUT">');
       lines.push('                    <assignedEntity classCode="ASSIGNED">');
       lines.push('                      <code code="1" displayName="regulator" codeSystem="2.16.840.1.113883.3.989.2.1.1.3"/>');
+      lines.push('                    </assignedEntity>');
+      lines.push('                  </author>');
+      lines.push('                </controlActEvent>');
+      lines.push('              </subjectOf2>');
+      lines.push('            </relatedInvestigation>');
+      lines.push('          </outboundRelationship>');
+
+      // C.2.r.5: Primary Source for Regulatory Purposes — full C.2.r reporter block
+      lines.push('          <outboundRelationship typeCode="SPRT">');
+      lines.push('            <priorityNumber value="1"/>');
+      lines.push('            <relatedInvestigation classCode="INVSTG" moodCode="EVN">');
+      lines.push('              <code code="2" codeSystem="2.16.840.1.113883.3.989.2.1.1.22" displayName="sourceReport"/>');
+      lines.push('              <subjectOf2 typeCode="SUBJ">');
+      lines.push('                <controlActEvent classCode="CACT" moodCode="EVN">');
+      lines.push('                  <author typeCode="AUT">');
+      lines.push('                    <assignedEntity classCode="ASSIGNED">');
+      lines.push('                      <addr>');
+      lines.push(`                        <streetAddressLine>${this.escapeXml(reporterStreet)}</streetAddressLine>`);
+      lines.push(`                        <city>${this.escapeXml(reporterCity)}</city>`);
+      lines.push(`                        <state>${this.escapeXml(reporterState)}</state>`);
+      lines.push(`                        <postalCode>${this.escapeXml(reporterPostalCode)}</postalCode>`);
+      lines.push(`                        <country>${this.escapeXml(reporterCountry)}</country>`);
+      lines.push('                      </addr>');
+      if (reporterPhone) lines.push(`                      <telecom value="tel:${this.escapeXml(reporterPhone)}"/>`);
+      if (reporterEmail) lines.push(`                      <telecom value="mailto:${this.escapeXml(reporterEmail)}"/>`);
+      lines.push('                      <assignedPerson classCode="PSN" determinerCode="INSTANCE">');
+      lines.push('                        <name>');
+      lines.push(`                          <prefix>${this.escapeXml(reporterTitle)}</prefix>`);
+      lines.push(`                          <given>${this.escapeXml(reporterGiven)}</given>`);
+      lines.push(`                          <family>${this.escapeXml(reporterFamily)}</family>`);
+      lines.push('                        </name>');
+      lines.push('                        <asQualifiedEntity classCode="QUAL">');
+      lines.push(`                          <code code="${reporterQualCode}" displayName="${reporterQualDisplay}" codeSystem="2.16.840.1.113883.3.989.2.1.1.6"/>`);
+      lines.push('                        </asQualifiedEntity>');
+      lines.push('                        <asLocatedEntity classCode="LOCE">');
+      lines.push('                          <location classCode="COUNTRY" determinerCode="INSTANCE">');
+      lines.push(`                            <code code="${this.escapeXml(reporterCountry)}" codeSystem="1.0.3166.1.2.2"/>`);
+      lines.push('                          </location>');
+      lines.push('                        </asLocatedEntity>');
+      lines.push('                      </assignedPerson>');
       lines.push('                    </assignedEntity>');
       lines.push('                  </author>');
       lines.push('                </controlActEvent>');
@@ -990,10 +1088,12 @@ export class XMLGeneratorService {
     lines.push('                  <subjectOf2 typeCode="SBJ">');
     lines.push('                    <observation classCode="OBS" moodCode="EVN">');
     lines.push('                      <code code="C17049" displayName="Race" codeSystem="2.16.840.1.113883.3.26.1.1"/>');
-    // FAERS 2.18 rejects both nullFlavor="NI" (ACK QTXZ) and C17998 "Unknown"
-    // (ACK 26ZL) on race. When not set, default to C41260 "Asian" — the only
-    // empirically confirmed accepted code from v37. Other NCI race codes
-    // (C41261, C16352, etc.) are likely valid but untested.
+    // FAERS 2.18 rejects nullFlavor="NI" (ACK QTXZ) and C17998 "Unknown" (ACK 26ZL).
+    // All five FDA race codes from v1.7.xlsx row 169 are now proven_safe per ACK3:
+    //   C41260 Asian (v37/2L8T), C41261 White (TC-A01), C41259 American Indian or
+    //   Alaska Native (TC-A03 v2), C41219 Native Hawaiian or Other Pacific Islander
+    //   (TC-A04 v2), C16352 African American (TC-A02b ci260601175051 2026-06-01).
+    // Default to C41260 when not set.
     if (caseData.patientRace) {
       lines.push(`                      <value xsi:type="CE" code="${this.escapeXml(caseData.patientRace)}" codeSystem="2.16.840.1.113883.3.26.1.1"/>`);
     } else {
@@ -1066,14 +1166,16 @@ export class XMLGeneratorService {
       lines.push('                  </subjectOf2>');
     }
 
-    // Reactions (B.2)
+    // Reactions (B.2) — reset UUID accumulator so buildDrugCausalityBlocks
+    // can cross-reference reactions by the exact UUIDs emitted here.
+    this.lastReactionUuids = [];
     for (const reaction of reactions) {
       lines.push(this.buildReaction(reaction, isPremarket, !!caseData.overallNonSerious));
     }
 
-    // Drugs (B.4)
-    for (const drug of drugs) {
-      lines.push(this.buildDrug(drug, isPremarket));
+    // Drugs (B.4) — pass 1-based index for substanceAdministration/id extension
+    for (let k = 0; k < drugs.length; k++) {
+      lines.push(this.buildDrug(drugs[k], isPremarket, k + 1));
     }
 
     lines.push('                </primaryRole>');
@@ -1099,7 +1201,9 @@ export class XMLGeneratorService {
 
     lines.push('                  <subjectOf2 typeCode="SBJ">');
     lines.push('                    <observation classCode="OBS" moodCode="EVN">');
-    lines.push(`                      <id root="${uuidv4()}"/>`);
+    const rxnUuid = uuidv4();
+    this.lastReactionUuids.push(rxnUuid);
+    lines.push(`                      <id root="${rxnUuid}"/>`);
     lines.push('                      <code code="29" codeSystem="2.16.840.1.113883.3.989.2.1.1.19" displayName="reaction"/>');
 
     // effectiveTime BEFORE value, IVL_TS when low/high used
@@ -1117,7 +1221,7 @@ export class XMLGeneratorService {
     // MedDRA-coded value — auto-resolve via dictionary/fallback when no code.
     const meddraCode = reaction.meddraCode || this.resolveMeddraCode(reaction.reactionTerm);
     if (meddraCode) {
-      lines.push(`                      <value xsi:type="CE" code="${this.escapeXml(meddraCode)}" displayName="${this.escapeXml(reaction.reactionTerm)}" codeSystem="${MEDDRA_OID}" codeSystemVersion="25.0"/>`);
+      lines.push(`                      <value xsi:type="CE" code="${this.escapeXml(meddraCode)}" displayName="${this.escapeXml(reaction.reactionTerm)}" codeSystem="${MEDDRA_OID}" codeSystemVersion="${MEDDRA_VERSION}"/>`);
     } else {
       lines.push(`                      <value xsi:type="CE" nullFlavor="UNK" displayName="${this.escapeXml(reaction.reactionTerm)}"/>`);
       this.buildWarnings.push(`Reaction '${reaction.reactionTerm}' could not be resolved to a MedDRA code — emitted with nullFlavor.`);
@@ -1239,18 +1343,26 @@ export class XMLGeneratorService {
   /**
    * Build drug section (B.4)
    */
-  private buildDrug(drug: CaseDrug, isPremarket: boolean = false): string {
+  private buildDrug(drug: CaseDrug, isPremarket: boolean = false, drugIndex: number = 1): string {
     const lines: string[] = [];
 
     lines.push('            <subjectOf2 typeCode="SBJ">');
     lines.push('              <organizer classCode="CATEGORY" moodCode="EVN">');
 
-    // Drug characterization (B.4.k.1)
-    const charCode = drug.characterization === 1 ? 'suspect' : drug.characterization === 2 ? 'concomitant' : 'interacting';
-    lines.push(`                <code code="${charCode}" codeSystem="2.16.840.1.113883.3.989.2.1.1.13"/>`);
+    // Drug organizer — new format per Business Rules v1.7 ICSR XPath sheet.
+    // code="4" on OID …1.20 is required for G.k product XPaths to resolve in
+    // FDA FAERS 2.18. Legacy format (code="suspect"/"concomitant" on …1.13)
+    // was accepted by the gateway but caused XPath resolution failures.
+    // G.k.1 drug role is now expressed via causalityAssessment code=20 —
+    // see buildDrugCausalityBlocks. Confirmed CA+AA: TC-XP01 ci260602192744.
+    lines.push('                <code code="4" codeSystem="2.16.840.1.113883.3.989.2.1.1.20"/>');
 
     lines.push('                <component typeCode="COMP">');
     lines.push('                  <substanceAdministration classCode="SBADM" moodCode="EVN">');
+    // Drug instance identifier — OID …3.19 + sequential extension per drug.
+    // Required by the new organizer format; confirmed from FDA reference XML
+    // FDA_E2B_R3_Test_ICSR.xml line 355.
+    lines.push(`                    <id root="2.16.840.1.113883.3.989.2.1.3.19" extension="${drugIndex}"/>`);
 
     // Drug dates (B.4.k.8, B.4.k.9)
     if (drug.startDate || drug.endDate) {
@@ -1264,14 +1376,27 @@ export class XMLGeneratorService {
       lines.push('                    </effectiveTime>');
     }
 
+    // G.k.4 route + dose are SUPPRESSED pending a structure fix + FDA acceptance.
+    // The current forms are non-conformant with the FDA E2B(R3) references and
+    // appear in NO accepted golden (including the June-accepted TC-XP01 / ACK
+    // ci260602192744):
+    //   - routeCode uses codeSystem 2.16.840.1.113883.3.989.2.1.1.14 — FDA refs
+    //     use the EDQM route value set 0.4.0.127.0.16.1.1.2.6 with displayName +
+    //     codeSystemVersion.
+    //   - doseQuantity wraps the value in <center> — FDA refs use the direct form
+    //     <doseQuantity value="..." unit="..."/>.
+    // Re-enable only after fixing both structures AND confirming an ACK accepts
+    // them. See docs/requirements/response/Generator_Golden_Divergence_Note.md.
+    const EMIT_GK4_ROUTE_DOSE = false;
+
     // Route of administration (B.4.k.4.r.8)
-    if (drug.dosages && drug.dosages.length > 0 && drug.dosages[0].route) {
+    if (EMIT_GK4_ROUTE_DOSE && drug.dosages && drug.dosages.length > 0 && drug.dosages[0].route) {
       const routeCode = this.getRouteCode(drug.dosages[0].route);
       lines.push(`                    <routeCode code="${routeCode}" codeSystem="2.16.840.1.113883.3.989.2.1.1.14"/>`);
     }
 
     // Dosage information (B.4.k.4)
-    if (drug.dosages && drug.dosages.length > 0) {
+    if (EMIT_GK4_ROUTE_DOSE && drug.dosages && drug.dosages.length > 0) {
       const dosage = drug.dosages[0];
       if (dosage.dose !== undefined || dosage.doseUnit) {
         lines.push('                    <doseQuantity>');
@@ -1303,6 +1428,11 @@ export class XMLGeneratorService {
     // the drug's own productName so the slot is never empty).
     if (drug.indAuthorizationNumber) {
       const holderName = drug.manufacturerName || drug.productName;
+      // G.k.3.2 country of authorisation — required by FAERS 2.18 business rules
+      // whenever G.k.3.1 is present (confirmed empirically: regression_results_2
+      // 2026-06-03 — 28/28 CR+AR with message "G.k.3.2 should be entered when
+      // G.k.3.1 is entered"). Default to "US" when not explicitly set on the drug.
+      const authCountry = drug.authorizationCountry ?? 'US';
       lines.push('                          <asManufacturedProduct classCode="MANU">');
       lines.push('                            <subjectOf typeCode="SBJ">');
       lines.push('                              <approval classCode="CNTRCT" moodCode="EVN">');
@@ -1314,6 +1444,13 @@ export class XMLGeneratorService {
       lines.push('                                    </playingOrganization>');
       lines.push('                                  </role>');
       lines.push('                                </holder>');
+      lines.push('                                <author typeCode="AUT">');
+      lines.push('                                  <territorialAuthority classCode="TERR">');
+      lines.push('                                    <territory classCode="NAT" determinerCode="INSTANCE">');
+      lines.push(`                                      <code code="${this.escapeXml(authCountry)}" codeSystem="1.0.3166.1.2.2"/>`);
+      lines.push('                                    </territory>');
+      lines.push('                                  </territorialAuthority>');
+      lines.push('                                </author>');
       lines.push('                              </approval>');
       lines.push('                            </subjectOf>');
       lines.push('                          </asManufacturedProduct>');
@@ -1334,7 +1471,7 @@ export class XMLGeneratorService {
         lines.push('                    <outboundRelationship2 typeCode="RSON">');
         lines.push('                      <observation classCode="OBS" moodCode="EVN">');
         lines.push('                        <code code="C41331" codeSystem="2.16.840.1.113883.3.26.1.1" displayName="Indication"/>');
-        lines.push(`                        <value xsi:type="CE" code="${this.escapeXml(resolvedCode)}" displayName="${this.escapeXml(drug.indication)}" codeSystem="${MEDDRA_OID}" codeSystemVersion="25.0"/>`);
+        lines.push(`                        <value xsi:type="CE" code="${this.escapeXml(resolvedCode)}" displayName="${this.escapeXml(drug.indication)}" codeSystem="${MEDDRA_OID}" codeSystemVersion="${MEDDRA_VERSION}"/>`);
         lines.push('                      </observation>');
         lines.push('                    </outboundRelationship2>');
       } else {
@@ -1403,6 +1540,102 @@ export class XMLGeneratorService {
     lines.push('                </component>');
     lines.push('              </organizer>');
     lines.push('            </subjectOf2>');
+
+    return lines.join('\n');
+  }
+
+  /**
+   * Build causalityAssessment blocks for G.k.1 (code=20) and G.k.9.i (code=39).
+   *
+   * These MUST be component children of the main adverseEventAssessment,
+   * placed after </subject1> (i.e. after buildPatient's output).
+   *
+   * G.k.1 (code=20): one block per drug, expresses drug role (Suspect/
+   *   Concomitant/Interacting) via <value> + <subject2/productUseReference>
+   *   referencing the drug by its substanceAdministration/id (OID …3.19,
+   *   extension = 1-based drug index). Per BRv1.7 ICSR XPath row 283.
+   *
+   * G.k.9.i (code=39): one block per (suspect drug × reaction) pair, links
+   *   the drug and reaction by their respective identifiers. Per BRv1.7 row 358.
+   *   Reaction UUIDs are the same values emitted in buildReaction and stored in
+   *   this.lastReactionUuids. Only suspect drugs (characterization=1) generate
+   *   code=39 entries; concomitant drugs do not have a causality assessment.
+   *
+   * Evidence: TC-XP01 ci260602192744 CA+AA 2026-06-02.
+   */
+  private buildDrugCausalityBlocks(drugs: CaseDrug[], isPremarket: boolean = false): string {
+    if (drugs.length === 0) return '';
+    const lines: string[] = [];
+
+    // G.k.1: drug role per drug
+    const roleMap: Record<number, { code: string; name: string }> = {
+      1: { code: '1', name: 'Suspect' },
+      2: { code: '2', name: 'Concomitant' },
+      3: { code: '3', name: 'Interacting' },
+      4: { code: '4', name: 'Not Administered' }
+    };
+    for (let k = 0; k < drugs.length; k++) {
+      const drug = drugs[k];
+      const drugIndex = k + 1;
+      const role = roleMap[drug.characterization] ?? { code: '1', name: 'Suspect' };
+      lines.push('              <!-- G.k.1 drug role (Business Rules v1.7 ICSR XPath row 283) -->');
+      lines.push('              <component typeCode="COMP">');
+      lines.push('                <causalityAssessment classCode="OBS" moodCode="EVN">');
+      lines.push('                  <code code="20" codeSystem="2.16.840.1.113883.3.989.2.1.1.19"/>');
+      lines.push(`                  <value xsi:type="CE" code="${role.code}" codeSystem="2.16.840.1.113883.3.989.2.1.1.13" displayName="${role.name}"/>`);
+      lines.push('                  <subject2 typeCode="SUBJ">');
+      lines.push('                    <productUseReference classCode="SBADM" moodCode="EVN">');
+      lines.push(`                      <id root="2.16.840.1.113883.3.989.2.1.3.19" extension="${drugIndex}"/>`);
+      lines.push('                    </productUseReference>');
+      lines.push('                  </subject2>');
+      lines.push('                </causalityAssessment>');
+      lines.push('              </component>');
+    }
+
+    // G.k.9.i: drug-reaction matrix for suspect drugs.
+    // For IND/premarket submissions, FAERS 2.18 enforces that at least one
+    // code=39 block must carry the G.k.9.i.2.r.1/2/3 triplet (source/method/result)
+    // for each suspect drug — confirmed by regression_results_5/6 CR+AR.
+    // For postmarket, the triplet is optional (CA+AA without it in RR3) but
+    // including it improves spec compliance.
+    // Structure confirmed from FAERS2022Scenario3.xml lines 610–636.
+    for (let k = 0; k < drugs.length; k++) {
+      const drug = drugs[k];
+      if (drug.characterization !== 1) continue; // only suspect drugs
+      const drugIndex = k + 1;
+      for (const rxnUuid of this.lastReactionUuids) {
+        lines.push('              <!-- G.k.9.i drug-reaction matrix (Business Rules v1.7 ICSR XPath row 358) -->');
+        lines.push('              <component typeCode="COMP">');
+        lines.push('                <causalityAssessment classCode="OBS" moodCode="EVN">');
+        lines.push('                  <code code="39" codeSystem="2.16.840.1.113883.3.989.2.1.1.19" displayName="causality"/>');
+        // G.k.9.i.2.r.3: Result of Assessment — "Suspected" per FDA Scenario 3 default
+        lines.push('                  <value xsi:type="ST">Suspected</value>');
+        // G.k.9.i.2.r.2: Method of Assessment
+        lines.push('                  <methodCode>');
+        lines.push('                    <originalText>FDA</originalText>');
+        lines.push('                  </methodCode>');
+        // G.k.9.i.2.r.1: Source of Assessment
+        lines.push('                  <author typeCode="AUT">');
+        lines.push('                    <assignedEntity classCode="ASSIGNED">');
+        lines.push('                      <code>');
+        lines.push('                        <originalText>Sponsor</originalText>');
+        lines.push('                      </code>');
+        lines.push('                    </assignedEntity>');
+        lines.push('                  </author>');
+        lines.push('                  <subject1 typeCode="SUBJ">');
+        lines.push('                    <adverseEffectReference classCode="OBS" moodCode="EVN">');
+        lines.push(`                      <id root="${rxnUuid}"/>`);
+        lines.push('                    </adverseEffectReference>');
+        lines.push('                  </subject1>');
+        lines.push('                  <subject2 typeCode="SUBJ">');
+        lines.push('                    <productUseReference classCode="SBADM" moodCode="EVN">');
+        lines.push(`                      <id root="2.16.840.1.113883.3.989.2.1.3.19" extension="${drugIndex}"/>`);
+        lines.push('                    </productUseReference>');
+        lines.push('                  </subject2>');
+        lines.push('                </causalityAssessment>');
+        lines.push('              </component>');
+      }
+    }
 
     return lines.join('\n');
   }

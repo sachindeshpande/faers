@@ -95,15 +95,9 @@ ROUND2     = FROM_APP / "round2"
 LOG_FILE   = SCRIPT_DIR / "submission_log.json"
 ENV_FILE   = SCRIPT_DIR / ".env"
 
-# Cases already confirmed accepted — skip these
-ALREADY_SUBMITTED = {
-    "TC-A01-race-white.xml",
-    "TC-A05-ethnicity-hispanic.xml",
-    "TC-B02-medhistory-narrative.xml",
-    "TC-E03-patient-female.xml",
-    # Add more as you receive ACKs:
-    # "TC-A02-race-black.xml",
-}
+# Cases already confirmed accepted — skip these.
+# Cleared 2026-05-31: full re-submission with fixed-generator XMLs (autopsyPerformed + G.k XPaths).
+ALREADY_SUBMITTED: set = set()
 
 # ─── Logging ──────────────────────────────────────────────────────────────────
 
@@ -155,7 +149,8 @@ def discover_pending(single_file: str = None) -> list[Path]:
 
     candidates = (
         sorted(HEADLESS.glob("TC-*.xml")) +
-        sorted(IND.glob("IND-*.xml")) +
+        sorted(HEADLESS.glob("IND-*.xml")) +   # IND cases now land in headless/ (ind/ removed)
+        sorted(IND.glob("IND-*.xml")) +         # legacy ind/ support (may be empty)
         sorted(ROUND2.glob("TC-*.xml")) +
         sorted(FROM_APP.glob("TC-*.xml"))  # top-level from_app/ (e.g. TC-A02)
     )
@@ -374,7 +369,24 @@ def submit_one(
     # The AS2 sender header is determined by submission_type, NOT by fda_center.
     # ZZFDATST_PREMKT enforces that AS2 header matches N.1.4 and N.2.r.3 in the XML.
     # ESGNG334 is returned if submission_type is not a valid value for the given fda_center.
-    if filename.startswith("IND-"):
+    # Detect routing from N.1.4 receiver in the XML (more reliable than filename prefix).
+    # N.1.4 = ZZFDATST_PREMKT → IND/PREMKT channel → AERS_PREMKT_CDER
+    # N.1.4 = ZZFDATST        → postmarket channel → AERS
+    _is_premkt = False
+    try:
+        import xml.etree.ElementTree as _ET
+        _NS14 = "urn:hl7-org:v3"
+        _xtree = _ET.parse(xml_path)
+        for _dev in _xtree.iter(f"{{{_NS14}}}device"):
+            for _id in _dev.findall(f"{{{_NS14}}}id"):
+                if _id.get("root") == "2.16.840.1.113883.3.989.2.1.3.14":
+                    if "PREMKT" in (_id.get("extension") or "").upper():
+                        _is_premkt = True
+    except Exception:
+        # Fallback to filename prefix if XML parsing fails
+        _is_premkt = filename.startswith("IND-")
+
+    if _is_premkt:
         submission_type = os.getenv("ESG_SUBMISSION_TYPE_IND", "AERS_PREMKT_CDER")
         fda_center      = os.getenv("ESG_CENTER_IND", "CDER")
     else:
@@ -528,6 +540,37 @@ def submit_one(
     log.info(f"└── ✅ Submitted  core_id={core_id}")
     return result
 
+# ─── Status / ACK retrieval ───────────────────────────────────────────────────
+
+def fetch_status_and_ack(tokens: "TokenManager", core_id: str) -> None:
+    """Poll the status endpoint for a previously submitted core_id.
+    If an acknowledgement_id is present, fetch and print the full ACK."""
+    hdrs = {"Authorization": f"Bearer {tokens.get()}"}
+
+    log.info(f"Checking status for core_id={core_id}")
+    r = requests.get(
+        EP["status"].format(core_id=core_id),
+        headers=hdrs,
+        timeout=30,
+    )
+    log.info(f"Status HTTP {r.status_code}")
+    body = r.json()
+    log.info(json.dumps(body, indent=2))
+
+    ack_id = body.get("acknowledgement_id") or body.get("acknowledgementId")
+    if ack_id:
+        log.info(f"acknowledgement_id={ack_id} — fetching ACK …")
+        a = requests.get(
+            EP["ack"].format(ack_id=ack_id),
+            headers=hdrs,
+            timeout=30,
+        )
+        log.info(f"ACK HTTP {a.status_code}")
+        log.info(json.dumps(a.json(), indent=2))
+    else:
+        log.info("No acknowledgement_id yet — submission still processing.")
+
+
 # ─── Main ─────────────────────────────────────────────────────────────────────
 
 def main():
@@ -536,6 +579,8 @@ def main():
                         help="Discover files and show plan but make no API calls")
     parser.add_argument("--file",    metavar="FILENAME",
                         help="Submit only this filename (e.g. TC-A02-race-black.xml)")
+    parser.add_argument("--status",  metavar="CORE_ID",
+                        help="Check status (and ACK if available) for a previously submitted core_id")
     parser.add_argument("--delay",   type=float, default=5.0,
                         help="Seconds between submissions (default: 5)")
     parser.add_argument("--prod",    action="store_true",
@@ -596,6 +641,11 @@ def main():
 
     tokens = TokenManager(client_id, client_sec)
     creds  = {"username": username, "password": password}
+
+    # ── Status / ACK check (short-circuit: no file discovery needed) ──────────
+    if args.status:
+        fetch_status_and_ack(tokens, args.status)
+        return
 
     # ── Resolve user_id / company_id ──────────────────────────────────────────
     if args.dry_run:

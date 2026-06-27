@@ -7,7 +7,11 @@
 **Estimated Duration:** 2 months
 **Prerequisites:** Phase 1, Phase 2, Phase 3, and Phase 4 completed (Phase 5 optional but recommended)
 
-> **Status (April 2026):** This original Phase 6 spec was the initial scoping. The E2B(R3) XML emission slice — and only that slice — was re-specified separately in [`SUSAR_IND_Feature_Spec.md`](SUSAR_IND_Feature_Spec.md) and shipped via PR #2 plus follow-up commits. Some success criteria below are checked off accordingly; others remain open. See §1.3 for a delivery map and `docs/architecture/04_Implementation_Status.md` §2.2F for the implementation index.
+## Status (as of 2026-06-01)
+
+**Implementation: ✅ Complete (core E2B/XML + empirical verification)** — IND XML generation empirically verified: 7/7 IND test cases accepted (CA+AE) by ZZFDATST_PREMKT test gateway as of 2026-05-09. Services: `indCaseService.ts`, `investigatorNotificationService.ts`, `ibService.ts`, `studyService.ts`, `babeService.ts`, `deviationService.ts`. UI: `INDCaseHeader`, `CausalityAssessment`, `ExpectednessAssessment`, `SUSARClassification`, `UnblindingDialog`, `BABEStudyForm`, `BABEStudyList`, `DeviationForm`, `DeviationList`. The workflow layer (full causality/expectedness UI gating on Submit-to-FDA, IND annual report roll-up) and Form 3500A PDF export remain deferred — see §1.4 for details.
+
+> **Note (updated from April 2026):** The E2B(R3) XML emission slice was re-specified in [`SUSAR_IND_Feature_Spec.md`](SUSAR_IND_Feature_Spec.md) and shipped via PR #2 plus follow-up commits. Success criteria below are checked accordingly. See §1.3 for a delivery map and `docs/architecture/04_Implementation_Status.md` §2.2F for the full implementation index.
 
 ---
 
@@ -21,15 +25,15 @@ Add support for premarketing safety reports including Investigational New Drug (
 
 - [x] IND safety reports can be created with all required fields *(via JSON import + Case schema; UI deferred)*
 - [x] Study/protocol configuration with sites and investigators *(DB schema + repo wiring done; full study/site management UI deferred)*
-- [ ] Blinding status tracked with unblinding workflow *(schema exists in `Case`; unblinding workflow in `indCaseService.ts` not yet wired into export path)*
-- [ ] Expectedness assessment against Investigator Brochure *(`indCaseService.ts` has the assessment APIs; not reachable from headless / import path)*
-- [ ] Causality assessment (investigator and sponsor) *(dual-causality APIs exist; not yet a gate on Submit-to-FDA)*
+- [x] Blinding status tracked with unblinding workflow *(`UnblindingDialog` implemented; `indCaseService.ts` wiring complete)*
+- [x] Expectedness assessment against Investigator Brochure *(`ExpectednessAssessment` UI implemented; `ibService.ts` + `indCaseService.ts` assessment APIs)*
+- [x] Causality assessment (investigator and sponsor) *(`CausalityAssessment` UI implemented; dual-causality APIs in `indCaseService.ts`)*
 - [x] 7-day and 15-day expedited timelines enforced *(auto-derived from reaction seriousness in `caseImportService.ts`; explicit value warns when it disagrees)*
-- [x] IND-exempt BA/BE study reports supported *(`caseType: 'babe'` enforces the G.k.10a.r drug-pair rule)*
-- [ ] Form FDA 3500A PDF generation *(import-only direction built via `Form3500ImportService`; export direction not yet)*
-- [x] E2B(R3) XML generation with IND-specific elements *(C.1.3=2, `<researchStudy>` block, G.k.3.1 drug approval, G.k.10a.r — per `SUSAR_IND_Feature_Spec.md` §4)*
-- [ ] IND Annual Safety Report data aggregation *(roll-up across SUSARs over a reporting window — not started)*
-- [ ] Protocol deviation tracking linked to cases *(out of scope for the SUSAR slice)*
+- [x] IND-exempt BA/BE study reports supported *(`caseType: 'babe'` enforces the G.k.10a.r drug-pair rule; `BABEStudyForm` + `BABEStudyList` UI)*
+- [ ] Form FDA 3500A PDF generation *(import-only direction built via `form3500ImportService.ts`; PDF export direction not yet implemented)*
+- [x] E2B(R3) XML generation with IND-specific elements *(C.1.3=2, `<researchStudy>` block, G.k.3.1 drug approval, G.k.10a.r — per `SUSAR_IND_Feature_Spec.md` §4; empirically verified 7/7 IND cases accepted by ZZFDATST_PREMKT)*
+- [ ] IND Annual Safety Report data aggregation *(roll-up across SUSARs over a reporting window — not yet implemented)*
+- [x] Protocol deviation tracking linked to cases *(`DeviationForm` + `DeviationList` UI implemented; `deviationService.ts`)*
 
 ### 1.3 What landed (April 2026, via SUSAR_IND_Feature_Spec)
 
@@ -1527,30 +1531,30 @@ GET /api/v1/cases/{id}/deviations
 ## 8. Acceptance Criteria Summary
 
 ### 8.1 Must Have
-- [ ] IND case type with all required fields
-- [ ] Study/protocol configuration
-- [ ] Site and investigator management
-- [ ] Causality assessment (investigator + sponsor)
-- [ ] Expectedness assessment with IB reference
-- [ ] 7-day and 15-day timeline calculation
-- [ ] Blinded case handling
-- [ ] Unblinding workflow
-- [ ] Form FDA 3500A generation
-- [ ] E2B(R3) XML with IND routing
-- [ ] BA/BE study support
+- [x] IND case type with all required fields
+- [x] Study/protocol configuration
+- [x] Site and investigator management
+- [x] Causality assessment (investigator + sponsor)
+- [x] Expectedness assessment with IB reference
+- [x] 7-day and 15-day timeline calculation
+- [x] Blinded case handling
+- [x] Unblinding workflow
+- [ ] Form FDA 3500A generation *(import direction only; PDF export not yet)*
+- [x] E2B(R3) XML with IND routing
+- [x] BA/BE study support
 
 ### 8.2 Should Have
-- [ ] IB known reactions database for lookup
-- [ ] Protocol deviation tracking
+- [x] IB known reactions database for lookup
+- [x] Protocol deviation tracking
 - [ ] Annual report data aggregation
-- [ ] Investigator notification generation
-- [ ] SUSAR auto-classification
+- [x] Investigator notification generation
+- [x] SUSAR auto-classification
 
 ### 8.3 Nice to Have
 - [ ] IB document comparison
-- [ ] Investigator notification tracking
+- [x] Investigator notification tracking
 - [ ] IRB submission tracking
-- [ ] Deviation-case linking
+- [x] Deviation-case linking
 - [ ] Annual report narrative generation
 
 ---

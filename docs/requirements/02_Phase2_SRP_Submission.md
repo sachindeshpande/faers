@@ -9,6 +9,12 @@
 
 ---
 
+## Status (as of 2026-06-01)
+
+**Implementation: ✅ Complete** — Both SRP manual upload workflow and ESG NextGen API auto-submission are fully implemented. Services: `exportFilenameService.ts`, `statusTransitionService.ts`, `submissionLogService.ts`. UI: `SubmissionDashboard`, `SubmissionHistoryPanel`, `RecordAcknowledgmentDialog`, `RecordSubmissionDialog`, `SubmitToFdaDialog`, `AcknowledgmentDisplay`, `ImportAckDialog`.
+
+---
+
 ## 1. Phase Overview
 
 ### 1.1 Objective
@@ -17,12 +23,12 @@ Enable users to submit ICSRs to FDA through the Safety Reporting Portal (SRP) by
 
 ### 1.2 Success Criteria
 
-- [ ] Users can generate FDA-ready XML export packages
-- [ ] Export packages meet FDA SRP formatting requirements
-- [ ] Users can track which cases have been submitted
-- [ ] Users can record FDA acknowledgment information
-- [ ] Submission history is maintained for each case
-- [ ] Dashboard shows submission status overview
+- [x] Users can generate FDA-ready XML export packages
+- [x] Export packages meet FDA SRP formatting requirements
+- [x] Users can track which cases have been submitted
+- [x] Users can record FDA acknowledgment information
+- [x] Submission history is maintained for each case
+- [x] Dashboard shows submission status overview
 
 ### 1.3 Out of Scope for Phase 2
 
@@ -536,22 +542,22 @@ Audit trail is append-only and cannot be modified
 ## 8. Acceptance Criteria Summary
 
 ### 9.1 Must Have
-- [ ] Generate FDA-compliant XML export package
-- [ ] Proper FDA filename conventions
-- [ ] Pre-export validation with error/warning display
-- [ ] Extended case status tracking
-- [ ] Record submission confirmation
-- [ ] Record FDA acknowledgment (accept/reject)
-- [ ] Submission history log per case
-- [ ] Return to draft for corrections
+- [x] Generate FDA-compliant XML export package
+- [x] Proper FDA filename conventions
+- [x] Pre-export validation with error/warning display
+- [x] Extended case status tracking
+- [x] Record submission confirmation
+- [x] Record FDA acknowledgment (accept/reject)
+- [x] Submission history log per case
+- [x] Return to draft for corrections
 
 ### 9.2 Should Have
-- [ ] Submission dashboard with status overview
-- [ ] Case list columns for submission info
-- [ ] Needs attention highlighting
+- [x] Submission dashboard with status overview
+- [x] Case list columns for submission info
+- [x] Needs attention highlighting
 - [ ] Export to ZIP option
 - [ ] README with instructions in export
-- [ ] Sender defaults configuration
+- [x] Sender defaults configuration
 
 ### 9.3 Nice to Have
 - [ ] Export wizard with step-by-step guidance

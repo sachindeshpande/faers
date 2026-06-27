@@ -255,6 +255,10 @@ export const CaseImportDrugSchema = z
     rechallengeCode: enumish.optional(),        // 1..4
     authorizationType: z.string().optional(),   // "NDA" | "ANDA" | "IND" | "BLA" | ...
     authorizationNumber: z.string().optional(),
+    /** G.k.3.2 — ISO 3166-1 alpha-2 country of authorisation (e.g. "US").
+     *  Required by FAERS 2.18 when G.k.3.1 is present. Defaults to "US" in
+     *  the generator when not explicitly provided. */
+    authorizationCountry: z.string().optional(),
     lotNumber: z.string().optional(),
     expirationDate: isoDate.optional(),
     manufacturerName: z.string().optional(),

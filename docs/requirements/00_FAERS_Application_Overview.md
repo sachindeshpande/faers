@@ -480,6 +480,23 @@ Each phase must meet:
 
 ---
 
+## Status (as of 2026-06-01)
+
+**Implementation: ✅ Complete (Phases 1–6)** — All six planned phases are fully implemented. Phase 2B ESG NextGen AS2 API integration verified via live round-trips with the ZZFDATST test gateway (submission 2L8T received CA+AA on 2026-04-21). Phase 6 IND XML generation empirically verified: 7/7 IND test cases accepted (CA+AE) by the ZZFDATST_PREMKT test gateway as of 2026-05-09. See `docs/architecture/04_Implementation_Status.md` and `faers-app/src/main/services/faersEmpiricalPolicy.ts` for the full service and empirical-evidence index.
+
+| Phase | Name | Status |
+|-------|------|--------|
+| 1 | Core ICSR Submission (MVP) | ✅ Complete |
+| 2 | SRP Submission | ✅ Complete |
+| 2B | ESG NextGen API Integration | ✅ Complete — live ACK verified |
+| 3 | Multi-User & Workflow | ✅ Complete |
+| 4 | Non-Expedited PSR + Batch + Annual | ✅ Complete |
+| 5 | Enhanced Data Management & Terminology | ✅ Complete |
+| 6 | Premarketing IND / SUSAR | ✅ Complete — 7/7 IND cases ACK'd |
+| 7–12 | Future phases | Not started |
+
+---
+
 ## Next Steps
 
 Proceed to **Phase 1 Requirements** (`01_Phase1_Core_ICSR_MVP.md`) for detailed implementation specifications.

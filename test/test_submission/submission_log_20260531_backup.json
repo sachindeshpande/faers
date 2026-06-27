@@ -1,0 +1,1260 @@
+{
+  "TC-C02-reporter-qual-3.xml": {
+    "status": "SUBMITTED",
+    "filename": "TC-C02-reporter-qual-3.xml",
+    "core_id": "ci260501170544.eb13b6b23098495fac264b08247efeb2",
+    "payload_id": "18837182-e3d3-489f-aac9-073b34b19584",
+    "sha256": "048c3b1af1d4da05bac93fc52dad6991d7cff84cffb8d6ecdac3e61dcc8c5371",
+    "submitted_at": "2026-05-01T17:05:48.270061+00:00",
+    "http_status": 200,
+    "submit_response": "{\"data\":{\"message\":\"Successful\"}}",
+    "status_check": {
+      "core_id": "ci260501170544.eb13b6b23098495fac264b08247efeb2",
+      "status": "Upload Received",
+      "submission_protocol": "API",
+      "esgngcode": "ESGNG270",
+      "esgngdescription": "Submission status retrieved successfully."
+    }
+  },
+  "TC-A02-race-black.xml": {
+    "status": "SUBMITTED",
+    "filename": "TC-A02-race-black.xml",
+    "core_id": "ci260501173418.2f4965e887c8411698dcfd27f9f7c0bc",
+    "payload_id": "6cf2c1c1-409a-41bb-958e-ab1eb3d5e798",
+    "sha256": "15841661ec2587964c5dd0f0484549379d19d403b416d043da7b180f6c522b61",
+    "submitted_at": "2026-05-01T17:34:21.802297+00:00",
+    "http_status": 200,
+    "submit_response": "{\"data\":{\"message\":\"Successful\"}}",
+    "status_check": {
+      "core_id": "ci260501173418.2f4965e887c8411698dcfd27f9f7c0bc",
+      "status": "Upload Received",
+      "submission_protocol": "API",
+      "esgngcode": "ESGNG270",
+      "esgngdescription": "Submission status retrieved successfully."
+    }
+  },
+  "TC-A01-race-white.xml": {
+    "status": "SUBMITTED",
+    "filename": "TC-A01-race-white.xml",
+    "core_id": "ci260501170454.0df6d79117554629bf003c23ac4b9476",
+    "payload_id": "d23179df-f6ef-450a-a061-95eb6f37d1a8",
+    "sha256": "70cca741ce8a9e7bfbbc7f351bcb24a1daf3b67dc5d9de3406290a04b1ed022a",
+    "submitted_at": "2026-05-01T17:04:58.420652+00:00",
+    "http_status": 200,
+    "submit_response": "{\"data\":{\"message\":\"Successful\"}}",
+    "status_check": {
+      "core_id": "ci260501170454.0df6d79117554629bf003c23ac4b9476",
+      "status": "Upload Received",
+      "submission_protocol": "API",
+      "esgngcode": "ESGNG270",
+      "esgngdescription": "Submission status retrieved successfully."
+    }
+  },
+  "TC-D01-action-dose-reduced.xml": {
+    "status": "SUBMITTED",
+    "filename": "TC-D01-action-dose-reduced.xml",
+    "core_id": "ci260501170553.407b534a8c8646e9890cdcdd28554e83",
+    "payload_id": "30be0949-28ed-4737-b0d5-238dfdc56362",
+    "sha256": "edeebe6cf1c053ff335cb966498fbb7d36b820b9a837c4e86f1551d153978a42",
+    "submitted_at": "2026-05-01T17:05:57.229391+00:00",
+    "http_status": 200,
+    "submit_response": "{\"data\":{\"message\":\"Successful\"}}",
+    "status_check": {
+      "core_id": "ci260501170553.407b534a8c8646e9890cdcdd28554e83",
+      "status": "Upload Received",
+      "submission_protocol": "API",
+      "esgngcode": "ESGNG270",
+      "esgngdescription": "Submission status retrieved successfully."
+    }
+  },
+  "TC-D05-two-suspect-drugs.xml": {
+    "status": "SUBMITTED",
+    "filename": "TC-D05-two-suspect-drugs.xml",
+    "core_id": "ci260501170602.2123b84d221f4071b6d86dea5eb933cc",
+    "payload_id": "d7ca798b-3585-4507-863e-d8ea1478bfd8",
+    "sha256": "6d58b4f5ea9472218a1564d354591487f5618bd8fac94018e300c110b3c5b24a",
+    "submitted_at": "2026-05-01T17:06:06.255765+00:00",
+    "http_status": 200,
+    "submit_response": "{\"data\":{\"message\":\"Successful\"}}",
+    "status_check": {
+      "core_id": "ci260501170602.2123b84d221f4071b6d86dea5eb933cc",
+      "status": "Upload Received",
+      "submission_protocol": "API",
+      "esgngcode": "ESGNG270",
+      "esgngdescription": "Submission status retrieved successfully."
+    }
+  },
+  "TC-G04-fatal-outcome.xml": {
+    "status": "SUBMITTED",
+    "filename": "TC-G04-fatal-outcome.xml",
+    "core_id": "ci260501170611.bb9d6033c77d46788e6c0fe33c2247c5",
+    "payload_id": "f5bf096c-1369-4a93-906e-c651436e6b5f",
+    "sha256": "90bab7070a8b251a8b256eab0e6e84268467ce6b78e992725da9acc1fd84ce43",
+    "submitted_at": "2026-05-01T17:06:15.221365+00:00",
+    "http_status": 200,
+    "submit_response": "{\"data\":{\"message\":\"Successful\"}}",
+    "status_check": {
+      "core_id": "ci260501170611.bb9d6033c77d46788e6c0fe33c2247c5",
+      "status": "Upload Received",
+      "submission_protocol": "API",
+      "esgngcode": "ESGNG270",
+      "esgngdescription": "Submission status retrieved successfully."
+    }
+  },
+  "TC-A03-race-amerindian.xml": {
+    "status": "SUBMITTED",
+    "filename": "TC-A03-race-amerindian.xml",
+    "core_id": "ci260501170657.1dfcd2bf85f4481f90748224627fef03",
+    "payload_id": "148a12cb-f299-4cf9-8b97-1529cf764a25",
+    "sha256": "3f15172efa6ea6903d98f9773148afd9aa5519585bd05a103147a4a1cd0fcef3",
+    "submitted_at": "2026-05-01T17:07:01.353806+00:00",
+    "http_status": 200,
+    "submit_response": "{\"data\":{\"message\":\"Successful\"}}",
+    "status_check": {
+      "core_id": "ci260501170657.1dfcd2bf85f4481f90748224627fef03",
+      "status": "Upload Received",
+      "submission_protocol": "API",
+      "esgngcode": "ESGNG270",
+      "esgngdescription": "Submission status retrieved successfully."
+    }
+  },
+  "TC-A04-race-hawaiian.xml": {
+    "status": "SUBMITTED",
+    "filename": "TC-A04-race-hawaiian.xml",
+    "core_id": "ci260501170706.15777c4a41aa43e19d81709ded86f1eb",
+    "payload_id": "2f0c75ca-c04c-4f20-924f-31b2e4ca79bd",
+    "sha256": "b9dd2e6eac0a69657a158773dbc283aade2d7ea45c80bee92acbf85c41a4e624",
+    "submitted_at": "2026-05-01T17:07:10.362637+00:00",
+    "http_status": 200,
+    "submit_response": "{\"data\":{\"message\":\"Successful\"}}",
+    "status_check": {
+      "core_id": "ci260501170706.15777c4a41aa43e19d81709ded86f1eb",
+      "status": "Upload Received",
+      "submission_protocol": "API",
+      "esgngcode": "ESGNG270",
+      "esgngdescription": "Submission status retrieved successfully."
+    }
+  },
+  "TC-A06-ethnicity-ni.xml": {
+    "status": "SUBMITTED",
+    "filename": "TC-A06-ethnicity-ni.xml",
+    "core_id": "ci260501170715.7beed508b6244fd19b35ccefb2ce6059",
+    "payload_id": "bc9da34f-6c6b-4388-8314-39a2ca45a22c",
+    "sha256": "392ece95b8173b67ed16955dfa24615ecf5c0a84083849645ed1920b697c54a8",
+    "submitted_at": "2026-05-01T17:07:19.484734+00:00",
+    "http_status": 200,
+    "submit_response": "{\"data\":{\"message\":\"Successful\"}}",
+    "status_check": {
+      "core_id": "ci260501170715.7beed508b6244fd19b35ccefb2ce6059",
+      "status": "Upload Received",
+      "submission_protocol": "API",
+      "esgngcode": "ESGNG270",
+      "esgngdescription": "Submission status retrieved successfully."
+    }
+  },
+  "TC-B01-medhistory-empty.xml": {
+    "status": "SUBMITTED",
+    "filename": "TC-B01-medhistory-empty.xml",
+    "core_id": "ci260501170724.8602650394d44a0f9dda95b60f432b57",
+    "payload_id": "9d0b7532-a3f3-4b57-b37b-6c9ea5c3840b",
+    "sha256": "49a1f592bbdc88471bd80548cc13dd06821fd34f30f35a63553e0f1d5d06b375",
+    "submitted_at": "2026-05-01T17:07:28.512700+00:00",
+    "http_status": 200,
+    "submit_response": "{\"data\":{\"message\":\"Successful\"}}",
+    "status_check": {
+      "core_id": "ci260501170724.8602650394d44a0f9dda95b60f432b57",
+      "status": "Upload Received",
+      "submission_protocol": "API",
+      "esgngcode": "ESGNG270",
+      "esgngdescription": "Submission status retrieved successfully."
+    }
+  },
+  "TC-C01-reporter-qual-2.xml": {
+    "status": "SUBMITTED",
+    "filename": "TC-C01-reporter-qual-2.xml",
+    "core_id": "ci260501170734.239f3823f97f4eb89242ec75cc2ccf47",
+    "payload_id": "567bd126-9dbb-4f3a-bc3d-8952a33a9abd",
+    "sha256": "271cb159be4c4f0f4548c6592a5e98165ebdb6d19efb3353f55330ac58a4fd27",
+    "submitted_at": "2026-05-01T17:07:37.577761+00:00",
+    "http_status": 200,
+    "submit_response": "{\"data\":{\"message\":\"Successful\"}}",
+    "status_check": {
+      "core_id": "ci260501170734.239f3823f97f4eb89242ec75cc2ccf47",
+      "status": "Upload Received",
+      "submission_protocol": "API",
+      "esgngcode": "ESGNG270",
+      "esgngdescription": "Submission status retrieved successfully."
+    }
+  },
+  "TC-D02-actiontaken-3.xml": {
+    "status": "SUBMITTED",
+    "filename": "TC-D02-actiontaken-3.xml",
+    "core_id": "ci260501170743.317a308ddd4d4e1692aa9b34f89ba78a",
+    "payload_id": "799b4677-5f27-4b9a-9111-c17d1242599f",
+    "sha256": "a9c5dda30f66f0d6d8d22d2e09f1f0dbcc01443cba1b9668109ab5463800ee24",
+    "submitted_at": "2026-05-01T17:07:46.662158+00:00",
+    "http_status": 200,
+    "submit_response": "{\"data\":{\"message\":\"Successful\"}}",
+    "status_check": {
+      "core_id": "ci260501170743.317a308ddd4d4e1692aa9b34f89ba78a",
+      "status": "Upload Received",
+      "submission_protocol": "API",
+      "esgngcode": "ESGNG270",
+      "esgngdescription": "Submission status retrieved successfully."
+    }
+  },
+  "TC-D03-actiontaken-5.xml": {
+    "status": "SUBMITTED",
+    "filename": "TC-D03-actiontaken-5.xml",
+    "core_id": "ci260501170752.a4d2539af77241fc86641f4b1125674f",
+    "payload_id": "4224dc9a-2c32-495d-9fcc-985348de81c1",
+    "sha256": "a5895a15997243c999598074f18b52041f7e986dda107c761ba79bc97a5888dd",
+    "submitted_at": "2026-05-01T17:07:55.956668+00:00",
+    "http_status": 200,
+    "submit_response": "{\"data\":{\"message\":\"Successful\"}}",
+    "status_check": {
+      "core_id": "ci260501170752.a4d2539af77241fc86641f4b1125674f",
+      "status": "Upload Received",
+      "submission_protocol": "API",
+      "esgngcode": "ESGNG270",
+      "esgngdescription": "Submission status retrieved successfully."
+    }
+  },
+  "TC-D04-dechallenge-1.xml": {
+    "status": "SUBMITTED",
+    "filename": "TC-D04-dechallenge-1.xml",
+    "core_id": "ci260501170801.df6b4779666c4e38b23fcbf09d9efc4c",
+    "payload_id": "485f307e-45d2-4903-a479-2c4de59ff1f1",
+    "sha256": "80e1ab20bfa8ce9780ae455b3c29a573ed60b82e4687e6ec13ae9575f3f62b0b",
+    "submitted_at": "2026-05-01T17:08:05.063999+00:00",
+    "http_status": 200,
+    "submit_response": "{\"data\":{\"message\":\"Successful\"}}",
+    "status_check": {
+      "core_id": "ci260501170801.df6b4779666c4e38b23fcbf09d9efc4c",
+      "status": "Upload Received",
+      "submission_protocol": "API",
+      "esgngcode": "ESGNG270",
+      "esgngdescription": "Submission status retrieved successfully."
+    }
+  },
+  "TC-D06-concom-actiontaken-6.xml": {
+    "status": "SUBMITTED",
+    "filename": "TC-D06-concom-actiontaken-6.xml",
+    "core_id": "ci260501170810.c6d07948de5c4d07aa7e0c0509607070",
+    "payload_id": "d1ff575a-3d51-4ec3-9a02-ccf816c01caa",
+    "sha256": "a29f1628133b05974a65e9015b57b2301f4150a380fd358f3c94ad22c373cd8e",
+    "submitted_at": "2026-05-01T17:08:14.070126+00:00",
+    "http_status": 200,
+    "submit_response": "{\"data\":{\"message\":\"Successful\"}}",
+    "status_check": {
+      "core_id": "ci260501170810.c6d07948de5c4d07aa7e0c0509607070",
+      "status": "Upload Received",
+      "submission_protocol": "API",
+      "esgngcode": "ESGNG270",
+      "esgngdescription": "Submission status retrieved successfully."
+    }
+  },
+  "TC-E01-weight-absent.xml": {
+    "status": "SUBMITTED",
+    "filename": "TC-E01-weight-absent.xml",
+    "core_id": "ci260501170819.da2348d12ac1421ba0a562f734db3851",
+    "payload_id": "0ad591de-a161-4faa-b4e0-31b3a4085503",
+    "sha256": "05ceadb3c7c73e306d1437cc87c7c4e8b856e63d52551f0149d496363695ba6a",
+    "submitted_at": "2026-05-01T17:08:23.063010+00:00",
+    "http_status": 200,
+    "submit_response": "{\"data\":{\"message\":\"Successful\"}}",
+    "status_check": {
+      "core_id": "ci260501170819.da2348d12ac1421ba0a562f734db3851",
+      "status": "Upload Received",
+      "submission_protocol": "API",
+      "esgngcode": "ESGNG270",
+      "esgngdescription": "Submission status retrieved successfully."
+    }
+  },
+  "TC-E02-age-nullflavor.xml": {
+    "status": "SUBMITTED",
+    "filename": "TC-E02-age-nullflavor.xml",
+    "core_id": "ci260501170828.841147b2493d4b2f94b7ccb5669acec3",
+    "payload_id": "30568acc-0958-47f0-ba8a-aede4780a990",
+    "sha256": "0b5db37714c1f5495e43a3aaa2ba6319a275aaad738f9d688f1b1fa4c5863fb5",
+    "submitted_at": "2026-05-01T17:08:32.134755+00:00",
+    "http_status": 200,
+    "submit_response": "{\"data\":{\"message\":\"Successful\"}}",
+    "status_check": {
+      "core_id": "ci260501170828.841147b2493d4b2f94b7ccb5669acec3",
+      "status": "Upload Received",
+      "submission_protocol": "API",
+      "esgngcode": "ESGNG270",
+      "esgngdescription": "Submission status retrieved successfully."
+    }
+  },
+  "TC-F01-followup-v3.xml": {
+    "status": "SUBMITTED",
+    "filename": "TC-F01-followup-v3.xml",
+    "core_id": "ci260501170837.1fd56d3801ee45a9aa62ac4ee92c6788",
+    "payload_id": "a712fed2-9be3-4e79-a27e-9f6fe9fe2477",
+    "sha256": "a240977ec0fffc2bd20c81e74b7937ef1c1cc8a0ac65a250a6ef2527d40954c0",
+    "submitted_at": "2026-05-01T17:08:41.125968+00:00",
+    "http_status": 200,
+    "submit_response": "{\"data\":{\"message\":\"Successful\"}}",
+    "status_check": {
+      "core_id": "ci260501170837.1fd56d3801ee45a9aa62ac4ee92c6788",
+      "status": "Upload Received",
+      "submission_protocol": "API",
+      "esgngcode": "ESGNG270",
+      "esgngdescription": "Submission status retrieved successfully."
+    }
+  },
+  "TC-F02-comboproduct.xml": {
+    "status": "SUBMITTED",
+    "filename": "TC-F02-comboproduct.xml",
+    "core_id": "ci260501170846.4693050d5f174bcdbd25c26f7f872c54",
+    "payload_id": "41f8943d-a7e9-4901-832d-96ce8d70792f",
+    "sha256": "b4fe24774df06c1876a304ed877e628a7042561e00c320b6f0a30217f96b90e4",
+    "submitted_at": "2026-05-01T17:08:50.128897+00:00",
+    "http_status": 200,
+    "submit_response": "{\"data\":{\"message\":\"Successful\"}}",
+    "status_check": {
+      "core_id": "ci260501170846.4693050d5f174bcdbd25c26f7f872c54",
+      "status": "Upload Received",
+      "submission_protocol": "API",
+      "esgngcode": "ESGNG270",
+      "esgngdescription": "Submission status retrieved successfully."
+    }
+  },
+  "TC-G02-outcome-recovering.xml": {
+    "status": "SUBMITTED",
+    "filename": "TC-G02-outcome-recovering.xml",
+    "core_id": "ci260501170922.21d0cdbf8b114742b96c0cf09222ff61",
+    "payload_id": "99f230a3-3f52-473e-b0d4-1096271959bf",
+    "sha256": "6dbe8aee350dbbb5ffb346f2e869f479d30d6d4f58e91db0afee81553b354b29",
+    "submitted_at": "2026-05-01T17:09:26.151056+00:00",
+    "http_status": 200,
+    "submit_response": "{\"data\":{\"message\":\"Successful\"}}",
+    "status_check": {
+      "core_id": "ci260501170922.21d0cdbf8b114742b96c0cf09222ff61",
+      "status": "Upload Received",
+      "submission_protocol": "API",
+      "esgngcode": "ESGNG270",
+      "esgngdescription": "Submission status retrieved successfully."
+    }
+  },
+  "TC-G03-outcome-sequelae.xml": {
+    "status": "SUBMITTED",
+    "filename": "TC-G03-outcome-sequelae.xml",
+    "core_id": "ci260501170931.0aefb3497b6541bab1da7cb4a6d26653",
+    "payload_id": "dd140616-18d4-456b-b07b-2ac64edddba6",
+    "sha256": "f63009acd00a78acdc823297ab5b765a52f75302df7b95f050b976b8fd3930e6",
+    "submitted_at": "2026-05-01T17:09:35.143117+00:00",
+    "http_status": 200,
+    "submit_response": "{\"data\":{\"message\":\"Successful\"}}",
+    "status_check": {
+      "core_id": "ci260501170931.0aefb3497b6541bab1da7cb4a6d26653",
+      "status": "Upload Received",
+      "submission_protocol": "API",
+      "esgngcode": "ESGNG270",
+      "esgngdescription": "Submission status retrieved successfully."
+    }
+  },
+  "TC-H01-addldocs-true.xml": {
+    "status": "SUBMITTED",
+    "filename": "TC-H01-addldocs-true.xml",
+    "core_id": "ci260501170940.a90cee22e2844d4995ba75d71eec5142",
+    "payload_id": "53c7fd6e-2ff2-440f-8249-3787f903f350",
+    "sha256": "b7a264a522c4d10992f734a810ea16409526fe0a56883dd1e251148380ba3f2b",
+    "submitted_at": "2026-05-01T17:09:44.139779+00:00",
+    "http_status": 200,
+    "submit_response": "{\"data\":{\"message\":\"Successful\"}}",
+    "status_check": {
+      "core_id": "ci260501170940.a90cee22e2844d4995ba75d71eec5142",
+      "status": "Upload Received",
+      "submission_protocol": "API",
+      "esgngcode": "ESGNG270",
+      "esgngdescription": "Submission status retrieved successfully."
+    }
+  },
+  "TC-H03-orgname-changed.xml": {
+    "status": "SUBMITTED",
+    "filename": "TC-H03-orgname-changed.xml",
+    "core_id": "ci260501170958.f9d56f18af6f4306a49ebe497405f12d",
+    "payload_id": "0c725962-8b03-4241-bd24-cf2550005a99",
+    "sha256": "27fed9d3540bcb9c604d406708fc1573a79a3aae5cde1b3b68af20f5f295637e",
+    "submitted_at": "2026-05-01T17:10:02.331837+00:00",
+    "http_status": 200,
+    "submit_response": "{\"data\":{\"message\":\"Successful\"}}",
+    "status_check": {
+      "core_id": "ci260501170958.f9d56f18af6f4306a49ebe497405f12d",
+      "status": "Upload Received",
+      "submission_protocol": "API",
+      "esgngcode": "ESGNG270",
+      "esgngdescription": "Submission status retrieved successfully."
+    }
+  },
+  "TC-F03-nonexpedited.xml": {
+    "status": "SUBMITTED",
+    "filename": "TC-F03-nonexpedited.xml",
+    "core_id": "ci260501225648.eb7dbc4f30cd45929119741f524910d8",
+    "payload_id": "90bdfb72-8106-43f0-8b94-f5878e0032ea",
+    "sha256": "dc92f6c8b83c8f3ffa35e622e1236bac81da23aefec2aae94ad0393dce6e55f3",
+    "submitted_at": "2026-05-01T22:56:51.721282+00:00",
+    "http_status": 200,
+    "submit_response": "{\"data\":{\"message\":\"Successful\"}}",
+    "status_check": {
+      "core_id": "ci260501225648.eb7dbc4f30cd45929119741f524910d8",
+      "status": "Upload Received",
+      "submission_protocol": "API",
+      "esgngcode": "ESGNG270",
+      "esgngdescription": "Submission status retrieved successfully."
+    }
+  },
+  "TC-F04-ich-rpttype-2.xml": {
+    "status": "SUBMITTED",
+    "filename": "TC-F04-ich-rpttype-2.xml",
+    "core_id": "ci260501225657.bdd26c9a43f64f808dacb7718a202198",
+    "payload_id": "4d0a9633-c0f3-4115-9f78-cfc085cc4659",
+    "sha256": "00b688110371ccec267d15e8bf3d8fe38b6becd78ab9a93352039760dd817d27",
+    "submitted_at": "2026-05-01T22:57:00.883407+00:00",
+    "http_status": 200,
+    "submit_response": "{\"data\":{\"message\":\"Successful\"}}",
+    "status_check": {
+      "core_id": "ci260501225657.bdd26c9a43f64f808dacb7718a202198",
+      "status": "Upload Received",
+      "submission_protocol": "API",
+      "esgngcode": "ESGNG270",
+      "esgngdescription": "Submission status retrieved successfully."
+    }
+  },
+  "TC-G01-nonserous.xml": {
+    "status": "SUBMITTED",
+    "filename": "TC-G01-nonserous.xml",
+    "core_id": "ci260501225706.94c8c512f4124e0082be2aae84dc05ee",
+    "payload_id": "900ab8cb-9a43-4ea6-afa5-9db83c726bba",
+    "sha256": "62ff0f9e22cf793c1f19cb303d86298f0acb545e9fa46df4cb814d4ab66fa3ea",
+    "submitted_at": "2026-05-01T22:57:09.829683+00:00",
+    "http_status": 200,
+    "submit_response": "{\"data\":{\"message\":\"Successful\"}}",
+    "status_check": {
+      "core_id": "ci260501225706.94c8c512f4124e0082be2aae84dc05ee",
+      "status": "Upload Received",
+      "submission_protocol": "API",
+      "esgngcode": "ESGNG270",
+      "esgngdescription": "Submission status retrieved successfully."
+    }
+  },
+  "TC-H02-nolocation.xml": {
+    "status": "SUBMITTED",
+    "filename": "TC-H02-nolocation.xml",
+    "core_id": "ci260501235624.c904d17d744c4581a6e89dbd49510348",
+    "payload_id": "53b4d94e-bdc1-4ccd-9efb-ffa519043b44",
+    "sha256": "4d01d668908edb28654af18177fcbd6020654977116500f8b4fa1475384d4516",
+    "submitted_at": "2026-05-01T23:56:27.792345+00:00",
+    "http_status": 200,
+    "submit_response": "{\"data\":{\"message\":\"Successful\"}}",
+    "status_check": {
+      "core_id": "ci260501235624.c904d17d744c4581a6e89dbd49510348",
+      "status": "Upload Received",
+      "submission_protocol": "API",
+      "esgngcode": "ESGNG270",
+      "esgngdescription": "Submission status retrieved successfully."
+    }
+  },
+  "IND-T01-susar-baseline.xml": {
+    "status": "SUBMITTED",
+    "filename": "IND-T01-susar-baseline.xml",
+    "core_id": "ci260507054727.392c2406978f4a92bbb542d677e228aa",
+    "payload_id": "be699330-8485-4276-9125-47fae3ecb05c",
+    "sha256": "a292378b830b369d12cbeae85b2660b78c27e5345337efa966e5b9ab0a9b21a4",
+    "submitted_at": "2026-05-07T05:47:31.680088+00:00",
+    "http_status": 200,
+    "submit_response": "{\"data\":{\"message\":\"Successful\"}}",
+    "status_check": {
+      "core_id": "ci260507054727.392c2406978f4a92bbb542d677e228aa",
+      "status": "Upload Received",
+      "submission_protocol": "API",
+      "esgngcode": "ESGNG270",
+      "esgngdescription": "Submission status retrieved successfully."
+    }
+  },
+  "IND-T02-susar-repeat.xml": {
+    "status": "SUBMITTED",
+    "filename": "IND-T02-susar-repeat.xml",
+    "core_id": "ci260507054737.edc470647efa476c85834a16c972696a",
+    "payload_id": "89c096e3-fc1b-4246-8a1b-42e8206e8851",
+    "sha256": "c037d75cab0171aee6f76aab191a0e8f7964b364af80aafed5f8ee968ddf5844",
+    "submitted_at": "2026-05-07T05:47:41.256354+00:00",
+    "http_status": 200,
+    "submit_response": "{\"data\":{\"message\":\"Successful\"}}",
+    "status_check": {
+      "core_id": "ci260507054737.edc470647efa476c85834a16c972696a",
+      "status": "Upload Received",
+      "submission_protocol": "API",
+      "esgngcode": "ESGNG270",
+      "esgngdescription": "Submission status retrieved successfully."
+    }
+  },
+  "IND-T03-cross-ref-ind.xml": {
+    "status": "SUBMITTED",
+    "filename": "IND-T03-cross-ref-ind.xml",
+    "core_id": "ci260507054746.50f8473e5aa242ee80ccf3c943e0ed44",
+    "payload_id": "a13331f0-4bc6-4b48-9f0e-d2567910a8ae",
+    "sha256": "5bf839d4a7f51544d8a52daa846a9dd7c85652410e1eade348ed2af78f6fc1b8",
+    "submitted_at": "2026-05-07T05:47:50.854348+00:00",
+    "http_status": 200,
+    "submit_response": "{\"data\":{\"message\":\"Successful\"}}",
+    "status_check": {
+      "core_id": "ci260507054746.50f8473e5aa242ee80ccf3c943e0ed44",
+      "status": "Upload Received",
+      "submission_protocol": "API",
+      "esgngcode": "ESGNG270",
+      "esgngdescription": "Submission status retrieved successfully."
+    }
+  },
+  "IND-T04-no-study-registration.xml": {
+    "status": "SUBMITTED",
+    "filename": "IND-T04-no-study-registration.xml",
+    "core_id": "ci260507054756.dc1e6eddc447411481f0ec8b75072cf9",
+    "payload_id": "e346197d-1fd5-4ce3-bdaf-3193899f13e4",
+    "sha256": "c74a3898c63b9d8749ecf9d52836f6a4909b2a752f70994007617c91d524f030",
+    "submitted_at": "2026-05-07T05:48:00.633050+00:00",
+    "http_status": 200,
+    "submit_response": "{\"data\":{\"message\":\"Successful\"}}",
+    "status_check": {
+      "core_id": "ci260507054756.dc1e6eddc447411481f0ec8b75072cf9",
+      "status": "Upload Received",
+      "submission_protocol": "API",
+      "esgngcode": "ESGNG270",
+      "esgngdescription": "Submission status retrieved successfully."
+    }
+  },
+  "IND-T05-fatal-seven-day.xml": {
+    "status": "SUBMITTED",
+    "filename": "IND-T05-fatal-seven-day.xml",
+    "core_id": "ci260507054806.188de655b7ba4536bce4dd344ea51376",
+    "payload_id": "2c924294-f3a3-4678-ac76-5162f8bdf9b1",
+    "sha256": "d39f13f796d6e4f0b745a6b56e8d2b7e6e504195d7ccea73b574661671eb04be",
+    "submitted_at": "2026-05-07T05:48:10.060426+00:00",
+    "http_status": 200,
+    "submit_response": "{\"data\":{\"message\":\"Successful\"}}",
+    "status_check": {
+      "core_id": "ci260507054806.188de655b7ba4536bce4dd344ea51376",
+      "status": "Upload Received",
+      "submission_protocol": "API",
+      "esgngcode": "ESGNG270",
+      "esgngdescription": "Submission status retrieved successfully."
+    }
+  },
+  "IND-T06-babe-test-reference.xml": {
+    "status": "SUBMITTED",
+    "filename": "IND-T06-babe-test-reference.xml",
+    "core_id": "ci260507054815.723b0f48995a4b8ba967219a0d8f33fe",
+    "payload_id": "1280c413-3d24-4e28-8b8c-94222a0f7816",
+    "sha256": "4f3f84ad6f5bcdfb271951e9198a2b9ee79bf3caa6b04bf0901dab701d8d14e3",
+    "submitted_at": "2026-05-07T05:48:19.653358+00:00",
+    "http_status": 200,
+    "submit_response": "{\"data\":{\"message\":\"Successful\"}}",
+    "status_check": {
+      "core_id": "ci260507054815.723b0f48995a4b8ba967219a0d8f33fe",
+      "status": "Upload Received",
+      "submission_protocol": "API",
+      "esgngcode": "ESGNG270",
+      "esgngdescription": "Submission status retrieved successfully."
+    }
+  },
+  "IND-T07-followup-report.xml": {
+    "status": "SUBMITTED",
+    "filename": "IND-T07-followup-report.xml",
+    "core_id": "ci260507054825.f9208bd002e745fe98131049c4a10270",
+    "payload_id": "31182e29-04cf-4909-9b0c-6d402d259d1d",
+    "sha256": "0961c6940e74d91e60b1cc0d6c4b59785465977c9d077c6caa61466081a4714a",
+    "submitted_at": "2026-05-07T05:48:29.082146+00:00",
+    "http_status": 200,
+    "submit_response": "{\"data\":{\"message\":\"Successful\"}}",
+    "status_check": {
+      "core_id": "ci260507054825.f9208bd002e745fe98131049c4a10270",
+      "status": "Upload Received",
+      "submission_protocol": "API",
+      "esgngcode": "ESGNG270",
+      "esgngdescription": "Submission status retrieved successfully."
+    }
+  },
+  "TC-A01-race-white-fresh.xml": {
+    "status": "SUBMITTED",
+    "filename": "TC-A01-race-white-fresh.xml",
+    "core_id": "ci260508041215.9fd2bfa59eb642568bc07fc78f182898",
+    "payload_id": "d0693ec0-55fa-4ba1-8b48-eaaeaff0e4d0",
+    "sha256": "4fd21f24cec6b9e3809a23db0c07d68952c86f829bcd9d92ed8856bf13e3e1a4",
+    "submitted_at": "2026-05-08T04:12:19.561794+00:00",
+    "http_status": 200,
+    "submit_response": "{\"data\":{\"message\":\"Successful\"}}",
+    "status_check": {
+      "core_id": "ci260508041215.9fd2bfa59eb642568bc07fc78f182898",
+      "status": "Upload Received",
+      "submission_protocol": "API",
+      "esgngcode": "ESGNG270",
+      "esgngdescription": "Submission status retrieved successfully."
+    }
+  },
+  "TC-B02-medhistory-narrative-fresh.xml": {
+    "status": "SUBMITTED",
+    "filename": "TC-B02-medhistory-narrative-fresh.xml",
+    "core_id": "ci260508041220.f4fee9e6d02a4a2b8547417b334c7786",
+    "payload_id": "2e62d90f-4f69-40c8-8b03-2a0dd428668d",
+    "sha256": "d1f543c3f4c4202366fcba8a2950c7d389e3a2c127522e8d71c7f676eecfaab5",
+    "submitted_at": "2026-05-08T04:12:24.115644+00:00",
+    "http_status": 200,
+    "submit_response": "{\"data\":{\"message\":\"Successful\"}}",
+    "status_check": {
+      "core_id": "ci260508041220.f4fee9e6d02a4a2b8547417b334c7786",
+      "status": "Upload Received",
+      "submission_protocol": "API",
+      "esgngcode": "ESGNG270",
+      "esgngdescription": "Submission status retrieved successfully."
+    }
+  },
+  "TC-E03-patient-female-fresh.xml": {
+    "status": "SUBMITTED",
+    "filename": "TC-E03-patient-female-fresh.xml",
+    "core_id": "ci260508041224.bd0c4c72950448f49a75332c1d6868a3",
+    "payload_id": "b2e683b0-76d6-41c0-9a26-3b7d0abea543",
+    "sha256": "c32d0ba2c3726392a9d2a5b2448677a1e69d8a76901ac45ffca93a02d665f02d",
+    "submitted_at": "2026-05-08T04:12:28.593163+00:00",
+    "http_status": 200,
+    "submit_response": "{\"data\":{\"message\":\"Successful\"}}",
+    "status_check": {
+      "core_id": "ci260508041224.bd0c4c72950448f49a75332c1d6868a3",
+      "status": "Upload Received",
+      "submission_protocol": "API",
+      "esgngcode": "ESGNG270",
+      "esgngdescription": "Submission status retrieved successfully."
+    }
+  },
+  "CASE-20260512-MEGA_v3.xml": {
+    "status": "SUBMITTED",
+    "filename": "CASE-20260512-MEGA_v3.xml",
+    "core_id": "ci260512171238.c44357812c944a31aa0432363303e0ef",
+    "payload_id": "dd3c2135-8a2f-4f93-b86c-9104f9945615",
+    "sha256": "8fd34837bb2adb9fece7d07e9a2d7a5cb4c658ba7e4536c09b555f5f596c15ce",
+    "submitted_at": "2026-05-12T17:12:42.089874+00:00",
+    "http_status": 200,
+    "submit_response": "{\"data\":{\"message\":\"Successful\"}}",
+    "status_check": {
+      "core_id": "ci260512171238.c44357812c944a31aa0432363303e0ef",
+      "status": "Upload Received",
+      "submission_protocol": "API",
+      "esgngcode": "ESGNG270",
+      "esgngdescription": "Submission status retrieved successfully."
+    }
+  },
+  "CASE-20260512-MEGA_v4.xml": {
+    "status": "SUBMITTED",
+    "filename": "CASE-20260512-MEGA_v4.xml",
+    "core_id": "ci260512175821.68c4fc01235a4fd7b5935ac815415552",
+    "payload_id": "f9c3f4bc-0b7b-4c17-8063-6ebb2cb4aa72",
+    "sha256": "122225f8e31d6e84d5235a83ad6d65f3b7106ea39202218fe7e458b3ece574ae",
+    "submitted_at": "2026-05-12T17:58:24.850631+00:00",
+    "http_status": 200,
+    "submit_response": "{\"data\":{\"message\":\"Successful\"}}",
+    "status_check": {
+      "core_id": "ci260512175821.68c4fc01235a4fd7b5935ac815415552",
+      "status": "Upload Received",
+      "submission_protocol": "API",
+      "esgngcode": "ESGNG270",
+      "esgngdescription": "Submission status retrieved successfully."
+    }
+  },
+  "IND-MEGA-20260512_v2.xml": {
+    "status": "SUBMITTED",
+    "filename": "IND-MEGA-20260512_v2.xml",
+    "core_id": "ci260513030435.ec29f18242354f9eb28f545fa203dfa3",
+    "payload_id": "c1298478-d100-41e1-a8ef-5d8e3ad86091",
+    "sha256": "5b633f189a52f04b22de88ee6319966cb8241cf21454c8e2a70789aa637b5810",
+    "submitted_at": "2026-05-13T03:04:39.809439+00:00",
+    "http_status": 200,
+    "submit_response": "{\"data\":{\"message\":\"Successful\"}}",
+    "status_check": {
+      "core_id": "ci260513030435.ec29f18242354f9eb28f545fa203dfa3",
+      "status": "Upload Received",
+      "submission_protocol": "API",
+      "esgngcode": "ESGNG270",
+      "esgngdescription": "Submission status retrieved successfully."
+    }
+  },
+  "IND-MEGA-20260512_v3.xml": {
+    "status": "SUBMITTED",
+    "filename": "IND-MEGA-20260512_v3.xml",
+    "core_id": "ci260513053453.81cd8abeadae4c0bb24c8f369d8a703a",
+    "payload_id": "aec22935-f0cd-48c2-8afb-3bbd9581e5b3",
+    "sha256": "7943353e60c6b42a55efd11d8a5c90f1f9c9789a324e1e8c0370f271d14e27e0",
+    "submitted_at": "2026-05-13T05:34:56.715260+00:00",
+    "http_status": 200,
+    "submit_response": "{\"data\":{\"message\":\"Successful\"}}",
+    "status_check": {
+      "core_id": "ci260513053453.81cd8abeadae4c0bb24c8f369d8a703a",
+      "status": "Upload Received",
+      "submission_protocol": "API",
+      "esgngcode": "ESGNG270",
+      "esgngdescription": "Submission status retrieved successfully."
+    }
+  },
+  "IND-MEGA-20260512_v4.xml": {
+    "status": "SUBMITTED",
+    "filename": "IND-MEGA-20260512_v4.xml",
+    "core_id": "ci260513145720.ac7c2e26ff1743fcb82bf841550786f4",
+    "payload_id": "6a5cb1a6-fe87-4fd3-b740-3e1b3a5e0e45",
+    "sha256": "4d5fe29d1b468c05fcbb495baffda0efdde063b0e395bd910a3db493d09c8130",
+    "submitted_at": "2026-05-13T14:57:24.628398+00:00",
+    "http_status": 200,
+    "submit_response": "{\"data\":{\"message\":\"Successful\"}}",
+    "status_check": {
+      "core_id": "ci260513145720.ac7c2e26ff1743fcb82bf841550786f4",
+      "status": "Upload Received",
+      "submission_protocol": "API",
+      "esgngcode": "ESGNG270",
+      "esgngdescription": "Submission status retrieved successfully."
+    }
+  },
+  "IND-MEGA-20260513_v5.xml": {
+    "status": "SUBMITTED",
+    "filename": "IND-MEGA-20260513_v5.xml",
+    "core_id": "ci260513180628.18f2aad350ee458f9ded8d4c2ce3aec4",
+    "payload_id": "60454ba1-2d6b-4989-b574-2e66bdf9005a",
+    "sha256": "55749258bc4b101ace820b79ba243dd4840621ed2cadca6da64e4bae3f05bf6f",
+    "submitted_at": "2026-05-13T18:06:32.336704+00:00",
+    "http_status": 200,
+    "submit_response": "{\"data\":{\"message\":\"Successful\"}}",
+    "status_check": {
+      "core_id": "ci260513180628.18f2aad350ee458f9ded8d4c2ce3aec4",
+      "status": "Upload Received",
+      "submission_protocol": "API",
+      "esgngcode": "ESGNG270",
+      "esgngdescription": "Submission status retrieved successfully."
+    }
+  },
+  "IND-MEGA-20260513_v6.xml": {
+    "status": "SUBMITTED",
+    "filename": "IND-MEGA-20260513_v6.xml",
+    "core_id": "ci260514021202.e5742ef677d54a25ad5499e44b9244c2",
+    "payload_id": "6aab0d6d-23d5-480b-8fa0-54702d9a35b3",
+    "sha256": "ece4c6220eed1e42395d2ce41025412efbb0af0a04598f5482f23b838e61e50d",
+    "submitted_at": "2026-05-14T02:12:06.220749+00:00",
+    "http_status": 200,
+    "submit_response": "{\"data\":{\"message\":\"Successful\"}}",
+    "status_check": {
+      "core_id": "ci260514021202.e5742ef677d54a25ad5499e44b9244c2",
+      "status": "Upload Received",
+      "submission_protocol": "API",
+      "esgngcode": "ESGNG270",
+      "esgngdescription": "Submission status retrieved successfully."
+    }
+  },
+  "IND-MEGA-20260513_v7.xml": {
+    "status": "SUBMITTED",
+    "filename": "IND-MEGA-20260513_v7.xml",
+    "core_id": "ci260514054033.1ad5fd6c1556408486cbbb0933529af0",
+    "payload_id": "fe88ad0a-0cc1-4609-af7a-5bdd31af1a9b",
+    "sha256": "843fb1a9a1c0a1548bed13e8ca06632fc7419e2da9607aac355bce6101e02d26",
+    "submitted_at": "2026-05-14T05:40:37.103884+00:00",
+    "http_status": 200,
+    "submit_response": "{\"data\":{\"message\":\"Successful\"}}",
+    "status_check": {
+      "core_id": "ci260514054033.1ad5fd6c1556408486cbbb0933529af0",
+      "status": "Upload Received",
+      "submission_protocol": "API",
+      "esgngcode": "ESGNG270",
+      "esgngdescription": "Submission status retrieved successfully."
+    }
+  },
+  "IND-MEGA-20260513_v8.xml": {
+    "status": "SUBMITTED",
+    "filename": "IND-MEGA-20260513_v8.xml",
+    "core_id": "ci260514061754.43943406cd8b42b1a88bc719d0b985fd",
+    "payload_id": "05ceb1d0-8adf-43c2-aa2f-26219887b637",
+    "sha256": "67094151ad5beb82be261f0dbbf47efac5a3ed39f4b5d3d82cae05895a7b8d13",
+    "submitted_at": "2026-05-14T06:17:58.097952+00:00",
+    "http_status": 200,
+    "submit_response": "{\"data\":{\"message\":\"Successful\"}}",
+    "status_check": {
+      "core_id": "ci260514061754.43943406cd8b42b1a88bc719d0b985fd",
+      "status": "Upload Received",
+      "submission_protocol": "API",
+      "esgngcode": "ESGNG270",
+      "esgngdescription": "Submission status retrieved successfully."
+    }
+  },
+  "IND-MEGA-20260513_v9.xml": {
+    "status": "SUBMITTED",
+    "filename": "IND-MEGA-20260513_v9.xml",
+    "core_id": "ci260515025404.a952dd3be6654a21a71d954aa0b2e57c",
+    "payload_id": "9518b6a6-7de4-49b5-856b-7282bea0868f",
+    "sha256": "9922555b5a99353478bf4cf8826a794cf139f602f0d067f5a558b48239a0cb3c",
+    "submitted_at": "2026-05-15T02:54:09.209052+00:00",
+    "http_status": 200,
+    "submit_response": "{\"data\":{\"message\":\"Successful\"}}",
+    "status_check": {
+      "core_id": "ci260515025404.a952dd3be6654a21a71d954aa0b2e57c",
+      "status": "Upload Received",
+      "submission_protocol": "API",
+      "esgngcode": "ESGNG270",
+      "esgngdescription": "Submission status retrieved successfully."
+    }
+  },
+  "CASE-20260518-MEGA_v1.xml": {
+    "status": "SUBMITTED",
+    "filename": "CASE-20260518-MEGA_v1.xml",
+    "core_id": "ci260518195206.92f1bc44176d457390c9d67cc3339dd3",
+    "payload_id": "a3ad368a-8a85-4513-9518-6e83586384a6",
+    "sha256": "a643feb697f98844aee91fa90bddea759e14c4c5cafa163d427e35dcf7e5ab40",
+    "submitted_at": "2026-05-18T19:52:10.162464+00:00",
+    "http_status": 200,
+    "submit_response": "{\"data\":{\"message\":\"Successful\"}}",
+    "status_check": {
+      "core_id": "ci260518195206.92f1bc44176d457390c9d67cc3339dd3",
+      "status": "Upload Received",
+      "submission_protocol": "API",
+      "esgngcode": "ESGNG270",
+      "esgngdescription": "Submission status retrieved successfully."
+    }
+  },
+  "CASE-20260518-MEGA_v2.xml": {
+    "status": "SUBMITTED",
+    "filename": "CASE-20260518-MEGA_v2.xml",
+    "core_id": "ci260518215619.98b7b4562e0b4e54a7dff4aa6a208f5f",
+    "payload_id": "41320644-5df3-4e77-8014-23479e8e0b41",
+    "sha256": "cc77281e62fabcf1323ff437be0e54fdfacebc9f4f716b88c8547f49217b9e42",
+    "submitted_at": "2026-05-18T21:56:23.566955+00:00",
+    "http_status": 200,
+    "submit_response": "{\"data\":{\"message\":\"Successful\"}}",
+    "status_check": {
+      "core_id": "ci260518215619.98b7b4562e0b4e54a7dff4aa6a208f5f",
+      "status": "Upload Received",
+      "submission_protocol": "API",
+      "esgngcode": "ESGNG270",
+      "esgngdescription": "Submission status retrieved successfully."
+    }
+  },
+  "CASE-20260518-MEGA_v3.xml": {
+    "status": "SUBMITTED",
+    "filename": "CASE-20260518-MEGA_v3.xml",
+    "core_id": "ci260519020917.c169efa4f1324a95848ebf69d6dc7fd1",
+    "payload_id": "e6582ec6-a266-4453-abfb-13bc2c1a6eb7",
+    "sha256": "0253dd882b769ec5ccf11ef2ef7260001a920a6392c76f52f1efb363b6cc19a0",
+    "submitted_at": "2026-05-19T02:09:20.445403+00:00",
+    "http_status": 200,
+    "submit_response": "{\"data\":{\"message\":\"Successful\"}}",
+    "status_check": {
+      "core_id": "ci260519020917.c169efa4f1324a95848ebf69d6dc7fd1",
+      "status": "Upload Received",
+      "submission_protocol": "API",
+      "esgngcode": "ESGNG270",
+      "esgngdescription": "Submission status retrieved successfully."
+    }
+  },
+  "CASE-20260518-MEGA_v4.xml": {
+    "status": "SUBMITTED",
+    "filename": "CASE-20260518-MEGA_v4.xml",
+    "core_id": "ci260519044913.14344129df674275afc84f181781a230",
+    "payload_id": "6fb83d16-dc0f-49cb-aacb-744821133425",
+    "sha256": "3470fcf7fb51ba11bd68e3011ae8376887e6fc3b3535f96c4f7e6c91a1fd1483",
+    "submitted_at": "2026-05-19T04:49:17.020200+00:00",
+    "http_status": 200,
+    "submit_response": "{\"data\":{\"message\":\"Successful\"}}",
+    "status_check": {
+      "core_id": "ci260519044913.14344129df674275afc84f181781a230",
+      "status": "Upload Received",
+      "submission_protocol": "API",
+      "esgngcode": "ESGNG270",
+      "esgngdescription": "Submission status retrieved successfully."
+    }
+  },
+  "CASE-20260518-MEGA_v5.xml": {
+    "status": "SUBMITTED",
+    "filename": "CASE-20260518-MEGA_v5.xml",
+    "core_id": "ci260519060404.7b33edb1f52c40d596e50a96af7caeb4",
+    "payload_id": "a66cf5bf-863f-4376-9fcc-39a3843208a1",
+    "sha256": "1e984e5094f3858eb520e09cb6698a6247238f261ee7048b77e98595c1a04e2a",
+    "submitted_at": "2026-05-19T06:04:08.025689+00:00",
+    "http_status": 200,
+    "submit_response": "{\"data\":{\"message\":\"Successful\"}}",
+    "status_check": {
+      "core_id": "ci260519060404.7b33edb1f52c40d596e50a96af7caeb4",
+      "status": "Upload Received",
+      "submission_protocol": "API",
+      "esgngcode": "ESGNG270",
+      "esgngdescription": "Submission status retrieved successfully."
+    }
+  },
+  "CASE-20260518-MEGA_v6.xml": {
+    "status": "SUBMITTED",
+    "filename": "CASE-20260518-MEGA_v6.xml",
+    "core_id": "ci260519222153.35169b836c834e598c9300839f897264",
+    "payload_id": "19fda31a-047d-41a8-ae72-63b95f79bf00",
+    "sha256": "031024b19c587f73ff6475da7c635bade020c5a323365ba8b0784d7f18ed946f",
+    "submitted_at": "2026-05-19T22:21:56.691373+00:00",
+    "http_status": 200,
+    "submit_response": "{\"data\":{\"message\":\"Successful\"}}",
+    "status_check": {
+      "core_id": "ci260519222153.35169b836c834e598c9300839f897264",
+      "status": "Upload Received",
+      "submission_protocol": "API",
+      "esgngcode": "ESGNG270",
+      "esgngdescription": "Submission status retrieved successfully."
+    }
+  },
+  "CASE-20260519-MEGA2_v1.xml": {
+    "status": "SUBMITTED",
+    "filename": "CASE-20260519-MEGA2_v1.xml",
+    "core_id": "ci260520044936.7643b970b65b412d9c928543fa3708c3",
+    "payload_id": "7a1577ab-61c6-4358-b2f5-4035c7bb9009",
+    "sha256": "9e2b6534dcafce976b8f0349c794b05f17a6a17df50902cc12c6a159c275336e",
+    "submitted_at": "2026-05-20T04:49:39.721079+00:00",
+    "http_status": 200,
+    "submit_response": "{\"data\":{\"message\":\"Successful\"}}",
+    "status_check": {
+      "core_id": "ci260520044936.7643b970b65b412d9c928543fa3708c3",
+      "status": "Upload Received",
+      "submission_protocol": "API",
+      "esgngcode": "ESGNG270",
+      "esgngdescription": "Submission status retrieved successfully."
+    }
+  },
+  "CASE-20260519-MEGA2_v2.xml": {
+    "status": "SUBMITTED",
+    "filename": "CASE-20260519-MEGA2_v2.xml",
+    "core_id": "ci260520182022.de367c4e2ec2419abc87abbc7bb848cf",
+    "payload_id": "ebf5c749-548f-4c1e-a276-c62881fd28ed",
+    "sha256": "579783bce9b1064484e9989f7550ccfda93bf51cf2f1f3337870e7a84f2e4b58",
+    "submitted_at": "2026-05-20T18:20:27.172366+00:00",
+    "http_status": 200,
+    "submit_response": "{\"data\":{\"message\":\"Successful\"}}",
+    "status_check": {
+      "core_id": "ci260520182022.de367c4e2ec2419abc87abbc7bb848cf",
+      "status": "Upload Received",
+      "submission_protocol": "API",
+      "esgngcode": "ESGNG270",
+      "esgngdescription": "Submission status retrieved successfully."
+    }
+  },
+  "CASE-20260519-MEGA2_v3.xml": {
+    "status": "SUBMITTED",
+    "filename": "CASE-20260519-MEGA2_v3.xml",
+    "core_id": "ci260525033444.f4fe124d5b7242eea9307e24af1d64be",
+    "payload_id": "742b3e5c-0568-409a-ace8-4dd18b7798d0",
+    "sha256": "d9fd40e9c7c26ce59d828248b30fa0bf20b7bc27baa5e19ca24c9091fb688474",
+    "submitted_at": "2026-05-25T03:34:48.166347+00:00",
+    "http_status": 200,
+    "submit_response": "{\"data\":{\"message\":\"Successful\"}}",
+    "status_check": {
+      "core_id": "ci260525033444.f4fe124d5b7242eea9307e24af1d64be",
+      "status": "Upload Received",
+      "submission_protocol": "API",
+      "esgngcode": "ESGNG270",
+      "esgngdescription": "Submission status retrieved successfully."
+    }
+  },
+  "CASE-20260519-MEGA2_v5.xml": {
+    "status": "SUBMITTED",
+    "filename": "CASE-20260519-MEGA2_v5.xml",
+    "core_id": "ci260525042934.a4d960cd52da48a1abd717167fedae09",
+    "payload_id": "029bf541-d56f-423b-94b2-9eb1269b7eb0",
+    "sha256": "7b571b514a28575564cec36ef5a9128c50db7956f8e7180b324609cf5331c026",
+    "submitted_at": "2026-05-25T04:29:37.756452+00:00",
+    "http_status": 200,
+    "submit_response": "{\"data\":{\"message\":\"Successful\"}}",
+    "status_check": {
+      "core_id": "ci260525042934.a4d960cd52da48a1abd717167fedae09",
+      "status": "Upload Received",
+      "submission_protocol": "API",
+      "esgngcode": "ESGNG270",
+      "esgngdescription": "Submission status retrieved successfully."
+    }
+  },
+  "CASE-20260521-MEGA3_v1.xml": {
+    "status": "SUBMITTED",
+    "filename": "CASE-20260521-MEGA3_v1.xml",
+    "core_id": "ci260525062458.0c10136b765f4345a5488be3091cd932",
+    "payload_id": "8503ba3c-1ef9-4b95-97f0-0a76df518573",
+    "sha256": "2b6621588b7115729f687f0ad918ec325e30a627208102bc181086c37d41bcc8",
+    "submitted_at": "2026-05-25T06:25:02.712537+00:00",
+    "http_status": 200,
+    "submit_response": "{\"data\":{\"message\":\"Successful\"}}",
+    "status_check": {
+      "core_id": "ci260525062458.0c10136b765f4345a5488be3091cd932",
+      "status": "Upload Received",
+      "submission_protocol": "API",
+      "esgngcode": "ESGNG270",
+      "esgngdescription": "Submission status retrieved successfully."
+    }
+  },
+  "CASE-20260522-MEGA4_v1.xml": {
+    "status": "SUBMITTED",
+    "filename": "CASE-20260522-MEGA4_v1.xml",
+    "core_id": "ci260525173911.859f95c8f6834d4da62cd0c61826d30f",
+    "payload_id": "687919c3-151e-44c7-8f7b-b3ede87b3efd",
+    "sha256": "349070fc2aab6f59da48422fd8224caa74bfe6248e402a47ecb3c965758d9460",
+    "submitted_at": "2026-05-25T17:39:14.943679+00:00",
+    "http_status": 200,
+    "submit_response": "{\"data\":{\"message\":\"Successful\"}}",
+    "status_check": {
+      "core_id": "ci260525173911.859f95c8f6834d4da62cd0c61826d30f",
+      "status": "Upload Received",
+      "submission_protocol": "API",
+      "esgngcode": "ESGNG270",
+      "esgngdescription": "Submission status retrieved successfully."
+    }
+  },
+  "CASE-20260522-MEGA4_v2.xml": {
+    "status": "SUBMITTED",
+    "filename": "CASE-20260522-MEGA4_v2.xml",
+    "core_id": "ci260525193058.e1761a3eda694f9489250492024cd2d0",
+    "payload_id": "aff4efeb-7414-481a-89a7-8f6de748a3fb",
+    "sha256": "dc056caa77c2a384e2880ea27a1c46182e63f90c5c15cbfa1afdff5798b5fa8a",
+    "submitted_at": "2026-05-25T19:31:01.967294+00:00",
+    "http_status": 200,
+    "submit_response": "{\"data\":{\"message\":\"Successful\"}}",
+    "status_check": {
+      "core_id": "ci260525193058.e1761a3eda694f9489250492024cd2d0",
+      "status": "Upload Received",
+      "submission_protocol": "API",
+      "esgngcode": "ESGNG270",
+      "esgngdescription": "Submission status retrieved successfully."
+    }
+  },
+  "CASE-20260522-MEGA4_v3.xml": {
+    "status": "SUBMITTED",
+    "filename": "CASE-20260522-MEGA4_v3.xml",
+    "core_id": "ci260525194848.7be3592da3a14272b1390d1c14c34fe4",
+    "payload_id": "f8b237a0-1d86-438c-95cb-a9a8829b027f",
+    "sha256": "079d4159dca8c7e2e9b3a93e187a953b61b7234119ed7f08dd673f44a215953a",
+    "submitted_at": "2026-05-25T19:48:52.146687+00:00",
+    "http_status": 200,
+    "submit_response": "{\"data\":{\"message\":\"Successful\"}}",
+    "status_check": {
+      "core_id": "ci260525194848.7be3592da3a14272b1390d1c14c34fe4",
+      "status": "Upload Received",
+      "submission_protocol": "API",
+      "esgngcode": "ESGNG270",
+      "esgngdescription": "Submission status retrieved successfully."
+    }
+  },
+  "CASE-20260523-MEGA5_v1.xml": {
+    "status": "SUBMITTED",
+    "filename": "CASE-20260523-MEGA5_v1.xml",
+    "core_id": "ci260526034007.6607c9db04174fd0929f298e979cc975",
+    "payload_id": "c07138b4-ae4f-4005-bf9c-d5882fc8f78c",
+    "sha256": "c0dafea3b7748d9163cfe45b08083b96b2e060ca533261207012f57f6853e6c8",
+    "submitted_at": "2026-05-26T03:40:11.576915+00:00",
+    "http_status": 200,
+    "submit_response": "{\"data\":{\"message\":\"Successful\"}}",
+    "status_check": {
+      "core_id": "ci260526034007.6607c9db04174fd0929f298e979cc975",
+      "status": "Upload Received",
+      "submission_protocol": "API",
+      "esgngcode": "ESGNG270",
+      "esgngdescription": "Submission status retrieved successfully."
+    }
+  },
+  "CASE-20260523-MEGA5_v2.xml": {
+    "status": "SUBMITTED",
+    "filename": "CASE-20260523-MEGA5_v2.xml",
+    "core_id": "ci260526040935.60bfdc831eed4b2c831357e3dfcd5a5e",
+    "payload_id": "6a731427-679e-44fc-a441-7d6e116658df",
+    "sha256": "d1ca94fadf47c3bd7f6cc795e9eeba97c154b4d121669b21032c6f7683b255ef",
+    "submitted_at": "2026-05-26T04:09:39.490711+00:00",
+    "http_status": 200,
+    "submit_response": "{\"data\":{\"message\":\"Successful\"}}",
+    "status_check": {
+      "core_id": "ci260526040935.60bfdc831eed4b2c831357e3dfcd5a5e",
+      "status": "Upload Received",
+      "submission_protocol": "API",
+      "esgngcode": "ESGNG270",
+      "esgngdescription": "Submission status retrieved successfully."
+    }
+  },
+  "CASE-20260523-MEGA5_v3.xml": {
+    "status": "SUBMITTED",
+    "filename": "CASE-20260523-MEGA5_v3.xml",
+    "core_id": "ci260526044808.5712e73ca7a7441d951d5ddd800f1c64",
+    "payload_id": "71249ad2-e065-4e4a-a2d8-ff1c5917c0b8",
+    "sha256": "efa4d71db8ff4690761b7a6802e9c44cbf10c1bf9d34b88f640c40a4e8816aad",
+    "submitted_at": "2026-05-26T04:48:12.603319+00:00",
+    "http_status": 200,
+    "submit_response": "{\"data\":{\"message\":\"Successful\"}}",
+    "status_check": {
+      "core_id": "ci260526044808.5712e73ca7a7441d951d5ddd800f1c64",
+      "status": "Upload Received",
+      "submission_protocol": "API",
+      "esgngcode": "ESGNG270",
+      "esgngdescription": "Submission status retrieved successfully."
+    }
+  },
+  "CASE-20260523-MEGA5_v5.xml": {
+    "status": "SUBMITTED",
+    "filename": "CASE-20260523-MEGA5_v5.xml",
+    "core_id": "ci260526053352.fb53b5e888ae498ca65c882225421b09",
+    "payload_id": "5d789ee2-cf31-4802-9595-be2fd065f047",
+    "sha256": "01b932f91a892d6dce3e1e2a6336e6b8580cb3d510ae6944ac8901dc6c878d8e",
+    "submitted_at": "2026-05-26T05:33:56.729958+00:00",
+    "http_status": 200,
+    "submit_response": "{\"data\":{\"message\":\"Successful\"}}",
+    "status_check": {
+      "core_id": "ci260526053352.fb53b5e888ae498ca65c882225421b09",
+      "status": "Upload Received",
+      "submission_protocol": "API",
+      "esgngcode": "ESGNG270",
+      "esgngdescription": "Submission status retrieved successfully."
+    }
+  },
+  "CASE-20260523-MEGA5_v6.xml": {
+    "status": "SUBMITTED",
+    "filename": "CASE-20260523-MEGA5_v6.xml",
+    "core_id": "ci260526064754.1372a106d19c44eda58dc9bd6bcb0299",
+    "payload_id": "5a996194-540a-4599-b955-81721e613f73",
+    "sha256": "2afd574a0c2bf9b734966025af8dda73f542c1d5b885a6e9a84ec8f2cc227e0a",
+    "submitted_at": "2026-05-26T06:47:58.022390+00:00",
+    "http_status": 200,
+    "submit_response": "{\"data\":{\"message\":\"Successful\"}}",
+    "status_check": {
+      "core_id": "ci260526064754.1372a106d19c44eda58dc9bd6bcb0299",
+      "status": "Upload Received",
+      "submission_protocol": "API",
+      "esgngcode": "ESGNG270",
+      "esgngdescription": "Submission status retrieved successfully."
+    }
+  },
+  "CASE-20260523-MEGA5_v8.xml": {
+    "status": "SUBMITTED",
+    "filename": "CASE-20260523-MEGA5_v8.xml",
+    "core_id": "ci260527161055.83ff1ee2447647b4ab9f5d8e16284d5f",
+    "payload_id": "cab1ab5d-1c3b-4388-87ce-b6d48fc63c54",
+    "sha256": "2076d8f890546e2b7f7859582e662eff3ab5daf0dbe78b2d43cd09a214a93806",
+    "submitted_at": "2026-05-27T16:10:59.092391+00:00",
+    "http_status": 200,
+    "submit_response": "{\"data\":{\"message\":\"Successful\"}}",
+    "status_check": {
+      "core_id": "ci260527161055.83ff1ee2447647b4ab9f5d8e16284d5f",
+      "status": "Upload Received",
+      "submission_protocol": "API",
+      "esgngcode": "ESGNG270",
+      "esgngdescription": "Submission status retrieved successfully."
+    }
+  },
+  "CASE-20260523-MEGA5_v9.xml": {
+    "status": "SUBMITTED",
+    "filename": "CASE-20260523-MEGA5_v9.xml",
+    "core_id": "ci260528052833.5c78dd911ce2465685052339c3aa5fb3",
+    "payload_id": "4137b7e2-f322-4969-b17b-745a3f5cccf8",
+    "sha256": "6b3dbd8374b2eb7b187cd972ec15749a6fcb77b96d894900496b610bf3a8519b",
+    "submitted_at": "2026-05-28T05:28:37.095011+00:00",
+    "http_status": 200,
+    "submit_response": "{\"data\":{\"message\":\"Successful\"}}",
+    "status_check": {
+      "core_id": "ci260528052833.5c78dd911ce2465685052339c3aa5fb3",
+      "status": "Upload Received",
+      "submission_protocol": "API",
+      "esgngcode": "ESGNG270",
+      "esgngdescription": "Submission status retrieved successfully."
+    }
+  },
+  "CASE-20260523-MEGA5_v10.xml": {
+    "status": "SUBMITTED",
+    "filename": "CASE-20260523-MEGA5_v10.xml",
+    "core_id": "ci260529044444.9309ced29fb542c384f917f4fca46cf8",
+    "payload_id": "2928ea6d-50bd-4a86-9e3f-dfac7d6da418",
+    "sha256": "5d3341c5e4824fd71af48bf1202ccbab96050800aa1fe98f4a741f5f8215a177",
+    "submitted_at": "2026-05-29T04:44:47.819533+00:00",
+    "http_status": 200,
+    "submit_response": "{\"data\":{\"message\":\"Successful\"}}",
+    "status_check": {
+      "core_id": "ci260529044444.9309ced29fb542c384f917f4fca46cf8",
+      "status": "Upload Received",
+      "submission_protocol": "API",
+      "esgngcode": "ESGNG270",
+      "esgngdescription": "Submission status retrieved successfully."
+    }
+  },
+  "CASE-20260523-MEGA5_v11.xml": {
+    "status": "SUBMITTED",
+    "filename": "CASE-20260523-MEGA5_v11.xml",
+    "core_id": "ci260529185006.89a9110c60eb496c83722f62f7a71310",
+    "payload_id": "a5053b80-c459-4a75-9983-78c066a0abfc",
+    "sha256": "08e62a2fc0da57bc2abb3f81f12196bd2e9ccf77269074a12d7de2cf1b0422a8",
+    "submitted_at": "2026-05-29T18:50:09.936136+00:00",
+    "http_status": 200,
+    "submit_response": "{\"data\":{\"message\":\"Successful\"}}",
+    "status_check": {
+      "core_id": "ci260529185006.89a9110c60eb496c83722f62f7a71310",
+      "status": "Upload Received",
+      "submission_protocol": "API",
+      "esgngcode": "ESGNG270",
+      "esgngdescription": "Submission status retrieved successfully."
+    }
+  },
+  "CASE-20260523-MEGA5_v12.xml": {
+    "status": "SUBMITTED",
+    "filename": "CASE-20260523-MEGA5_v12.xml",
+    "core_id": "ci260529225919.caa7c6c1cf6d4dcf8f5a6674f8e8e77f",
+    "payload_id": "6bdc0d87-00d7-4e7b-a75f-27c21762b84c",
+    "sha256": "f10f7609c9d6f528d2394321c87928bf1458e607c5b6951c95d5497e68622e66",
+    "submitted_at": "2026-05-29T22:59:23.517134+00:00",
+    "http_status": 200,
+    "submit_response": "{\"data\":{\"message\":\"Successful\"}}",
+    "status_check": {
+      "core_id": "ci260529225919.caa7c6c1cf6d4dcf8f5a6674f8e8e77f",
+      "status": "Upload Received",
+      "submission_protocol": "API",
+      "esgngcode": "ESGNG270",
+      "esgngdescription": "Submission status retrieved successfully."
+    }
+  },
+  "TC-F05-solicited-odcs.xml": {
+    "status": "SUBMITTED",
+    "filename": "TC-F05-solicited-odcs.xml",
+    "core_id": "ci260529231631.a89873c80f7c4d4d899a6fee703f1f75",
+    "payload_id": "a95645de-ca92-47e9-8b48-564c667fb1de",
+    "sha256": "4d48eb52c12fa97bcb36502f2b99e429e55d16002cd5db245ddb3fc7322ed77f",
+    "submitted_at": "2026-05-29T23:16:35.109364+00:00",
+    "http_status": 200,
+    "submit_response": "{\"data\":{\"message\":\"Successful\"}}",
+    "status_check": {
+      "core_id": "ci260529231631.a89873c80f7c4d4d899a6fee703f1f75",
+      "status": "Upload Received",
+      "submission_protocol": "API",
+      "esgngcode": "ESGNG270",
+      "esgngdescription": "Submission status retrieved successfully."
+    }
+  },
+  "IND-T08-premarket-spontaneous.xml": {
+    "status": "SUBMITTED",
+    "filename": "IND-T08-premarket-spontaneous.xml",
+    "core_id": "ci260529231636.4baa7492fb2949999c05ba78056ec673",
+    "payload_id": "16aeedc1-bc2f-4e07-a0a3-773c3faa961e",
+    "sha256": "da7cc6d582fe3926ec40e768d3088b5cccb8426c90a290d0c07babaea40bcdec",
+    "submitted_at": "2026-05-29T23:16:39.718882+00:00",
+    "http_status": 200,
+    "submit_response": "{\"data\":{\"message\":\"Successful\"}}",
+    "status_check": {
+      "core_id": "ci260529231636.4baa7492fb2949999c05ba78056ec673",
+      "status": "Upload Received",
+      "submission_protocol": "API",
+      "esgngcode": "ESGNG270",
+      "esgngdescription": "Submission status retrieved successfully."
+    }
+  },
+  "CASE-20260331-EMJQ_gen_v33.xml": {
+    "status": "SUBMITTED",
+    "filename": "CASE-20260331-EMJQ_gen_v33.xml",
+    "core_id": "ci260531034550.02e47e1fd33b45569ef7af5f494ce0ff",
+    "payload_id": "a5dbfad2-c175-43c6-bf92-f7a925cb69ed",
+    "sha256": "c104c971458af36c16ae10b9853897d8a58e8d42d9ca64627257f837c8ab0dc5",
+    "submitted_at": "2026-05-31T03:45:54.600182+00:00",
+    "http_status": 200,
+    "submit_response": "{\"data\":{\"message\":\"Successful\"}}",
+    "status_check": {
+      "core_id": "ci260531034550.02e47e1fd33b45569ef7af5f494ce0ff",
+      "status": "Upload Received",
+      "submission_protocol": "API",
+      "esgngcode": "ESGNG270",
+      "esgngdescription": "Submission status retrieved successfully."
+    }
+  }
+}

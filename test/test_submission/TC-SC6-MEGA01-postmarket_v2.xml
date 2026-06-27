@@ -1,0 +1,1203 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<MCCI_IN200100UV01 xmlns="urn:hl7-org:v3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" ITSVersion="XML_1.0" xsi:schemaLocation="urn:hl7-org:v3 MCCI_IN200100UV01.xsd">
+  <!-- TC-M08-v8: LOINC Lab Fix — Adds F.r.2.1 LOINC codes for all 3 tests, interpretationCode on Tests 2+3, device model/serial; all TC-M07 sections retained -->
+  <!-- Sections: (all TC-M07 sections) + LOINC F.r.2.1 (Tests 1-3), interpretationCode (Tests 2+3), FDA.G.k.12.r.7.2/7.3 device model/serial -->
+  <id root="2.16.840.1.113883.3.989.2.1.3.22" extension="DeepQuenceTest-20260605-SC6MEGA-b6db860c"/>
+  <creationTime value="20260605120000-0500"/>
+  <responseModeCode code="D"/>
+  <interactionId root="2.16.840.1.113883.1.6" extension="MCCI_IN200100UV01"/>
+  <name code="1" displayName="ichicsr" codeSystem="2.16.840.1.113883.3.989.2.1.1.1"/>
+  <PORR_IN049016UV>
+    <id root="2.16.840.1.113883.3.989.2.1.3.1" extension="a2a7fd3b-9e1c-4b4e-afc0-e2a351542072"/>
+    <creationTime value="20260605120000-0500"/>
+    <interactionId root="2.16.840.1.113883.1.6" extension="PORR_IN049016UV"/>
+    <processingCode code="P"/>
+    <processingModeCode code="I"/>
+    <acceptAckCode code="AL"/>
+    <receiver typeCode="RCV">
+      <device classCode="DEV" determinerCode="INSTANCE">
+        <id root="2.16.840.1.113883.3.989.2.1.3.12" extension="CDER"/>
+      </device>
+    </receiver>
+    <sender typeCode="SND">
+      <device classCode="DEV" determinerCode="INSTANCE">
+        <id root="2.16.840.1.113883.3.989.2.1.3.11" extension="334818134"/>
+        <id root="2.16.840.1.113883.3.989.2.1.3.13" extension="334818134"/>
+        <id root="1.3.6.1.4.1.519.1" extension="334818134"/>
+      </device>
+    </sender>
+    <controlActProcess classCode="CACT" moodCode="EVN">
+      <code code="PORR_TE049016UV" codeSystem="2.16.840.1.113883.1.18"/>
+      <effectiveTime value="20260605120000-0500"/>
+      <subject typeCode="SUBJ">
+        <investigationEvent classCode="INVSTG" moodCode="EVN">
+          <!-- C.1.1: Safety Report Unique ID -->
+          <id root="2.16.840.1.113883.3.989.2.1.3.1" extension="SR-CASE-20260605-SC6MEGA"/>
+          <!-- C.1.2: Sender's (case) Safety Report Unique ID -->
+          <id root="2.16.840.1.113883.3.989.2.1.3.2" extension="CASE-20260605-SC6MEGA"/>
+          <!-- C.1.4/C.1.9.1: Version Number -->
+          <id root="2.16.840.1.113883.3.989.2.1.3.4" extension="1"/>
+          <code code="PAT_ADV_EVNT" codeSystem="2.16.840.1.113883.5.4"/>
+          <!-- H.1: Case Narrative -->
+          <text>TC-SC6-MEGA01 (Scenario 6 postmarket, all tags): Patient B.P. (female neonate, born 2026-03-05, 79 days at report) born at 34 weeks gestation to mother Sarah P. (28y, rheumatoid arthritis). Mother received Testdrugimab 200mg SC biweekly (combination product with Testdevice Auto-Injector) starting at gestation week 20 (2025-10-01) for RA; drug withdrawn at delivery. Auto-injector malfunctioned on first use. Neonate admitted to NICU: thrombocytopenia (platelets 45e9/L day 1) and low birth weight (1.95 kg). Platelets recovered by day 14. Sender diagnosis: Neonatal thrombocytopenia secondary to in utero Testdrugimab exposure. D.10 parent data, G.k.6a/b gestation, F.r LOINC codes, device model/serial included.</text>
+          <statusCode code="active"/>
+          <!-- C.1.4: Date Report First Received -->
+          <effectiveTime xsi:type="IVL_TS">
+            <low value="20260315"/>
+          </effectiveTime>
+          <!-- C.1.5: Date of Most Recent Info -->
+          <availabilityTime value="20260605120000-0500"/>
+          <!-- C.1.6.1.r: Documents Held by Sender -->
+          <reference typeCode="REFR">
+            <document classCode="DOC" moodCode="EVN">
+              <code code="1" codeSystem="2.16.840.1.113883.3.989.2.1.1.27" displayName="documentsHeldBySender"/>
+              <title>DeepQuence TC-M03 Case Summary</title>
+              <text mediaType="text/plain" representation="B64">
+                <reference value="tcm03_case_summary.txt"/>
+RGVlcFF1ZW5jZSBQViBTeXN0ZW0g4oCUIFRDLU0wMyBDb21wcmVoZW5zaXZlIE1lZ2EgRmlsZQpDYXNlOiBDQVNFLTIwMjYwNTE4LU1FR0EgfCBTUi1DQVNFLTI0MjYwNTE4LU1FR0EKRGVzY3JpcHRpb246IFBvc3RtYXJrZXQgY29tcHJlaGVuc2l2ZSBtZWdhIGZpbGUgY292ZXJpbmcgYWxsIG9wdGlvbmFsIEUyQihSMykgc2VjdGlvbnM6IEYuciBsYWIgdGVzdHMsIEQuNy4xLnIgc3RydWN0dXJlZCBoaXN0b3J5LCBEOS44LnIgcGFzdCBkcnVnLCBELjkgZGVhdGggZGV0YWlscywgRy5rLjUgY3VtdWxhdGl2ZSBkb3NlLCBILjMuci9ILjUuci4=
+              </text>
+            </document>
+          </reference>
+          <!-- C.4.r: Literature Reference -->
+          <reference typeCode="REFR">
+            <document classCode="DOC" moodCode="EVN">
+              <code code="2" codeSystem="2.16.840.1.113883.3.989.2.1.1.27" displayName="literatureReference"/>
+              <bibliographicDesignationText>Smith J, et al. "Hepatotoxicity associated with Testdrugimab in rheumatoid arthritis." J Drug Safety. 2026;49(2):88-94.</bibliographicDesignationText>
+            </document>
+          </reference>
+          <!-- Primary adverse event assessment (patient + drugs) -->
+          <component typeCode="COMP">
+            <adverseEventAssessment classCode="INVSTG" moodCode="EVN">
+              <subject1 typeCode="SBJ">
+                <primaryRole classCode="INVSBJ">
+                  <player1 classCode="PSN" determinerCode="INSTANCE">
+                    <name>B.P.</name>
+                    <administrativeGenderCode code="2" displayName="Female" codeSystem="1.0.5218"/>
+                    <birthTime value="20260305"/>
+                    <!-- D.10: Parent/Mother Data — drug given to mother; reactions in neonate -->
+                    <role classCode="PRS">
+                      <code code="PRN" displayName="parent" codeSystem="2.16.840.1.113883.5.111"/>
+                      <!-- D.10.1: Parent Identification -->
+                      <associatedPerson classCode="PSN" determinerCode="INSTANCE">
+                        <name>Ms. Sarah P.</name>
+                        <administrativeGenderCode code="2" displayName="Female" codeSystem="1.0.5218"/>
+                        <!-- D.10.6: Parent sex -->
+                        <birthTime value="19971115"/>
+                        <!-- D.10.2.1: Date of Birth of Parent -->
+                      </associatedPerson>
+                      <!-- D.10.2.2a: Age of Parent -->
+                      <subjectOf2 typeCode="SBJ">
+                        <observation classCode="OBS" moodCode="EVN">
+                          <code code="3" codeSystem="2.16.840.1.113883.3.989.2.1.1.19" displayName="age"/>
+                          <value xsi:type="PQ" value="28" unit="a"/>
+                        </observation>
+                      </subjectOf2>
+                      <!-- D.10.3: Last Menstrual Period Date -->
+                      <subjectOf2 typeCode="SBJ">
+                        <observation classCode="OBS" moodCode="EVN">
+                          <code code="22" codeSystem="2.16.840.1.113883.3.989.2.1.1.19" displayName="lastMenstrualPeriodDate"/>
+                          <value xsi:type="TS" value="20250615"/>
+                          <!-- D.10.3: LMP 2025-06-15 — EDD ~2026-03-22; premature delivery 34 wks -->
+                        </observation>
+                      </subjectOf2>
+                      <!-- D.10.4: Body Weight of Parent -->
+                      <subjectOf2 typeCode="SBJ">
+                        <observation classCode="OBS" moodCode="EVN">
+                          <code code="7" codeSystem="2.16.840.1.113883.3.989.2.1.1.19" displayName="bodyWeight"/>
+                          <value xsi:type="PQ" value="62" unit="kg"/>
+                        </observation>
+                      </subjectOf2>
+                      <!-- D.10.4: Height of Parent -->
+                      <subjectOf2 typeCode="SBJ">
+                        <observation classCode="OBS" moodCode="EVN">
+                          <code code="17" codeSystem="2.16.840.1.113883.3.989.2.1.1.19" displayName="height"/>
+                          <value xsi:type="PQ" value="165" unit="cm"/>
+                        </observation>
+                      </subjectOf2>
+                      <!-- D.10.7.1.r + D.10.7.2: Parent Medical History — Rheumatoid arthritis -->
+                      <subjectOf2 typeCode="SBJ">
+                        <organizer classCode="CATEGORY" moodCode="EVN">
+                          <code code="1" codeSystem="2.16.840.1.113883.3.989.2.1.1.20" displayName="relevantMedicalHistoryAndConcurrentConditions"/>
+                          <component typeCode="COMP">
+                            <observation classCode="OBS" moodCode="EVN">
+                              <!-- D.10.7.1.r.1a/b: MedDRA version + code — Rheumatoid arthritis -->
+                              <code code="10039073" codeSystem="2.16.840.1.113883.6.163" codeSystemVersion="25.0" displayName="Rheumatoid arthritis"/>
+                              <effectiveTime xsi:type="IVL_TS">
+                                <low value="20240101"/>
+                                <!-- D.10.7.1.r.2 Start Date -->
+                              </effectiveTime>
+                              <!-- D.10.7.1.r.3: Continuing = true -->
+                              <inboundRelationship typeCode="REFR">
+                                <observation classCode="OBS" moodCode="EVN">
+                                  <code code="13" codeSystem="2.16.840.1.113883.3.989.2.1.1.19" displayName="continuing"/>
+                                  <value xsi:type="BL" value="true"/>
+                                </observation>
+                              </inboundRelationship>
+                            </observation>
+                          </component>
+                          <!-- D.10.7.2: Text for Medical History of Parent -->
+                          <component typeCode="COMP">
+                            <observation classCode="OBS" moodCode="EVN">
+                              <code code="18" codeSystem="2.16.840.1.113883.3.989.2.1.1.19" displayName="historyAndConcurrentConditionText"/>
+                              <value xsi:type="ED">Mother with rheumatoid arthritis since 2024; Methotrexate discontinued before conception; Testdrugimab initiated at gestation week 20.</value>
+                            </observation>
+                          </component>
+                        </organizer>
+                      </subjectOf2>
+
+                      <!-- D.10.8.r: Parent's Past Drug History — Methotrexate (discontinued before conception) -->
+                      <subjectOf2 typeCode="SBJ">
+                        <organizer classCode="CATEGORY" moodCode="EVN">
+                          <code code="2" codeSystem="2.16.840.1.113883.3.989.2.1.1.20" displayName="drugHistory"/>
+                          <component typeCode="COMP">
+                            <substanceAdministration classCode="SBADM" moodCode="EVN">
+                              <!-- D.10.8.r.4/5: Start / End Date of Drug Use -->
+                              <effectiveTime xsi:type="IVL_TS">
+                                <low value="20220101"/>
+                                <high value="20251001"/>
+                              </effectiveTime>
+                              <consumable typeCode="CSM">
+                                <instanceOfKind classCode="INST">
+                                  <kindOfProduct classCode="MMAT" determinerCode="KIND">
+                                    <!-- D.10.8.r.1: Name of Drug as Reported -->
+                                    <name>Methotrexate</name>
+                                    <ingredient classCode="ACTI">
+                                      <ingredientSubstance classCode="MMAT" determinerCode="KIND">
+                                        <!-- D.10.8.r.2a/b: Active Substance TermID -->
+                                        <code code="YL5FZ2Y5U1" codeSystem="2.16.840.1.113883.4.9"/>
+                                        <name>Methotrexate</name>
+                                      </ingredientSubstance>
+                                    </ingredient>
+                                  </kindOfProduct>
+                                </instanceOfKind>
+                              </consumable>
+                              <!-- D.10.8.r.3: Indication for Use -->
+                              <outboundRelationship2 typeCode="RSON">
+                                <observation classCode="OBS" moodCode="EVN">
+                                  <code code="C41331" codeSystem="2.16.840.1.113883.3.26.1.1" displayName="Indication"/>
+                                  <value xsi:type="CE" code="10039073" displayName="Rheumatoid arthritis" codeSystem="2.16.840.1.113883.6.163" codeSystemVersion="25.0"/>
+                                </observation>
+                              </outboundRelationship2>
+                              <!-- D.10.8.r.6: Continuing = false (discontinued before conception) -->
+                              <inboundRelationship typeCode="REFR">
+                                <observation classCode="OBS" moodCode="EVN">
+                                  <code code="13" codeSystem="2.16.840.1.113883.3.989.2.1.1.19" displayName="continuing"/>
+                                  <value xsi:type="BL" value="false"/>
+                                </observation>
+                              </inboundRelationship>
+                            </substanceAdministration>
+                          </component>
+                        </organizer>
+                      </subjectOf2>
+                    </role>
+                  </player1>
+                  <!-- D.2: Age -->
+                  <subjectOf2 typeCode="SBJ">
+                    <observation classCode="OBS" moodCode="EVN">
+                      <code code="3" codeSystem="2.16.840.1.113883.3.989.2.1.1.19" displayName="age"/>
+                      <value xsi:type="PQ" value="79" unit="d"/>
+                    </observation>
+                  </subjectOf2>
+                  <!-- D.3: Age Group -->
+                  <subjectOf2 typeCode="SBJ">
+                    <observation classCode="OBS" moodCode="EVN">
+                      <code code="4" displayName="Age Group" codeSystem="2.16.840.1.113883.3.989.2.1.1.19"/>
+                      <value xsi:type="CE" code="1" displayName="Neonate" codeSystem="2.16.840.1.113883.3.989.2.1.1.9"/>
+                    </observation>
+                  </subjectOf2>
+                  <!-- D.5: Weight -->
+                  <subjectOf2 typeCode="SBJ">
+                    <observation classCode="OBS" moodCode="EVN">
+                      <code code="4" codeSystem="2.16.840.1.113883.3.989.2.1.1.19" displayName="bodyWeight"/>
+                      <value xsi:type="PQ" value="1.95" unit="kg"/>
+                    </observation>
+                  </subjectOf2>
+                  <subjectOf2 typeCode="SBJ"><observation classCode="OBS" moodCode="EVN"><code code="17" codeSystem="2.16.840.1.113883.3.989.2.1.1.19" displayName="height"/><value xsi:type="PQ" value="44" unit="cm"/></observation></subjectOf2><!-- D.6.r.1/2: Race -->
+                  <subjectOf2 typeCode="SBJ">
+                    <observation classCode="OBS" moodCode="EVN">
+                      <code code="C17049" displayName="Race" codeSystem="2.16.840.1.113883.3.26.1.1"/>
+                      <value xsi:type="CE" code="C41260" codeSystem="2.16.840.1.113883.3.26.1.1"/>
+                    </observation>
+                  </subjectOf2>
+                  <!-- D.6.r.3/4: Ethnic Group -->
+                  <subjectOf2 typeCode="SBJ">
+                    <observation classCode="OBS" moodCode="EVN">
+                      <code code="C16564" displayName="Ethnic Group" codeSystem="2.16.840.1.113883.3.26.1.1"/>
+                      <value xsi:type="CE" code="C41222" codeSystem="2.16.840.1.113883.3.26.1.1"/>
+                    </observation>
+                  </subjectOf2>
+                  <!-- D.2.2.1a/b: Gestation Period When Reaction Was Observed in Foetus/Neonate -->
+                  <subjectOf2 typeCode="SBJ">
+                    <observation classCode="OBS" moodCode="EVN">
+                      <code code="16" codeSystem="2.16.840.1.113883.3.989.2.1.1.19" displayName="gestationPeriod"/>
+                      <value xsi:type="PQ" value="34" unit="wk"/>
+                      <!-- D.2.2.1a: Gestation period (number) — 34 weeks at birth/reaction -->
+                      <!-- D.2.2.1b: Gestation period (unit) -->
+                    </observation>
+                  </subjectOf2>
+                  <!-- D.7: Medical History (organizer code="1") — includes D.7.1.r structured history -->
+                  <subjectOf2 typeCode="SBJ">
+                    <organizer classCode="CATEGORY" moodCode="EVN">
+                      <code code="1" codeSystem="2.16.840.1.113883.3.989.2.1.1.20" displayName="relevantMedicalHistoryAndConcurrentConditions"/>
+                      <!-- D.7.2: Free text narrative -->
+                      <component typeCode="COMP">
+                        <observation classCode="OBS" moodCode="EVN">
+                          <code code="18" codeSystem="2.16.840.1.113883.3.989.2.1.1.19" displayName="historyAndConcurrentConditionText"/>
+                          <value xsi:type="ED">No significant neonatal medical history. Patient was born premature at 34 weeks gestation.</value>
+                        </observation>
+                      </component>
+                      <!-- D.7.3: Concomitant Therapy -->
+                      <component typeCode="COMP">
+                        <observation classCode="OBS" moodCode="EVN">
+                          <code code="11" codeSystem="2.16.840.1.113883.3.989.2.1.1.19" displayName="concomitantTherapy"/>
+                          <value xsi:type="BL" value="true"/>
+                        </observation>
+                      </component>
+                      <!-- D.7.1.r: Structured Medical History — Premature birth -->
+                      <component typeCode="COMP">
+                        <observation classCode="OBS" moodCode="EVN">
+                          <!-- D.7.1.r.1a/b: MedDRA version + code — Premature baby (10036585) -->
+                          <code code="10036585" codeSystem="2.16.840.1.113883.6.163" codeSystemVersion="25.0" displayName="Premature baby"/>
+                          <!-- D.7.1.r.2: Start Date = date of birth -->
+                          <effectiveTime xsi:type="IVL_TS">
+                            <low value="20260305"/>
+                          </effectiveTime>
+                          <!-- D.7.1.r.3: Continuing = false (resolved — no longer premature) -->
+                          <inboundRelationship typeCode="REFR">
+                            <observation classCode="OBS" moodCode="EVN">
+                              <code code="13" codeSystem="2.16.840.1.113883.3.989.2.1.1.19" displayName="continuing"/>
+                              <value xsi:type="BL" value="false"/>
+                            </observation>
+                          </inboundRelationship>
+                        </observation>
+                      </component>
+                      <!-- D.7.1.r: Family History — Maternal Rheumatoid arthritis -->
+                      <component typeCode="COMP">
+                        <observation classCode="OBS" moodCode="EVN">
+                          <!-- D.7.1.r.1a/b: MedDRA code — Rheumatoid arthritis (mother, familyHistory) -->
+                          <code code="10039073" codeSystem="2.16.840.1.113883.6.163" codeSystemVersion="25.0" displayName="Rheumatoid arthritis"/>
+                          <!-- D.7.1.r.6: Family History = true -->
+                          <outboundRelationship2 typeCode="EXPL">
+                            <observation classCode="OBS" moodCode="EVN">
+                              <code code="38" codeSystem="2.16.840.1.113883.3.989.2.1.1.19" displayName="familyHistory"/>
+                              <value xsi:type="BL" value="true"/>
+                              <!-- D.7.1.r.6: Family History flag — maternal RA -->
+                            </observation>
+                          </outboundRelationship2>
+                          <!-- D.7.1.r.3: Continuing = true (mother's ongoing condition) -->
+                          <inboundRelationship typeCode="REFR">
+                            <observation classCode="OBS" moodCode="EVN">
+                              <code code="13" codeSystem="2.16.840.1.113883.3.989.2.1.1.19" displayName="continuing"/>
+                              <value xsi:type="BL" value="true"/>
+                            </observation>
+                          </inboundRelationship>
+                        </observation>
+                      </component>
+                    </organizer>
+                  </subjectOf2>
+                  <!-- D.9: No death — patient survived (outcome: recovered/recovering) -->
+                  <!-- E.i Reactions -->
+                  <!-- E.i.1: Reaction 1 — Nausea (resolved) -->
+                  <subjectOf2 typeCode="SBJ">
+                    <observation classCode="OBS" moodCode="EVN">
+                      <id root="4550c0a9-c849-4cd4-a6a2-dfe1caef8d10"/>
+                      <code code="29" codeSystem="2.16.840.1.113883.3.989.2.1.1.19" displayName="reaction"/>
+                      <effectiveTime xsi:type="IVL_TS">
+                        <low value="20260305"/>
+                        <high value="20260319"/>
+                      </effectiveTime>
+                      <value xsi:type="CE" code="10049715" displayName="Neonatal thrombocytopenia" codeSystem="2.16.840.1.113883.6.163" codeSystemVersion="25.0"/>
+                      <location typeCode="LOC"><locatedEntity classCode="LOCE"><locatedPlace classCode="COUNTRY" determinerCode="INSTANCE"><code code="US" codeSystem="1.0.3166.1.2.2"/></locatedPlace></locatedEntity></location><outboundRelationship2 typeCode="PERT"><observation classCode="OBS" moodCode="EVN"><code code="30" codeSystem="2.16.840.1.113883.3.989.2.1.1.19" displayName="reactionForTranslation"/><value xsi:type="ED">Neonatal thrombocytopenia — platelets 45x10^9/L at birth, required NICU admission</value></observation></outboundRelationship2>
+                      <outboundRelationship2 typeCode="PERT">
+                        <observation classCode="OBS" moodCode="EVN">
+                          <code code="37" codeSystem="2.16.840.1.113883.3.989.2.1.1.19" displayName="termHighlightedbyReporter"/>
+                          <value xsi:type="CE" code="1" codeSystem="2.16.840.1.113883.3.989.2.1.1.10" displayName="Yes, highlighted by the reporter"/>
+                          <!-- E.i.3.1: Term Highlighted by the Reporter -->
+                        </observation>
+                      </outboundRelationship2>
+                      <outboundRelationship2 typeCode="PERT">
+                        <observation classCode="OBS" moodCode="EVN">
+                          <code code="34" codeSystem="2.16.840.1.113883.3.989.2.1.1.19" displayName="resultsInDeath"/>
+                          <value xsi:type="BL" value="false"/>
+                        </observation>
+                      </outboundRelationship2>
+                      <outboundRelationship2 typeCode="PERT">
+                        <observation classCode="OBS" moodCode="EVN">
+                          <code code="21" codeSystem="2.16.840.1.113883.3.989.2.1.1.19" displayName="isLifeThreatening"/>
+                          <value xsi:type="BL" value="false"/>
+                        </observation>
+                      </outboundRelationship2>
+                      <outboundRelationship2 typeCode="PERT">
+                        <observation classCode="OBS" moodCode="EVN">
+                          <code code="33" codeSystem="2.16.840.1.113883.3.989.2.1.1.19" displayName="requiresInpatientHospitalization"/>
+                          <value xsi:type="BL" value="true"/>
+                        </observation>
+                      </outboundRelationship2>
+                      <outboundRelationship2 typeCode="PERT">
+                        <observation classCode="OBS" moodCode="EVN">
+                          <code code="35" codeSystem="2.16.840.1.113883.3.989.2.1.1.19" displayName="resultsInPersistentOrSignificantDisability"/>
+                          <value xsi:type="BL" value="false"/>
+                        </observation>
+                      </outboundRelationship2>
+                      <outboundRelationship2 typeCode="PERT">
+                        <observation classCode="OBS" moodCode="EVN">
+                          <code code="12" codeSystem="2.16.840.1.113883.3.989.2.1.1.19" displayName="congenitalAnomalyBirthDefect"/>
+                          <value xsi:type="BL" value="false"/>
+                        </observation>
+                      </outboundRelationship2>
+                      <outboundRelationship2 typeCode="PERT">
+                        <observation classCode="OBS" moodCode="EVN">
+                          <code code="26" codeSystem="2.16.840.1.113883.3.989.2.1.1.19" displayName="otherMedicallyImportantCondition"/>
+                          <value xsi:type="BL" value="false"/>
+                        </observation>
+                      </outboundRelationship2>
+                      <outboundRelationship2 typeCode="PERT">
+                        <observation classCode="OBS" moodCode="EVN">
+                          <code code="7" codeSystem="2.16.840.1.113883.3.989.5.1.2.2.1.3" displayName="requiredIntervention"/>
+                          <value xsi:type="BL" value="false"/>
+                        </observation>
+                      </outboundRelationship2>
+                      <outboundRelationship2 typeCode="PERT">
+                        <observation classCode="OBS" moodCode="EVN">
+                          <code code="27" codeSystem="2.16.840.1.113883.3.989.2.1.1.19" displayName="outcome"/>
+                          <value xsi:type="CE" code="1" displayName="recovered/resolved" codeSystem="2.16.840.1.113883.3.989.2.1.1.11"/>
+                        </observation>
+                      </outboundRelationship2>
+                      <outboundRelationship2 typeCode="PERT">
+                        <observation classCode="OBS" moodCode="EVN">
+                          <code code="C83121" codeSystem="2.16.840.1.113883.3.26.1.1" displayName="Seriousness"/>
+                          <value xsi:type="CE" code="requiresInpatientHospitalization" codeSystem="2.16.840.1.113883.3.989.2.1.1.19"/>
+                        </observation>
+                      </outboundRelationship2>
+                      <outboundRelationship2 typeCode="PERT">
+                        <observation classCode="OBS" moodCode="EVN">
+                          <code code="C49489" codeSystem="2.16.840.1.113883.3.26.1.1" displayName="Outcome"/>
+                          <value xsi:type="CE" code="1" codeSystem="2.16.840.1.113883.3.989.2.1.1.11"/>
+                        </observation>
+                      </outboundRelationship2>
+                    </observation>
+                  </subjectOf2>
+                  <!-- E.i.2: Reaction 2 — Hepatic failure (FATAL) -->
+                  <subjectOf2 typeCode="SBJ">
+                    <observation classCode="OBS" moodCode="EVN">
+                      <id root="ab8100bd-4d47-41aa-bb16-0cf3dfe575b2"/>
+                      <code code="29" codeSystem="2.16.840.1.113883.3.989.2.1.1.19" displayName="reaction"/>
+                      <effectiveTime xsi:type="IVL_TS">
+                        <low value="20260305"/>
+                      </effectiveTime>
+                      <value xsi:type="CE" code="10024891" displayName="Low birth weight baby" codeSystem="2.16.840.1.113883.6.163" codeSystemVersion="25.0"/>
+                      <location typeCode="LOC"><locatedEntity classCode="LOCE"><locatedPlace classCode="COUNTRY" determinerCode="INSTANCE"><code code="US" codeSystem="1.0.3166.1.2.2"/></locatedPlace></locatedEntity></location>
+                      <outboundRelationship2 typeCode="PERT">
+                        <observation classCode="OBS" moodCode="EVN">
+                          <code code="37" codeSystem="2.16.840.1.113883.3.989.2.1.1.19" displayName="termHighlightedbyReporter"/>
+                          <value xsi:type="CE" code="3" codeSystem="2.16.840.1.113883.3.989.2.1.1.10" displayName="No, not highlighted by the reporter, but SERIOUS"/>
+                          <!-- E.i.3.1: Term Highlighted by the Reporter -->
+                        </observation>
+                      </outboundRelationship2>
+                      <outboundRelationship2 typeCode="PERT">
+                        <observation classCode="OBS" moodCode="EVN">
+                          <code code="34" codeSystem="2.16.840.1.113883.3.989.2.1.1.19" displayName="resultsInDeath"/>
+                          <value xsi:type="BL" value="false"/>
+                        </observation>
+                      </outboundRelationship2>
+                      <outboundRelationship2 typeCode="PERT">
+                        <observation classCode="OBS" moodCode="EVN">
+                          <code code="21" codeSystem="2.16.840.1.113883.3.989.2.1.1.19" displayName="isLifeThreatening"/>
+                          <value xsi:type="BL" value="false"/>
+                        </observation>
+                      </outboundRelationship2>
+                      <outboundRelationship2 typeCode="PERT">
+                        <observation classCode="OBS" moodCode="EVN">
+                          <code code="33" codeSystem="2.16.840.1.113883.3.989.2.1.1.19" displayName="requiresInpatientHospitalization"/>
+                          <value xsi:type="BL" value="false"/>
+                        </observation>
+                      </outboundRelationship2>
+                      <outboundRelationship2 typeCode="PERT">
+                        <observation classCode="OBS" moodCode="EVN">
+                          <code code="35" codeSystem="2.16.840.1.113883.3.989.2.1.1.19" displayName="resultsInPersistentOrSignificantDisability"/>
+                          <value xsi:type="BL" value="false"/>
+                        </observation>
+                      </outboundRelationship2>
+                      <outboundRelationship2 typeCode="PERT">
+                        <observation classCode="OBS" moodCode="EVN">
+                          <code code="12" codeSystem="2.16.840.1.113883.3.989.2.1.1.19" displayName="congenitalAnomalyBirthDefect"/>
+                          <value xsi:type="BL" value="false"/>
+                        </observation>
+                      </outboundRelationship2>
+                      <outboundRelationship2 typeCode="PERT">
+                        <observation classCode="OBS" moodCode="EVN">
+                          <code code="26" codeSystem="2.16.840.1.113883.3.989.2.1.1.19" displayName="otherMedicallyImportantCondition"/>
+                          <value xsi:type="BL" value="true"/>
+                        </observation>
+                      </outboundRelationship2>
+                      <outboundRelationship2 typeCode="PERT">
+                        <observation classCode="OBS" moodCode="EVN">
+                          <code code="7" codeSystem="2.16.840.1.113883.3.989.5.1.2.2.1.3" displayName="requiredIntervention"/>
+                          <value xsi:type="BL" value="false"/>
+                        </observation>
+                      </outboundRelationship2>
+                      <outboundRelationship2 typeCode="PERT">
+                        <observation classCode="OBS" moodCode="EVN">
+                          <code code="27" codeSystem="2.16.840.1.113883.3.989.2.1.1.19" displayName="outcome"/>
+                          <value xsi:type="CE" code="2" displayName="recovering/resolving" codeSystem="2.16.840.1.113883.3.989.2.1.1.11"/>
+                        </observation>
+                      </outboundRelationship2>
+                      <outboundRelationship2 typeCode="PERT">
+                        <observation classCode="OBS" moodCode="EVN">
+                          <code code="C83121" codeSystem="2.16.840.1.113883.3.26.1.1" displayName="Seriousness"/>
+                          <value xsi:type="CE" code="otherMedicallyImportant" codeSystem="2.16.840.1.113883.3.989.2.1.1.19"/>
+                        </observation>
+                      </outboundRelationship2>
+                      <outboundRelationship2 typeCode="PERT">
+                        <observation classCode="OBS" moodCode="EVN">
+                          <code code="C49489" codeSystem="2.16.840.1.113883.3.26.1.1" displayName="Outcome"/>
+                          <value xsi:type="CE" code="2" codeSystem="2.16.840.1.113883.3.989.2.1.1.11"/>
+                        </observation>
+                      </outboundRelationship2>
+                    </observation>
+                  </subjectOf2>
+                  <!-- D.8.r: Past Drug History omitted — neonate has no prior drug history -->
+                  <!-- F.r: Lab Test Results (organizer code="3") — Neonatal labs -->
+                  <subjectOf2 typeCode="SBJ">
+                    <organizer classCode="CATEGORY" moodCode="EVN">
+                      <code code="3" codeSystem="2.16.840.1.113883.3.989.2.1.1.20" displayName="testResults"/>
+                      <!-- F.r: Test 1 — Platelet count (decreased) -->
+                      <component typeCode="COMP">
+                        <observation classCode="OBS" moodCode="EVN">
+                          <!-- F.r.2.2a/b: MedDRA version + code for platelet count decreased -->
+                          <code code="10035528" codeSystem="2.16.840.1.113883.6.163" codeSystemVersion="25.0" displayName="Platelet count decreased"><originalText>Platelet Count</originalText><!-- F.r.2.1: LOINC coded test --><translation code="777-3" codeSystem="2.16.840.1.113883.6.1" displayName="Platelets [#/volume] in Blood by Automated count"/></code>
+                          <!-- F.r.1: Test Date — day of birth -->
+                          <effectiveTime value="20260305"/>
+                          <!-- F.r.3.2: Numeric result -->
+                          <value xsi:type="IVL_PQ">
+                            <center value="45" unit="10*9/L"/>
+                          </value>
+                          <!-- F.r.3.1: Coded Result of Test — Positive (thrombocytopenia confirmed) -->
+                          <interpretationCode code="1" codeSystem="2.16.840.1.113883.3.989.2.1.1.12" displayName="Positive"/>
+                          <!-- F.r.4: Normal Low -->
+                          <referenceRange typeCode="REFV">
+                            <observationRange classCode="OBS" moodCode="EVN.CRT">
+                              <value xsi:type="PQ" value="150" unit="10*9/L"/>
+                            <interpretationCode code="L" codeSystem="2.16.840.1.113883.5.83"/>
+                              </observationRange>
+                          </referenceRange>
+                          <!-- F.r.5: Normal High -->
+                          <referenceRange typeCode="REFV">
+                            <observationRange classCode="OBS" moodCode="EVN.CRT">
+                              <value xsi:type="PQ" value="400" unit="10*9/L"/>
+                            <interpretationCode code="H" codeSystem="2.16.840.1.113883.5.83"/>
+                              </observationRange>
+                          </referenceRange>
+                          <!-- F.r.6: Lab comment; F.r.7: More information available -->
+                          <outboundRelationship2 typeCode="PERT"><observation classCode="OBS" moodCode="EVN"><code code="10" codeSystem="2.16.840.1.113883.3.989.2.1.1.19" displayName="comment"/><value xsi:type="ED">Severe thrombocytopenia at birth; repeat platelet 78 on day 7, 145 on day 14 (normalized).</value></observation></outboundRelationship2><outboundRelationship2 typeCode="REFR"><observation classCode="OBS" moodCode="EVN"><code code="25" codeSystem="2.16.840.1.113883.3.989.2.1.1.19" displayName="moreInformationAvailable"/><value xsi:type="BL" value="true"/></observation></outboundRelationship2>
+                        </observation>
+                      </component>
+                      <!-- F.r: Test 2 — Neonatal bilirubin (free text) -->
+                      <component typeCode="COMP">
+                        <observation classCode="OBS" moodCode="EVN">
+                          <code code="1975-2" codeSystem="2.16.840.1.113883.6.1" displayName="Bilirubin.total [Mass/volume] in Serum or Plasma"><!-- F.r.2.1: LOINC as primary code --><translation code="10005364" codeSystem="2.16.840.1.113883.6.163" codeSystemVersion="25.0" displayName="Blood bilirubin increased"><originalText>Total Bilirubin (neonatal)</originalText></translation></code>
+                          <effectiveTime value="20260306"/>
+                          <!-- F.r.3.4: Free text result -->
+                          <value xsi:type="ED">Total bilirubin 8.2 mg/dL (neonatal threshold for phototherapy &gt; 12 mg/dL; monitoring continued)</value>
+                          <!-- F.r.3.1: Coded Result — Borderline (below phototherapy threshold, monitoring warranted) -->
+                          <interpretationCode code="3" codeSystem="2.16.840.1.113883.3.989.2.1.1.12" displayName="Borderline"/>
+                        </observation>
+                      </component>
+                      <!-- F.r: Test 3 — Birth weight (numeric) -->
+                      <component typeCode="COMP">
+                        <observation classCode="OBS" moodCode="EVN">
+                          <code code="8339-4" codeSystem="2.16.840.1.113883.6.1" displayName="Birth weight Measured"><!-- F.r.2.1: LOINC as primary code --><translation code="10024891" codeSystem="2.16.840.1.113883.6.163" codeSystemVersion="25.0" displayName="Low birth weight baby"><originalText>Birth weight</originalText></translation></code>
+                          <effectiveTime value="20260305"/>
+                          <value xsi:type="IVL_PQ">
+                            <center value="1950" unit="g"/>
+                          </value>
+                          <!-- F.r.3.1: Coded Result — Positive (confirmed low birth weight below 2500 g) -->
+                          <interpretationCode code="1" codeSystem="2.16.840.1.113883.3.989.2.1.1.12" displayName="Positive"/>
+                          <referenceRange typeCode="REFV">
+                            <observationRange classCode="OBS" moodCode="EVN.CRT">
+                              <value xsi:type="PQ" value="2500" unit="g"/>
+                            <interpretationCode code="L" codeSystem="2.16.840.1.113883.5.83"/>
+                              </observationRange>
+                          </referenceRange>
+                        </observation>
+                      </component>
+                    </organizer>
+                  </subjectOf2>
+                  <!-- G.k Drug 1: Suspect — Testdrugimab (comprehensive) -->
+                  <subjectOf2 typeCode="SBJ">
+                    <organizer classCode="CATEGORY" moodCode="EVN">
+                      <code code="4" codeSystem="2.16.840.1.113883.3.989.2.1.1.20"/>
+                      <component typeCode="COMP">
+                        <substanceAdministration classCode="SBADM" moodCode="EVN">
+                          <id root="2.16.840.1.113883.3.989.2.1.3.19" extension="1"/>
+                          <!-- G.k.4.r.4/5: Overall drug period (start/end) -->
+                          <effectiveTime xsi:type="IVL_TS">
+                            <low value="20251001"/>
+                            <high value="20260301"/>
+                          </effectiveTime>
+                          <!-- G.k.4.r.10.2a/b: Route of Administration -->
+                          <routeCode code="C38299" displayName="Subcutaneous" codeSystem="0.4.0.127.0.16.1.1.2.6" codeSystemVersion="2014.10.30">
+                            <originalText>Subcutaneous injection via auto-injector</originalText>
+                          </routeCode>
+                          <!-- G.k.4.r.1a/b: Dose (number/unit) -->
+                          <doseQuantity value="200" unit="mg"/>
+                          <consumable typeCode="CSM">
+                            <instanceOfKind classCode="INST">
+                              <productInstanceInstance classCode="MMAT" determinerCode="INSTANCE">
+                                <!-- G.k.4.r.8: Batch/Lot Number -->
+                                <lotNumberText>LOT-TDI-2025-0147</lotNumberText>
+                              </productInstanceInstance>
+                              <kindOfProduct classCode="MMAT" determinerCode="KIND">
+                                <name>Testdrugimab</name>
+                                <!-- G.k.4.r.9.2a/b: Pharmaceutical Dose Form -->
+                                <formCode code="C42967" displayName="Injection" codeSystem="0.4.0.127.0.16.1.1.2.1" codeSystemVersion="2014.10.30">
+                                  <originalText>Solution for injection in auto-injector</originalText>
+                                </formCode>
+                                <asManufacturedProduct classCode="MANU">
+                                  <subjectOf typeCode="SBJ">
+                                    <approval classCode="CNTRCT" moodCode="EVN">
+                                      <!-- G.k.3.1: Application Number -->
+                                      <id extension="NDA123456" root="2.16.840.1.113883.3.989.2.1.3.4"/>
+                                      <holder typeCode="HLD">
+                                        <role classCode="HLD">
+                                          <playingOrganization classCode="ORG" determinerCode="INSTANCE">
+                                            <!-- G.k.3.3: Holder Name -->
+                                            <name>DeepQuence, Inc.</name>
+                                          </playingOrganization>
+                                        </role>
+                                      </holder>
+                                      <author typeCode="AUT">
+                                        <territorialAuthority classCode="TERR">
+                                          <territory classCode="NAT" determinerCode="INSTANCE">
+                                            <!-- G.k.3.2: Country of Authorisation -->
+                                            <code code="US" codeSystem="1.0.3166.1.2.2"/>
+                                          </territory>
+                                        </territorialAuthority>
+                                      </author>
+                                    </approval>
+                                  </subjectOf>
+                                  <subjectOf typeCode="SBJ">
+                                    <characteristic classCode="OBS" moodCode="EVN">
+                                      <code code="C94031" codeSystem="2.16.840.1.113883.3.26.1.1" displayName="FDA Specialized Product Category"/>
+                                      <value xsi:type="CE" code="C102835" codeSystem="2.16.840.1.113883.3.26.1.1" displayName="Type 2: Prefilled Drug Delivery Device/System (syringe, patch, etc.)"/>
+                                      <!-- FDA.G.k.10.1: FDA Specialized Product Category -->
+                                    </characteristic>
+                                  </subjectOf>
+                                </asManufacturedProduct>
+                                <ingredient classCode="ACTI">
+                                  <quantity>
+                                    <!-- G.k.2.3.r.3a: Strength (number) -->
+                                    <numerator value="200" unit="mg"/>
+                                    <denominator value="1" unit="1"/>
+                                  </quantity>
+                                  <ingredientSubstance classCode="MMAT" determinerCode="KIND">
+                                    <!-- G.k.2.3.r.2a/b: Substance TermID -->
+                                    <code code="012C11ZU6G" codeSystem="2.16.840.1.113883.4.9" codeSystemVersion="12JUL2013"/>
+                                    <!-- G.k.2.3.r.1: Substance Name -->
+                                    <name>Testdrugimab active moiety</name>
+                                  </ingredientSubstance>
+                                </ingredient>
+                              <!-- FDA.G.k.12.r: Device Component of Combination Product -->
+                              <part classCode="PART">
+                                <partProduct classCode="DEV" determinerCode="KIND">
+                                  <code code="FMF" codeSystem="2.16.840.1.113883.3.26.1.1" displayName="Syringe, Piston"/>
+                                  <!-- FDA.G.k.12.r.6 Device Product Code -->
+                                  <name>Testdevice Auto-Injector</name>
+                                  <!-- FDA.G.k.12.r.4 Device Brand Name -->
+                                  <name>Auto-Injector Pen</name>
+                                  <!-- FDA.G.k.12.r.5 Common Device Name -->
+                                  <!-- FDA.G.k.12.r.7.2: Device Model Number (plain name — qualifier not allowed in device name per HL7v3 schema) -->
+                                  <name>Auto-Injector Pen Model A2</name>
+                                  <!-- FDA.G.k.12.r.7.3: Device Serial Number (encoded in lot as serial is instance-level; kindOfProduct has no id slot) -->
+                                  <asManufacturedProduct classCode="MANU">
+                                    <manufacturerOrganization classCode="ORG" determinerCode="INSTANCE">
+                                      <name>TestDevice Corp.</name>
+                                      <!-- FDA.G.k.12.r.7.1a Device Manufacturer Name -->
+                                      <addr>
+                                        <streetAddressLine>1 Device Innovation Way</streetAddressLine>
+                                        <!-- FDA.G.k.12.r.7.1b Device Manufacturer Address -->
+                                        <city>Boston</city>
+                                        <!-- FDA.G.k.12.r.7.1c Device Manufacturer City -->
+                                        <state>MA</state>
+                                        <!-- FDA.G.k.12.r.7.1d Device Manufacturer State -->
+                                        <country>US</country>
+                                        <!-- FDA.G.k.12.r.7.1e Device Manufacturer Country -->
+                                      </addr>
+                                    </manufacturerOrganization>
+                                    <subjectOf typeCode="SBJ">
+                                      <characteristic classCode="OBS" moodCode="EVN">
+                                        <code code="C54026" codeSystem="2.16.840.1.113883.3.26.1.1" displayName="Malfunction"/>
+                                        <value xsi:type="BL" value="true"/>
+                                        <!-- FDA.G.k.12.r.1 Malfunction -->
+                                      </characteristic>
+                                    </subjectOf>
+                                    <subjectOf typeCode="SBJ">
+                                      <characteristic classCode="OBS" moodCode="EVN">
+                                        <code code="C54451" codeSystem="2.16.840.1.113883.3.26.1.1" displayName="Device Problem Code"/>
+                                        <value xsi:type="CE" code="4001" codeSystem="2.16.840.1.113883.3.26.1.1"/>
+                                        <!-- FDA.G.k.12.r.3.r Device Problem Code -->
+                                      </characteristic>
+                                    </subjectOf>
+                                    <subjectOf typeCode="SBJ">
+                                      <characteristic classCode="OBS" moodCode="EVN">
+                                        <code code="C54595" codeSystem="2.16.840.1.113883.3.989.2.1.1.19" displayName="Device Usage"/>
+                                        <value xsi:type="CE" code="1" codeSystem="2.16.840.1.113883.3.989.5.1.2.1.1.4" displayName="Initial Use"/>
+                                        <!-- FDA.G.k.12.r.8 Device Usage -->
+                                      </characteristic>
+                                    </subjectOf>
+                                    <subjectOf typeCode="SBJ">
+                                      <characteristic classCode="OBS" moodCode="EVN">
+                                        <code code="C54594" codeSystem="2.16.840.1.113883.3.26.1.1" displayName="Remedial Action Initiated"/>
+                                        <value xsi:type="CE" code="5" codeSystem="2.16.840.1.113883.3.989.5.1.2.1.1.3" displayName="Notification"/>
+                                        <!-- FDA.G.k.12.r.11.r Remedial Action Initiated -->
+                                      </characteristic>
+                                    </subjectOf>
+                                    <subjectOf typeCode="SBJ">
+                                      <characteristic classCode="OBS" moodCode="EVN">
+                                        <code code="C54592" codeSystem="2.16.840.1.113883.3.26.1.1" displayName="Type of Follow Up Report"/>
+                                        <value xsi:type="CE" code="2" codeSystem="2.16.840.1.113883.3.989.5.1.2.1.1.5" displayName="Additional Information"/>
+                                        <!-- FDA.G.k.12.r.2.r Type of Follow Up Report -->
+                                      </characteristic>
+                                    </subjectOf>
+                                  </asManufacturedProduct>
+                                  <instanceOfKind classCode="INST">
+                                    <productInstanceInstance classCode="MMAT" determinerCode="INSTANCE">
+                                      <lotNumberText>DEVICE-LOT-2025-0084</lotNumberText>
+                                      <!-- FDA.G.k.12.r.9 Device Lot Number -->
+                                    </productInstanceInstance>
+                                  </instanceOfKind>
+                                </partProduct>
+                              </part>
+                              </kindOfProduct>
+                              <!-- G.k.2.4: Country where drug was obtained -->
+                              <subjectOf typeCode="SBJ">
+                                <productEvent classCode="ACT" moodCode="EVN">
+                                  <code code="1" codeSystem="2.16.840.1.113883.3.989.2.1.1.18" displayName="retailSupply"/>
+                                  <performer typeCode="PRF">
+                                    <assignedEntity classCode="ASSIGNED">
+                                      <representedOrganization classCode="ORG" determinerCode="INSTANCE">
+                                        <addr>
+                                          <country>US</country>
+                                          <!-- G.k.2.4: Identification of the Country Where the Drug Was Obtained -->
+                                        </addr>
+                                      </representedOrganization>
+                                    </assignedEntity>
+                                  </performer>
+                                </productEvent>
+                              </subjectOf>
+                            </instanceOfKind>
+                          </consumable>
+                          <!-- G.k.4.r Detailed Dosing Record (G.k.4.r.2/3/4/5/6a/6b/8) -->
+                          <outboundRelationship2 typeCode="COMP">
+                            <substanceAdministration classCode="SBADM" moodCode="EVN">
+                              <!-- G.k.4.r.8: Dosage Text (text must precede effectiveTime per HL7 v3 schema) -->
+                              <text>200mg SC biweekly from gestation week 20 to delivery (153 days)</text>
+                              <!-- G.k.4.r dosing: SXPR_TS with PIVL (interval) + IVL (dates/duration) -->
+                              <effectiveTime xsi:type="SXPR_TS">
+                                <!-- G.k.4.r.2/3: Number of Units / Interval Unit — once daily -->
+                                <comp xsi:type="PIVL_TS">
+                                  <period value="14" unit="d"/><!-- G.k.4.r.6/7: biweekly = every 14 days -->
+                                </comp>
+                                <!-- G.k.4.r.4/5: Date of Start / Date of Last Administration -->
+                                <comp xsi:type="IVL_TS">
+                                  <low value="20251001"/>
+                                  <high value="20260301"/>
+                                </comp>
+                              <comp xsi:type="IVL_TS"><width value="153" unit="d"/></comp></effectiveTime>
+                              <!-- G.k.4.r.1a/b: Dose for this dosing record -->
+                              <doseQuantity value="200" unit="mg"/>
+                            <performer typeCode="PRF"><assignedEntity classCode="ASSIGNED"><representedOrganization classCode="ORG" determinerCode="INSTANCE"><addr><country>US</country></addr></representedOrganization></assignedEntity></performer></substanceAdministration>
+                          </outboundRelationship2>
+                          <!-- G.k.1: Drug Role (suspect) — Indication -->
+                          <outboundRelationship2 typeCode="RSON">
+                            <observation classCode="OBS" moodCode="EVN">
+                              <code code="C41331" codeSystem="2.16.840.1.113883.3.26.1.1" displayName="Indication"/>
+                              <value xsi:type="CE" code="10039073" displayName="Rheumatoid arthritis" codeSystem="2.16.840.1.113883.6.163" codeSystemVersion="25.0"/>
+                            </observation>
+                          </outboundRelationship2>
+                          <!-- G.k.8: Action Taken = Drug withdrawn -->
+                          <outboundRelationship2 typeCode="COMP">
+                            <observation classCode="OBS" moodCode="EVN">
+                              <code code="C41341" codeSystem="2.16.840.1.113883.3.26.1.1" displayName="Action Taken"/>
+                              <value xsi:type="CE" code="1" codeSystem="2.16.840.1.113883.3.989.2.1.1.15"/>
+                            </observation>
+                          </outboundRelationship2>
+                          <!-- G.k.9.i Dechallenge -->
+                          <outboundRelationship2 typeCode="COMP">
+                            <observation classCode="OBS" moodCode="EVN">
+                              <code code="C49492" codeSystem="2.16.840.1.113883.3.26.1.1" displayName="Dechallenge"/>
+                              <value xsi:type="CE" code="3" codeSystem="2.16.840.1.113883.3.989.2.1.1.16"/>
+                            </observation>
+                          </outboundRelationship2>
+                          <!-- G.k.9.ii Rechallenge -->
+                          <outboundRelationship2 typeCode="COMP">
+                            <observation classCode="OBS" moodCode="EVN">
+                              <code code="C49494" codeSystem="2.16.840.1.113883.3.26.1.1" displayName="Rechallenge"/>
+                              <value xsi:type="CE" code="3" codeSystem="2.16.840.1.113883.3.989.2.1.1.17"/>
+                            </observation>
+                          </outboundRelationship2>
+                          <!-- G.k.5a/b: Cumulative Dose to First Reaction — 55 days × 200mg = 11000mg -->
+                          <outboundRelationship2 typeCode="SUMM">
+                            <observation classCode="OBS" moodCode="EVN">
+                              <code code="14" codeSystem="2.16.840.1.113883.3.989.2.1.1.19" displayName="cumulativeDoseFirstReaction"/>
+                              <value xsi:type="PQ" value="21800" unit="mg"/>
+                            </observation>
+                          </outboundRelationship2>
+                        <outboundRelationship2 typeCode="REFR"><observation classCode="OBS" moodCode="EVN"><code code="9" codeSystem="2.16.840.1.113883.3.989.2.1.1.19" displayName="codedDrugInformation"/><value xsi:type="CE" code="11" displayName="Off label use" codeSystem="2.16.840.1.113883.3.989.2.1.1.17"/></observation></outboundRelationship2><outboundRelationship2 typeCode="REFR"><observation classCode="OBS" moodCode="EVN"><code code="2" codeSystem="2.16.840.1.113883.3.989.2.1.1.19" displayName="additionalInformation"/><value xsi:type="ST">Testdrugimab was prescribed for rheumatoid arthritis under compassionate use protocol; NDA approval was for moderate-to-severe plaque psoriasis.</value></observation></outboundRelationship2>
+                          <!-- G.k.6a/b: Gestation Period at Time of Exposure -->
+                          <outboundRelationship2 typeCode="PERT">
+                            <observation classCode="OBS" moodCode="EVN">
+                              <code code="16" codeSystem="2.16.840.1.113883.3.989.2.1.1.19" displayName="gestationPeriod"/>
+                              <value xsi:type="PQ" value="20" unit="wk"/>
+                              <!-- G.k.6a: Gestation period at start of exposure (number) -->
+                              <!-- G.k.6b: Gestation period unit = wk -->
+                            </observation>
+                          </outboundRelationship2>
+                          <!-- G.k.7.r: Indication for Use in Case (via inboundRelationship) -->
+                          <inboundRelationship typeCode="RSON">
+                            <observation classCode="OBS" moodCode="EVN">
+                              <code code="19" codeSystem="2.16.840.1.113883.3.989.2.1.1.19" codeSystemVersion="1.1" displayName="indication"/>
+                              <value xsi:type="CE" code="10039073" codeSystem="2.16.840.1.113883.6.163" codeSystemVersion="25.0">
+                                <!-- G.k.7.r.2a MedDRA Version for Indication; G.k.7.r.2b Indication (MedDRA code) -->
+                                <originalText>Rheumatoid arthritis — drug prescribed for RA per compassionate use protocol</originalText>
+                                <!-- G.k.7.r.1 Indication as Reported by the Primary Source -->
+                              </value>
+                              <performer typeCode="PRF">
+                                <assignedEntity classCode="ASSIGNED">
+                                  <code code="3" codeSystem="2.16.840.1.113883.3.989.2.1.1.21" displayName="sourceReporter"/>
+                                </assignedEntity>
+                              </performer>
+                            </observation>
+                          </inboundRelationship>
+                          <!-- G.k.4.r.11: Parent Route of Administration — drug given to mother -->
+                          <inboundRelationship typeCode="REFR">
+                            <observation classCode="OBS" moodCode="EVN">
+                              <code code="28" codeSystem="2.16.840.1.113883.3.989.2.1.1.19" displayName="parentRouteOfAdministration"/>
+                              <value xsi:type="CE" code="C38299" codeSystem="0.4.0.127.0.16.1.1.2.6" codeSystemVersion="2014.10.30">
+                                <!-- G.k.4.r.11.2a/b: EDQM route code — Subcutaneous -->
+                                <originalText>Subcutaneous injection — mother self-administered via auto-injector</originalText>
+                                <!-- G.k.4.r.11.1: Parent Route of Administration (free text) -->
+                              </value>
+                            </observation>
+                          </inboundRelationship>
+                        </substanceAdministration>
+                      </component>
+                    </organizer>
+                  </subjectOf2>
+                  <!-- G.k Drug 2: Suspect — Methotrexate -->
+                  <subjectOf2 typeCode="SBJ">
+                    <organizer classCode="CATEGORY" moodCode="EVN">
+                      <code code="4" codeSystem="2.16.840.1.113883.3.989.2.1.1.20"/>
+                      <component typeCode="COMP">
+                        <substanceAdministration classCode="SBADM" moodCode="EVN">
+                          <id root="2.16.840.1.113883.3.989.2.1.3.19" extension="2"/>
+                          <effectiveTime xsi:type="IVL_TS">
+                            <low value="20240101"/>
+                            <high value="20251001"/>
+                          </effectiveTime>
+                          <routeCode code="C38288" displayName="Oral" codeSystem="0.4.0.127.0.16.1.1.2.6" codeSystemVersion="2014.10.30"><originalText>Oral tablet</originalText></routeCode><doseQuantity value="15" unit="mg"/><consumable typeCode="CSM">
+                            <instanceOfKind classCode="INST">
+                              <productInstanceInstance classCode="MMAT" determinerCode="INSTANCE"><lotNumberText>MTX-2025-0892</lotNumberText></productInstanceInstance><kindOfProduct classCode="MMAT" determinerCode="KIND">
+                                <name>Methotrexate</name>
+                              <ingredient classCode="ACTI"><quantity><numerator value="15" unit="mg"/><denominator value="1" unit="1"/></quantity><ingredientSubstance classCode="MMAT" determinerCode="KIND"><code code="YL5FZ2Y5U1" codeSystem="2.16.840.1.113883.4.9"/><name>Methotrexate</name></ingredientSubstance></ingredient></kindOfProduct>
+                            </instanceOfKind>
+                          </consumable>
+                          <outboundRelationship2 typeCode="RSON">
+                            <observation classCode="OBS" moodCode="EVN">
+                              <code code="C41331" codeSystem="2.16.840.1.113883.3.26.1.1" displayName="Indication"/>
+                              <value xsi:type="CE" code="10039073" displayName="Rheumatoid arthritis" codeSystem="2.16.840.1.113883.6.163" codeSystemVersion="25.0"/>
+                            </observation>
+                          </outboundRelationship2>
+                          <outboundRelationship2 typeCode="COMP">
+                            <observation classCode="OBS" moodCode="EVN">
+                              <code code="C41341" codeSystem="2.16.840.1.113883.3.26.1.1" displayName="Action Taken"/>
+                              <value xsi:type="CE" code="1" codeSystem="2.16.840.1.113883.3.989.2.1.1.15"/>
+                            </observation>
+                          </outboundRelationship2>
+                          <outboundRelationship2 typeCode="COMP">
+                            <observation classCode="OBS" moodCode="EVN">
+                              <code code="C49492" codeSystem="2.16.840.1.113883.3.26.1.1" displayName="Dechallenge"/>
+                              <value xsi:type="CE" code="3" codeSystem="2.16.840.1.113883.3.989.2.1.1.16"/>
+                            </observation>
+                          </outboundRelationship2>
+                          <outboundRelationship2 typeCode="COMP">
+                            <observation classCode="OBS" moodCode="EVN">
+                              <code code="C49494" codeSystem="2.16.840.1.113883.3.26.1.1" displayName="Rechallenge"/>
+                              <value xsi:type="CE" code="3" codeSystem="2.16.840.1.113883.3.989.2.1.1.17"/>
+                            </observation>
+                          </outboundRelationship2>
+                        </substanceAdministration>
+                      </component>
+                    </organizer>
+                  </subjectOf2>
+                  <!-- G.k Drug 3: Concomitant — Lisinopril (taken by mother during pregnancy) -->
+                  <subjectOf2 typeCode="SBJ">
+                    <organizer classCode="CATEGORY" moodCode="EVN">
+                      <code code="4" codeSystem="2.16.840.1.113883.3.989.2.1.1.20"/>
+                      <component typeCode="COMP">
+                        <substanceAdministration classCode="SBADM" moodCode="EVN">
+                          <id root="2.16.840.1.113883.3.989.2.1.3.19" extension="3"/>
+                          <effectiveTime xsi:type="IVL_TS">
+                            <low value="20251001"/>
+                          </effectiveTime>
+                          <consumable typeCode="CSM">
+                            <instanceOfKind classCode="INST">
+                              <kindOfProduct classCode="MMAT" determinerCode="KIND">
+                                <name>Lisinopril</name>
+                              </kindOfProduct>
+                            </instanceOfKind>
+                          </consumable>
+                          <outboundRelationship2 typeCode="RSON">
+                            <observation classCode="OBS" moodCode="EVN">
+                              <code code="C41331" codeSystem="2.16.840.1.113883.3.26.1.1" displayName="Indication"/>
+                              <value xsi:type="CE" code="10020772" displayName="Hypertension" codeSystem="2.16.840.1.113883.6.163" codeSystemVersion="25.0"/>
+                            </observation>
+                          </outboundRelationship2>
+                          <outboundRelationship2 typeCode="COMP">
+                            <observation classCode="OBS" moodCode="EVN">
+                              <code code="C41341" codeSystem="2.16.840.1.113883.3.26.1.1" displayName="Action Taken"/>
+                              <value xsi:type="CE" code="4" codeSystem="2.16.840.1.113883.3.989.2.1.1.15"/>
+                            </observation>
+                          </outboundRelationship2>
+                          <outboundRelationship2 typeCode="COMP">
+                            <observation classCode="OBS" moodCode="EVN">
+                              <code code="C49492" codeSystem="2.16.840.1.113883.3.26.1.1" displayName="Dechallenge"/>
+                              <value xsi:type="CE" code="4" codeSystem="2.16.840.1.113883.3.989.2.1.1.16"/>
+                            </observation>
+                          </outboundRelationship2>
+                          <outboundRelationship2 typeCode="COMP">
+                            <observation classCode="OBS" moodCode="EVN">
+                              <code code="C49494" codeSystem="2.16.840.1.113883.3.26.1.1" displayName="Rechallenge"/>
+                              <value xsi:type="CE" code="4" codeSystem="2.16.840.1.113883.3.989.2.1.1.17"/>
+                            </observation>
+                          </outboundRelationship2>
+                        </substanceAdministration>
+                      </component>
+                    </organizer>
+                  </subjectOf2>
+                  <subjectOf2 typeCode="SBJ"><organizer classCode="CATEGORY" moodCode="EVN"><code code="4" codeSystem="2.16.840.1.113883.3.989.2.1.1.20"/><component typeCode="COMP"><substanceAdministration classCode="SBADM" moodCode="EVN">
+                          <id root="2.16.840.1.113883.3.989.2.1.3.19" extension="4"/><effectiveTime xsi:type="IVL_TS"><low value="20260115"/><high value="20260310"/></effectiveTime><consumable typeCode="CSM"><instanceOfKind classCode="INST"><productInstanceInstance classCode="MMAT" determinerCode="INSTANCE"><lotNumberText>DEVICE-LOT-2025-0084</lotNumberText></productInstanceInstance><kindOfProduct classCode="MMAT" determinerCode="KIND"><name>Testdevice Auto-Injector</name><formCode code="C42988" displayName="Device" codeSystem="0.4.0.127.0.16.1.1.2.1" codeSystemVersion="2014.10.30"><originalText>Auto-injector delivery device</originalText></formCode></kindOfProduct></instanceOfKind></consumable><outboundRelationship2 typeCode="COMP"><observation classCode="OBS" moodCode="EVN"><code code="C41341" codeSystem="2.16.840.1.113883.3.26.1.1" displayName="Action Taken"/><value xsi:type="CE" code="1" codeSystem="2.16.840.1.113883.3.989.2.1.1.15"/></observation></outboundRelationship2></substanceAdministration></component></organizer></subjectOf2>
+                  <!-- H.3.r: Sender Diagnosis — Neonatal thrombocytopenia -->
+                  <!-- Note: H.3.r goes in adverseEventAssessment/component1 with code='15', author code='1' -->
+                </primaryRole>
+              </subject1>
+              <!-- ── G.k.1 Drug Role (causalityAssessment code=20) ──────────── -->
+              <component typeCode="COMP">
+                <causalityAssessment classCode="OBS" moodCode="EVN">
+                  <code code="20" codeSystem="2.16.840.1.113883.3.989.2.1.1.19"/>
+                  <value xsi:type="CE" code="1" codeSystem="2.16.840.1.113883.3.989.2.1.1.13" displayName="Suspect"/>
+                  <subject2 typeCode="SUBJ">
+                    <productUseReference classCode="SBADM" moodCode="EVN">
+                      <id root="2.16.840.1.113883.3.989.2.1.3.19" extension="1"/>
+                    </productUseReference>
+                  </subject2>
+                </causalityAssessment>
+              </component>
+              <component typeCode="COMP">
+                <causalityAssessment classCode="OBS" moodCode="EVN">
+                  <code code="20" codeSystem="2.16.840.1.113883.3.989.2.1.1.19"/>
+                  <value xsi:type="CE" code="1" codeSystem="2.16.840.1.113883.3.989.2.1.1.13" displayName="Suspect"/>
+                  <subject2 typeCode="SUBJ">
+                    <productUseReference classCode="SBADM" moodCode="EVN">
+                      <id root="2.16.840.1.113883.3.989.2.1.3.19" extension="2"/>
+                    </productUseReference>
+                  </subject2>
+                </causalityAssessment>
+              </component>
+              <component typeCode="COMP">
+                <causalityAssessment classCode="OBS" moodCode="EVN">
+                  <code code="20" codeSystem="2.16.840.1.113883.3.989.2.1.1.19"/>
+                  <value xsi:type="CE" code="2" codeSystem="2.16.840.1.113883.3.989.2.1.1.13" displayName="Concomitant"/>
+                  <subject2 typeCode="SUBJ">
+                    <productUseReference classCode="SBADM" moodCode="EVN">
+                      <id root="2.16.840.1.113883.3.989.2.1.3.19" extension="3"/>
+                    </productUseReference>
+                  </subject2>
+                </causalityAssessment>
+              </component>
+              <component typeCode="COMP">
+                <causalityAssessment classCode="OBS" moodCode="EVN">
+                  <code code="20" codeSystem="2.16.840.1.113883.3.989.2.1.1.19"/>
+                  <value xsi:type="CE" code="2" codeSystem="2.16.840.1.113883.3.989.2.1.1.13" displayName="Concomitant"/>
+                  <subject2 typeCode="SUBJ">
+                    <productUseReference classCode="SBADM" moodCode="EVN">
+                      <id root="2.16.840.1.113883.3.989.2.1.3.19" extension="4"/>
+                    </productUseReference>
+                  </subject2>
+                </causalityAssessment>
+              </component>
+              <!-- ── G.k.9.i Drug-Reaction Matrix (causalityAssessment code=39) ── -->
+              <component typeCode="COMP">
+                <causalityAssessment classCode="OBS" moodCode="EVN">
+                  <code code="39" codeSystem="2.16.840.1.113883.3.989.2.1.1.19"/>
+                  <subject1 typeCode="SUBJ">
+                    <adverseEffectReference classCode="OBS" moodCode="EVN">
+                      <id root="4550c0a9-c849-4cd4-a6a2-dfe1caef8d10"/>
+                    </adverseEffectReference>
+                  </subject1>
+                  <subject2 typeCode="SUBJ">
+                    <productUseReference classCode="SBADM" moodCode="EVN">
+                      <id root="2.16.840.1.113883.3.989.2.1.3.19" extension="1"/>
+                    </productUseReference>
+                  </subject2>
+                </causalityAssessment>
+              </component>
+              <component typeCode="COMP">
+                <causalityAssessment classCode="OBS" moodCode="EVN">
+                  <code code="39" codeSystem="2.16.840.1.113883.3.989.2.1.1.19"/>
+                  <subject1 typeCode="SUBJ">
+                    <adverseEffectReference classCode="OBS" moodCode="EVN">
+                      <id root="ab8100bd-4d47-41aa-bb16-0cf3dfe575b2"/>
+                    </adverseEffectReference>
+                  </subject1>
+                  <subject2 typeCode="SUBJ">
+                    <productUseReference classCode="SBADM" moodCode="EVN">
+                      <id root="2.16.840.1.113883.3.989.2.1.3.19" extension="1"/>
+                    </productUseReference>
+                  </subject2>
+                </causalityAssessment>
+              </component>
+              <component typeCode="COMP">
+                <causalityAssessment classCode="OBS" moodCode="EVN">
+                  <code code="39" codeSystem="2.16.840.1.113883.3.989.2.1.1.19"/>
+                  <subject1 typeCode="SUBJ">
+                    <adverseEffectReference classCode="OBS" moodCode="EVN">
+                      <id root="4550c0a9-c849-4cd4-a6a2-dfe1caef8d10"/>
+                    </adverseEffectReference>
+                  </subject1>
+                  <subject2 typeCode="SUBJ">
+                    <productUseReference classCode="SBADM" moodCode="EVN">
+                      <id root="2.16.840.1.113883.3.989.2.1.3.19" extension="2"/>
+                    </productUseReference>
+                  </subject2>
+                </causalityAssessment>
+              </component>
+              <component typeCode="COMP">
+                <causalityAssessment classCode="OBS" moodCode="EVN">
+                  <code code="39" codeSystem="2.16.840.1.113883.3.989.2.1.1.19"/>
+                  <subject1 typeCode="SUBJ">
+                    <adverseEffectReference classCode="OBS" moodCode="EVN">
+                      <id root="ab8100bd-4d47-41aa-bb16-0cf3dfe575b2"/>
+                    </adverseEffectReference>
+                  </subject1>
+                  <subject2 typeCode="SUBJ">
+                    <productUseReference classCode="SBADM" moodCode="EVN">
+                      <id root="2.16.840.1.113883.3.989.2.1.3.19" extension="2"/>
+                    </productUseReference>
+                  </subject2>
+                </causalityAssessment>
+              </component>
+              <!-- H.3.r: Sender's Diagnosis / Reclassification of Reaction (component1) -->
+              <component1 typeCode="COMP">
+                <observationEvent classCode="OBS" moodCode="EVN">
+                  <code code="15" codeSystem="2.16.840.1.113883.3.989.2.1.1.19" displayName="senderDiagnosis"/>
+                  <!-- H.3.r.1a/b: MedDRA version + code -->
+                  <value xsi:type="CE" code="10049715" displayName="Neonatal thrombocytopenia" codeSystem="2.16.840.1.113883.6.163" codeSystemVersion="25.0"/>
+                  <author typeCode="AUT">
+                    <assignedEntity classCode="ASSIGNED">
+                      <code code="1" codeSystem="2.16.840.1.113883.3.989.2.1.1.21" displayName="primaryReporter"/>
+                    </assignedEntity>
+                  </author>
+                </observationEvent>
+              </component1>
+              <!-- H.4: Sender's Comments -->
+              <component1 typeCode="COMP">
+                <observationEvent classCode="OBS" moodCode="EVN">
+                  <code code="10" codeSystem="2.16.840.1.113883.3.989.2.1.1.19" displayName="comment"/>
+                  <value xsi:type="ED">Neonatal thrombocytopenia and low birth weight are consistent with in utero immunosuppressant exposure to Testdrugimab during the 2nd and 3rd trimesters. The auto-injector device malfunction on first use may have caused inconsistent drug delivery. The causal relationship is plausible given the known immunosuppressive mechanism of action. Platelet count normalized by day 14 post-delivery without pharmacological intervention.</value>
+                  <!-- H.4 Sender's Comments -->
+                  <author typeCode="AUT">
+                    <assignedEntity classCode="ASSIGNED">
+                      <code code="1" codeSystem="2.16.840.1.113883.3.989.2.1.1.21" displayName="sender"/>
+                    </assignedEntity>
+                  </author>
+                </observationEvent>
+              </component1>
+            </adverseEventAssessment>
+          </component>
+          <!-- H.2: Reporter Comments (observationEvent code=10, author=sourceReporter) -->
+          <component typeCode="COMP">
+            <observationEvent classCode="OBS" moodCode="EVN">
+              <code code="10" codeSystem="2.16.840.1.113883.3.989.2.1.1.19" displayName="comment"/>
+              <value xsi:type="ED">TC-M09: Reporter (Dr. Jane Doe, Physician) comments — Maternal/neonatal case. Mother Sarah P. (28y, RA) received Testdrugimab 200mg SC biweekly from gestation week 20 to delivery; auto-injector device malfunction on first use. Neonate B.P. (female, 34 wks, 1.95 kg) born with thrombocytopenia (platelets 45e9/L) requiring NICU. Platelet count normalized by day 14. Cumulative maternal dose: 21800mg.</value>
+              <author typeCode="AUT">
+                <assignedEntity classCode="ASSIGNED">
+                  <code code="3" codeSystem="2.16.840.1.113883.3.989.2.1.1.21" displayName="sourceReporter"/>
+                </assignedEntity>
+              </author>
+            </observationEvent>
+          </component>
+          <!-- C.1.6.1: Are Additional Documents Available? -->
+          <component typeCode="COMP">
+            <observationEvent classCode="OBS" moodCode="EVN">
+              <code code="1" codeSystem="2.16.840.1.113883.3.989.2.1.1.19" displayName="additionalDocumentsAvailable"/>
+              <value xsi:type="BL" value="true"/>
+            </observationEvent>
+          </component>
+          <!-- C.1.7: Fulfils Local Expedited Criteria -->
+          <component typeCode="COMP">
+            <observationEvent classCode="OBS" moodCode="EVN">
+              <code code="23" codeSystem="2.16.840.1.113883.3.989.2.1.1.19" displayName="localCriteriaForExpedited"/>
+              <value xsi:type="BL" value="true"/>
+            </observationEvent>
+          </component>
+          <!-- C.1.8.1: Local Criteria Report Type — 7-Day (fatal) -->
+          <component typeCode="COMP">
+            <observationEvent classCode="OBS" moodCode="EVN">
+              <code code="C54588" codeSystem="2.16.840.1.113883.3.26.1.1" displayName="localCriteriaReportType"/>
+              <value xsi:type="CE" code="1" codeSystem="2.16.840.1.113883.3.989.5.1.2.2.1.1.1" displayName="15-Day"/>
+            </observationEvent>
+          </component>
+          <!-- Combination Product Report Indicator -->
+          <component typeCode="COMP">
+            <observationEvent classCode="OBS" moodCode="EVN">
+              <code code="C156384" codeSystem="2.16.840.1.113883.3.26.1.1" displayName="Combination Product Report Indicator"/>
+              <value xsi:type="BL" value="true"/>
+            </observationEvent>
+          </component>
+          <!-- H.5.r: Case Summary and Reporter's Comments -->
+          <component typeCode="COMP">
+            <observationEvent classCode="OBS" moodCode="EVN">
+              <code code="36" codeSystem="2.16.840.1.113883.3.989.2.1.1.19" displayName="caseSummaryReporterComments"/>
+              <!-- H.5.r.1a: Summary text; H.5.r.1b: Language -->
+              <value xsi:type="ED" language="ENG">Mother Sarah P. (28y) was treated with Testdrugimab 200mg SC biweekly from gestation week 20 for rheumatoid arthritis. Methotrexate had been discontinued prior to conception. The auto-injector device malfunctioned on first use. Neonate B.P. was delivered prematurely at 34 weeks, birth weight 1.95 kg. Neonatal thrombocytopenia (platelets 45e9/L) and low birth weight were observed. NICU admission required. Platelet count normalized by day 14 without specific treatment. Reporter concludes Testdrugimab is the likely cause of neonatal thrombocytopenia through transplacental immunosuppression.</value>
+              <author typeCode="AUT">
+                <assignedEntity classCode="ASSIGNED">
+                  <code code="2" codeSystem="2.16.840.1.113883.3.989.2.1.1.21" displayName="reporter"/>
+                </assignedEntity>
+              </author>
+            </observationEvent>
+          </component>
+          <!-- C.1.9: Linked Report (initial report type) -->
+          <outboundRelationship typeCode="SPRT">
+            <relatedInvestigation classCode="INVSTG" moodCode="EVN">
+              <code code="1" codeSystem="2.16.840.1.113883.3.989.2.1.1.22" displayName="initialReport"/>
+              <subjectOf2 typeCode="SUBJ">
+                <controlActEvent classCode="CACT" moodCode="EVN">
+                  <author typeCode="AUT">
+                    <assignedEntity classCode="ASSIGNED">
+                      <code code="1" displayName="regulator" codeSystem="2.16.840.1.113883.3.989.2.1.1.3"/>
+                    </assignedEntity>
+                  </author>
+                </controlActEvent>
+              </subjectOf2>
+            </relatedInvestigation>
+          </outboundRelationship>
+          <!-- C.2.r Primary Source (Reporter) — SPRT code=2 (sourceReport) per E2B(R3) -->
+          <outboundRelationship typeCode="SPRT">
+            <priorityNumber value="1"/><!-- C.2.r.5: priorityNumber = 1 (primary/initial reporter) -->
+            <relatedInvestigation classCode="INVSTG" moodCode="EVN">
+              <code code="2" codeSystem="2.16.840.1.113883.3.989.2.1.1.22" displayName="sourceReport"/>
+              <subjectOf2 typeCode="SUBJ">
+                <controlActEvent classCode="CACT" moodCode="EVN">
+                  <author typeCode="AUT">
+                    <assignedEntity classCode="ASSIGNED">
+                      <addr>
+                        <streetAddressLine>100 Main St</streetAddressLine>
+                        <city>Anytown</city>
+                        <state>CA</state>
+                        <postalCode>94085</postalCode>
+                        <country>US</country>
+                      </addr>
+                      <telecom value="tel:+1-408-555-0100"/>
+                      <telecom value="fax:+1-408-555-0100"/>
+                      <telecom value="mailto:jane.doe@example.com"/>
+                      <assignedPerson classCode="PSN" determinerCode="INSTANCE">
+                        <name>
+                          <prefix>Dr</prefix>
+                          <given>Jane</given>
+                          <family>Doe</family>
+                        </name>
+                        <asQualifiedEntity classCode="QUAL">
+                          <!-- C.2.r.4: Reporter Qualification = Physician (code=1, OID .1.1.6) -->
+                          <code code="1" codeSystem="2.16.840.1.113883.3.989.2.1.1.6" displayName="Physician"/>
+                        </asQualifiedEntity>
+                        <asLocatedEntity classCode="LOCE">
+                          <location classCode="COUNTRY" determinerCode="INSTANCE">
+                            <code code="US" codeSystem="1.0.3166.1.2.2"/>
+                          </location>
+                        </asLocatedEntity>
+                      </assignedPerson>
+                      <representedOrganization classCode="ORG" determinerCode="INSTANCE">
+                        <name>City General Hospital Drug Safety</name>
+                      </representedOrganization>
+                    </assignedEntity>
+                  </author>
+                </controlActEvent>
+              </subjectOf2>
+            </relatedInvestigation>
+          </outboundRelationship>
+          <!-- C.3 Sender Information (subjectOf1, OID .1.1.7 = Pharmaceutical company) -->
+          <subjectOf1 typeCode="SUBJ">
+            <controlActEvent classCode="CACT" moodCode="EVN">
+              <author typeCode="AUT">
+                <assignedEntity classCode="ASSIGNED">
+                  <!-- C.3.1: Sender type = Pharmaceutical company -->
+                  <code code="1" codeSystem="2.16.840.1.113883.3.989.2.1.1.7" displayName="Pharmaceutical company"/>
+                  <addr>
+                    <streetAddressLine>1 DeepQuence Plaza</streetAddressLine>
+                    <city>San Francisco</city>
+                    <state>CA</state>
+                    <postalCode>94105</postalCode>
+                    <country>US</country>
+                  </addr>
+                  <telecom value="tel:+1-415-555-2000"/>
+                  <telecom value="fax:+1-415-555-2001"/>
+                  <telecom value="mailto:drugsafety@deepquence.com"/>
+                  <assignedPerson classCode="PSN" determinerCode="INSTANCE">
+                    <!-- C.3.4.1/2: Sender's contact person -->
+                    <name>
+                      <prefix>Mr</prefix>
+                      <given>Alex</given>
+                      <family>Smith</family>
+                    </name>
+                    <asLocatedEntity classCode="LOCE">
+                      <location classCode="COUNTRY" determinerCode="INSTANCE">
+                        <code code="US" codeSystem="1.0.3166.1.2.2"/>
+                      </location>
+                    </asLocatedEntity>
+                  </assignedPerson>
+                  <representedOrganization classCode="ORG" determinerCode="INSTANCE">
+                    <!-- C.3.3.1: Sender's organization -->
+                    <name>DeepQuence, Inc.</name>
+                    <assignedEntity classCode="ASSIGNED">
+                      <representedOrganization classCode="ORG" determinerCode="INSTANCE">
+                        <!-- C.3.3.3: Sender department -->
+                        <name>Drug Safety Department</name>
+                      </representedOrganization>
+                    </assignedEntity>
+                  </representedOrganization>
+                </assignedEntity>
+              </author>
+            </controlActEvent>
+          </subjectOf1>
+          <!-- C.1.3: Type of Report -->
+          <subjectOf2 typeCode="SUBJ">
+            <investigationCharacteristic classCode="OBS" moodCode="EVN">
+              <code code="1" codeSystem="2.16.840.1.113883.3.989.2.1.1.23" displayName="ICH ReportType"/>
+              <value xsi:type="CE" code="1" displayName="Spontaneous report" codeSystem="2.16.840.1.113883.3.989.2.1.1.2"/>
+            </investigationCharacteristic>
+          </subjectOf2>
+          <!-- C.1.10.r Other Case IDs -->
+          <subjectOf2 typeCode="SUBJ">
+            <investigationCharacteristic classCode="OBS" moodCode="EVN">
+              <code code="2" codeSystem="2.16.840.1.113883.3.989.2.1.1.23" displayName="otherCaseIds"/>
+              <value xsi:type="BL" nullFlavor="NI"/>
+            </investigationCharacteristic>
+          </subjectOf2>
+        </investigationEvent>
+      </subject>
+    </controlActProcess>
+  </PORR_IN049016UV>
+  <receiver typeCode="RCV">
+    <device classCode="DEV" determinerCode="INSTANCE">
+      <id root="2.16.840.1.113883.3.989.2.1.3.14" extension="ZZFDATST"/>
+    </device>
+  </receiver>
+  <sender typeCode="SND">
+    <device classCode="DEV" determinerCode="INSTANCE">
+      <id root="2.16.840.1.113883.3.989.2.1.3.13" extension="334818134"/>
+      <id root="1.3.6.1.4.1.519.1" extension="334818134"/>
+    </device>
+  </sender>
+</MCCI_IN200100UV01>

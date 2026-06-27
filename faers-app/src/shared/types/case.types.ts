@@ -348,6 +348,10 @@ export interface CaseDrug {
   // `fdaAdditionalDrugInfo` drives the G.k.10a.r <outboundRelationship2>
   // observation; required only for IND-Exempt BA/BE submissions.
   indAuthorizationNumber?: string;
+  /** G.k.3.2 Country of Authorisation. Required by FAERS 2.18 whenever G.k.3.1
+   *  is present (enforced empirically: regression_results_2, 2026-06-03).
+   *  Defaults to "US" in the generator when not explicitly set. */
+  authorizationCountry?: string;
   fdaAdditionalDrugInfo?: FdaAdditionalDrugInfo;
 }
 
@@ -445,6 +449,9 @@ export interface Case {
   receiptDate?: string;
   receiveDate?: string;
   additionalDocs?: boolean;
+  /** C.1.6.1.r Documents Held by Sender — required by BRv1.7 Rule R0009
+   *  whenever additionalDocs=true. Free-text description of documents. */
+  documentsHeldBySender?: string;
   /**
    * Combination Product Report Indicator (C156384). When true the generator
    * emits BL `value="true"` on the C156384 observation; default false.

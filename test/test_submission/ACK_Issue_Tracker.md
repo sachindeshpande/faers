@@ -1,6 +1,6 @@
 # FAERS ESG Test Submission — ACK Issue Tracker
 
-**Last updated:** 2026-05-02 (May 1 API batch complete — all 30 postmarket TC scenarios attempted; 25 CA+AA, 4 proven-rejected, 1 pending; 7 IND API submissions awaiting ACK3)  
+**Last updated:** 2026-06-01 (TC-A02b v2 ci260601175051 CA+AA — **all 5 FDA race codes now proven_safe**. **30/30 postmarket scenarios accepted**; 1 scenario invalid by design (H02). IND 7/7 accepted.)  
 **Gateway:** ZZFDATST (postmarket) / ZZFDATST_PREMKT (premarket/IND)  
 **Environment:** TEST
 
@@ -43,9 +43,14 @@
 |---|---|---|---|---|---|
 | TC-A01-race-white.xml | SR-CASE-EXAMPLE-TCA01 | ci260501170454 | ❌ CR+AR | Duplicate — already accepted ci260429225353. **No action needed.** | Superseded by portal CA+AA |
 | TC-A02-race-black.xml | SR-CASE-EXAMPLE-TCA02 | ci260501173418 | ✅ **CA+AA** | Race C41259 proven accepted | ✅ Accepted |
-| TC-A03-race-amerindian.xml | SR-CASE-EXAMPLE-TCA03 | ci260501170657 | ❌ **CR+AR** | `Element value not allowed for tag FDA.D.11.r.1` — C41257 proven rejected | ❌ Data point (no resubmit) |
-| TC-A04-race-hawaiian.xml | SR-CASE-EXAMPLE-TCA04 | ci260501170706 | ❌ **CR+AR** | `Element value not allowed for tag FDA.D.11.r.1` — C41258 proven rejected | ❌ Data point (no resubmit) |
-| TC-A06-ethnicity-ni.xml | SR-CASE-EXAMPLE-TCA06 | ci260501170715 | ❌ **CR+AR** | `SAXParseException: cvc-type.2 abstract type` — nullFlavor schema-rejected | ❌ Data point (no resubmit) |
+| TC-A02b-race-black-c16352.xml *(v1)* | SR-CASE-EXAMPLE-TCA02B | ci260601163938 | ❌ CR+AR | "Case Rejected as Message No and Sender Combination already Exists" — batch ID `DeepQuenceTest-20260429-907ad7e3` and worldwide case ID `CASE-20260429-GF9N` carried forward from TC-A02 golden XML (accepted Apr 29). Both IDs must be unique per submission. | Fixed in v2 |
+| TC-A02b-race-black-c16352.xml *(v2, fresh IDs)* | SR-CASE-EXAMPLE-TCA02B | ci260601175051 | ✅ **CA+AA** | "Report Loaded Successfully" — C16352 (African American) proven accepted. All 5 FDA race codes now proven_safe. | ✅ Accepted |
+| TC-A03-race-amerindian.xml | SR-CASE-EXAMPLE-TCA03 | ci260501170657 | ❌ **CR+AR** | `Element value not allowed for tag FDA.D.11.r.1` — C41257 NOT in FDA value set (see ISSUE-009) | Patched v2 → CA+AA |
+| TC-A03-race-amerindian.xml *(v2, C41259 fix)* | SR-CASE-EXAMPLE-TCA03 | ci260601150309 | ✅ **CA+AA** | "Report Loaded Successfully" — C41259 (American Indian or Alaska Native) proven accepted | ✅ Accepted |
+| TC-A04-race-hawaiian.xml | SR-CASE-EXAMPLE-TCA04 | ci260501170706 | ❌ **CR+AR** | `Element value not allowed for tag FDA.D.11.r.1` — C41258 NOT in FDA value set (see ISSUE-009) | Patched v2 → CA+AA |
+| TC-A04-race-hawaiian.xml *(v2, C41219 fix)* | SR-CASE-EXAMPLE-TCA04 | ci260601150313 | ✅ **CA+AA** | "Report Loaded Successfully" — C41219 (Native Hawaiian or Other Pacific Islander) proven accepted | ✅ Accepted |
+| TC-A06-ethnicity-ni.xml | SR-CASE-EXAMPLE-TCA06 | ci260501170715 | ❌ **CR+AR** | `SAXParseException: cvc-type.2 abstract type` — nullFlavor schema-rejected | Patched: added `xsi:type="CE"` to `<value nullFlavor="NI"/>` |
+| TC-A06-ethnicity-ni.xml *(v2, xsi:type="CE" fix)* | SR-CASE-EXAMPLE-TCA06 | ci260601050356 | ✅ **CA+AA** | "Report Loaded Successfully" — ethnicity nullFlavor=NI with xsi:type="CE" accepted | ✅ Accepted |
 | TC-B01-medhistory-empty.xml | SR-CASE-EXAMPLE-TCB01 | ci260501170724 | ✅ **CA+AA** | Empty ED accepted | ✅ Accepted |
 | TC-C01-reporter-qual-2.xml | SR-CASE-EXAMPLE-TCC01 | ci260501170734 | ✅ **CA+AA** | Reporter code=2 accepted | ✅ Accepted |
 | TC-C02-reporter-qual-3.xml | SR-CASE-EXAMPLE-TCC02 | ci260501170544 | ✅ **CA+AA** | Reporter code=3 accepted | ✅ Accepted |
@@ -76,7 +81,7 @@
 | TC-F03-nonexpedited.xml (v2) | SR-CASE-20260501-TCF03 | ci260501225648 | ✅ **CA+AA** | C.1.7.1 code=2 fix confirmed | ✅ Accepted |
 | TC-F04-ich-rpttype-2.xml (v2) | SR-CASE-20260501-TCF04 | ci260501225657 | ✅ **CA+AA** | C.5.4 researchStudy fix confirmed | ✅ Accepted |
 | TC-H02-nolocation.xml (v2) | SR-CASE-20260501-TCH02V2 | ci260501225715 | ❌ **CR+AR** | SAXParseException — asLocatedEntity placed outside assignedPerson | Regenerated via headless workflow |
-| TC-G01-nonserous.xml (v2) | SR-CASE-20260501-TCG01 | ci260501225706 | ⏳ **Pending ACK3** | Same C.1.7.1 fix as F03 | ⏳ Pending |
+| TC-G01-nonserous.xml (v2) | SR-CASE-20260501-TCG01 | ci260501225706 | ✅ **CA+AA** | "Report Loaded Successfully" — C.1.7.1 code=2 fix confirmed. ACK timestamp 20260501190437-0400. Duplicate rejection in Jun 1 regression batch confirms prior load. | ✅ Accepted |
 | TC-H02-nolocation.xml (v3) | SR-CASE-EXAMPLE-TCH02 | ci260501235624 | ❌ **CR+AR** | C.3.4.1/2/3/4 all required — CDER mandates full address. **Scenario invalid, no resubmit.** | ❌ Scenario closed |
 
 ---
@@ -105,6 +110,24 @@
 | IND-T05 *(IND_May7 v5, UUID …de9f5d5ee8a8)* | SR-CASE-20260506-V3-INDT05 | ci260507054806 | ✅ CA+AE ⚠️ | C.5.6.r warning — channel-inherent | Consistent | ✅ Accepted |
 | IND-T06 *(IND_May7 v5, UUID …f61e56edeb3f)* | SR-CASE-20260506-V3-INDT06 | ci260507054815 | ✅ CA+AE ⚠️ | C.5.6.r warning — channel-inherent | Consistent | ✅ Accepted |
 | IND-T07 *(IND_May7 v5, UUID …3ecdb40e968a)* | SR-CASE-20260506-V3-INDT07 | ci260507054825 | ✅ CA+AE ⚠️ | C.5.6.r warning — channel-inherent | Consistent | ✅ Accepted |
+
+### Regression Batch — May 31 (ZZFDATST_PREMKT / CDER_IND channel)
+
+All 7 IND-T0x files rejected. Root causes: (1) case IDs `SR-CASE-20260506-V3-INDTxx` matched prior accepted May 7 submissions → duplicate rejection; (2) C.5.6.r element with OID `.2.3` was missing from generator output → R0026 rejection.
+
+**Fix applied:** Added `<authorization>` block with `nullFlavor="NA"` OID `.2.3` to T01/T02/T04–T07; T03 cross-ref OIDs already correct. Case IDs changed to `SR-CASE-2026R2-INDTxx`.
+
+### June 1 Batch — R0026 + xsi:type="CE" Fixes (ZZFDATST_PREMKT / CDER_IND channel)
+
+| Package | Case ID | ACK File | Result | Warning | Notes | Status |
+|---|---|---|---|---|---|---|
+| IND-T01-susar-baseline.xml *(R0026 fix, SR-CASE-2026R2)* | SR-CASE-2026R2-INDT01 | ci260601050250 | ✅ **CA+AA** | None | "Report Loaded Successfully" — C.5.6.r nullFlavor=NA confirmed accepted | ✅ Accepted |
+| IND-T02-susar-repeat.xml *(R0026 fix)* | SR-CASE-2026R2-INDT02 | ci260601050300 | ✅ **CA+AA** | None | "Report Loaded Successfully" | ✅ Accepted |
+| IND-T03-cross-ref-ind.xml *(R0026 fix)* | SR-CASE-2026R2-INDT03 | ci260601050309 | ✅ **CA+AE** ⚠️⚠️ | Two C.5.6.r channel-inherent warnings | "Safety report loaded" with warnings — dual C.5.6.r warning expected for two cross-ref INDs; AE (not AR) confirms batch accepted | ✅ Accepted |
+| IND-T04-no-study-registration.xml *(R0026 fix)* | SR-CASE-2026R2-INDT04 | ci260601050319 | ✅ **CA+AA** | None | "Report Loaded Successfully" | ✅ Accepted |
+| IND-T05-fatal-seven-day.xml *(R0026 fix)* | SR-CASE-2026R2-INDT05 | ci260601050328 | ✅ **CA+AA** | None | "Report Loaded Successfully" | ✅ Accepted |
+| IND-T06-babe-test-reference.xml *(R0026 fix)* | SR-CASE-2026R2-INDT06 | ci260601050338 | ✅ **CA+AA** | None | "Report Loaded Successfully" | ✅ Accepted |
+| IND-T07-followup-report.xml *(R0026 fix)* | SR-CASE-2026R2-INDT07 | ci260601050347 | ✅ **CA+AA** | None | "Report Loaded Successfully" | ✅ Accepted |
 
 ---
 
@@ -155,6 +178,23 @@
 **Fix:** Generator updated with: (1) validation error block in `generate()` that blocks submission if any C.3.4.1–C.3.4.4 is absent; (2) unconditional emission in `buildReporter()` so all five fields are always written. `faersEmpiricalPolicy.ts` updated with `REPORTER_ADDRESS_ALL_FIELDS_REQUIRED = true`.  
 **Status:** ✅ Closed — scenario definitively not supported by FAERS 2.18. No resubmission.
 
+### ISSUE-009 — TC-A03/TC-A04 Race Codes C41257/C41258 Not in FDA Value Set (Patched)
+**Affected:** TC-A03 (ci260501170657), TC-A04 (ci260501170706)  
+**Error:** `Element value not allowed for tag FDA.D.11.r.1`  
+**Root cause:** The FDA-authoritative value set for race (tag `FDA.D.11.r.1`) is defined in `fda_e2b_r3_core_regional_data_elements_business_rules_v1.6/v1.7.xlsx`, row 169. The only allowed codes are:  
+- `C16352` = African American  
+- `C41259` = American Indian or Alaska Native  
+- `C41260` = Asian  
+- `C41219` = Native Hawaiian or Other Pacific Islander  
+- `C41261` = White  
+- nullFlavor: UNK, MSK, OTH, NA  
+
+TC-A03 used `C41257` and TC-A04 used `C41258` — neither code appears in the FDA value set. These codes come from the NCI Thesaurus but are NOT the NCI codes that FDA chose for their restricted value set. This is not a platform gap — it is a test-case construction error (wrong NCI codes selected).  
+**Important:** The ICH E2B(R3) IG does not define D.11 at all — race is an FDA regional extension only.  
+**App enum status:** The `PatientRace` enum in `case.types.ts` is correct: `AmericanIndianOrAlaskaNative = 'C41259'`, `NativeHawaiianOrPacificIslander = 'C41219'` — both match the FDA value set.  
+**Fix:** TC-A03 v2: `C41257 → C41259`. TC-A04 v2: `C41258 → C41219`. Files updated in `from_app/round2/` and promoted to `test/golden/postmarket/accepted/xml/`. Linter: 129 ✅ 0 ❌ both.  
+**Status:** ✅ Closed — TC-A03 v2 ci260601150309 CA+AA; TC-A04 v2 ci260601150313 CA+AA (2026-06-01). TC-A02b v2 ci260601175051 CA+AA (2026-06-01) closes C16352 coverage. **All 5 FDA race codes proven_safe** as of 2026-06-01. Policy entries promoted in `faersEmpiricalPolicy.ts`.
+
 ### ISSUE-005 — Missing Autopsy Field When Date of Death Is Present (Historical — Closed)
 **Affected:** IND-T05 early attempt (ci260428001004) — superseded by successful resubmission ci260429044612  
 **Error:** `Since the element Date of Death - D.9.1/B.1.9.1b has a value, the element Was Autopsy Done? - D.9.3/B.1.9.3 must contain a value`  
@@ -171,14 +211,16 @@
 
 ---
 
-## Summary Counts (as of 2026-05-02)
+## Summary Counts (as of 2026-06-01)
 
-| Category | Unique Scenarios | ✅ Accepted (final) | ❌ Proven Rejected / Scenario Invalid | ⏳ ACK3 Pending |
+| Category | Unique Scenarios | ✅ Accepted (final) | ❌ Proven Rejected / Scenario Invalid | ⏳ Pending |
 |---|---|---|---|---|
 | Postmarket (TC-*) — portal Apr 23+29 | 4 | 4 CA+AA (A01, A05, B02, E03) | 0 | 0 |
-| Postmarket (TC-*) — API May 1 Batch 1 | 27 submitted (19 unique new) | 19 CA+AA | 4 CR+AR data points (A03, A04, A06 → rejected values; A01 → duplicate) + 3 CR+AR patched | 0 |
+| Postmarket (TC-*) — API May 1 Batch 1 | 27 submitted (19 unique new) | 19 CA+AA | 4 CR+AR (A03, A04 → wrong NCI codes, not platform gap; A06 patched; A01 → duplicate) + 3 CR+AR patched | 0 |
 | Postmarket (TC-*) — API May 1 Batch 2 (v2 resubmits) | 4 | 2 CA+AA (F03, F04) | 1 scenario invalid (H02 v3) | 1 (G01 v2) |
+| Postmarket (TC-*) — Jun 1 A06 fix | 1 | 1 CA+AA (A06 xsi:type="CE" fix) | 0 | 0 |
 | IND/Premarket (IND-T*) — portal Apr 29–30 | 7 | 7 CA+AE | 0 | 0 |
-| IND/Premarket (IND-T*) — API May 1 | 7 (re-submission of same 7) | — | — | 7 ACK3 pending |
-| **Postmarket total unique scenarios** | **30** | **25** | **4** | **1** |
-| **IND total unique scenarios** | **7** | **7 (portal confirmed)** | **0** | **7 (API ACK3 pending)** |
+| IND/Premarket (IND-T*) — API May 1 | 7 (re-submission of same 7) | 7 CA+AE confirmed via May 7 v5 | 0 | 0 |
+| IND/Premarket (IND-T*) — Jun 1 R0026 fix | 7 | 7 CA+AA/AE (SR-CASE-2026R2-INDTxx) | 0 | 0 |
+| **Postmarket total unique scenarios** | **30** | **29** (A03 v2 + A04 v2 confirmed 2026-06-01) | **1** scenario invalid (H02 — CDER requires full street address; no resubmit) | **0** |
+| **IND total unique scenarios** | **7** | **7 ✅ API confirmed CA** | **0** | **0** |
